@@ -1,3 +1,8 @@
+
+Function Open-File([Parameter(Mandatory)][ValidateNotNull()][string]$fileName) {
+    . $fileName
+}
+
 Function Edit-File([Parameter(Mandatory)][ValidateNotNull()][string]$fileName) {
     If(!(Test-Path $fileName)) {
         New-Item -ItemType File $fileName;

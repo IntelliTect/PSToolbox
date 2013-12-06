@@ -1,3 +1,7 @@
+$here = $PSScriptRoot
+$sut = $PSCommandPath.Replace(".Tests", "")
+. $sut
+
 Describe "Edit-File" {
     It "Create a new file called and open it to edit" {
         $tempFile = [IO.Path]::ChangeExtension([IO.Path]::GetTempFileName(), ".txt")
