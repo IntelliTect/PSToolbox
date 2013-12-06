@@ -1,27 +1,36 @@
 $here = $PSScriptRoot
 $sut = $PSCommandPath.Replace(".Tests", "")
-#dir "$ChocolateyInstall\lib\Pester*" Pester.psm1 -Recurse | Select-Object -Last 1 | Import-Module -Scope Local
-#Get-Module "Import-Script" | remove-module
-#Import-Module "$here\Import-Script.psm1" -Scope Local -Force
-#Import-Script "$here\$sut" -IncludeVariables
-#Invoke-Pester "$MyInvocation.MyCommand.Path"
-
-function DebugBreak{}
-function Debug{
-    Set-PSBreakpoint -command DebugBreak
-    DebugBreak
-}
-
+. $sut
 
 Function OpenTempFile() {
         $tempFile = [IO.Path]::GetTempFileName()
         if(!(Test-Path $tempFile)) { New-Item $tempFile -ItemType File}
-        ISE $tempFile
         start (get-command powershell_ise.exe).Path -Wait $tempFile #Use start to ensure it is synchronous for testing purposes.
         $openedTempFile = ($psISE.CurrentPowerShellTab.Files | ?{ $_.FullPath -eq $tempFile })
         $openedTempFile.FullPath | Should Be $tempFile
         return $tempFile
 }
+
+Describe "Open-File" {
+    It "Open a temp file" {
+        $tempFile = [IO.Path]::GetTempFileName()
+        Open-File $tempFile
+        $openedTempFile = ($psISE.CurrentPowerShellTab.Files | ?{ $_.FullPath -eq $tempFile })
+        $openedTempFile.FullPath | Should Be $tempFile
+        Close-File $openedTempFile.FullPath
+    }
+        It "Open a temp file from pipeline" {
+        $tempFile = [IO.Path]::GetTempFileName()
+        type function:\Open-File
+        $tempFile | Open-File 
+        $openedTempFile = ($psISE.CurrentPowerShellTab.Files | ?{ $_.FullPath -eq $tempFile })
+        $openedTempFile.FullPath | Should Be $tempFile
+        Close-File $openedTempFile.FullPath
+    }
+}
+
+
+
 Describe "Close-File" {
     It "Close a file passed as a parameter" {
         $tempFile = OpenTempFile

@@ -8,8 +8,10 @@ Function Close-File ([Parameter(ValueFromPipeline=$true,Mandatory)][ValidateNotN
     }
 }
 
-Function Open-File([Parameter(Mandatory)][ValidateNotNull()][string]$fileName) {
-    start (get-command powershell_ise.exe).Path -Wait $filename #Use start to ensure it is synchronous for testing purposes.
+Function Open-File([Parameter(ValueFromPipeline=$true,Mandatory)][ValidateNotNull()][string]$fileName) {
+    PROCESS {
+        start (get-command powershell_ise.exe).Path -Wait $filename #Use start to ensure it is synchronous for testing purposes.
+    }
 }
 
  
