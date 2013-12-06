@@ -1,11 +1,4 @@
+$here = $PSScriptRoot
 
-
-
-
-Function Edit-File([Parameter(Mandatory)][ValidateNotNull()][string]$fileName) {
-    If(!(Test-Path $fileName)) {
-        New-Item -ItemType File $fileName;
-    }
-    Open-File (Resolve-Path $fileName)
-}
-Set-Alias Edit Edit-File;
+Get-childItem (Join-Path $here Functions) *.ps1 | ?{
+    $_.Name -notlike "__*.ps1" } | %{ . $_.FullName }
