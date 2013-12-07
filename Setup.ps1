@@ -22,3 +22,5 @@ Get-ChildItem "$ENV:ChocolateyInstall\lib\Pester*" Pester.psm1 -Recurse | Select
 Function Checkin {
     TF.exe "Checkin" $pwd -recursive
 }
+
+Import-Module PSCX -Function Import-VsCommandLine -PassThru | Import-VsCommandLine
