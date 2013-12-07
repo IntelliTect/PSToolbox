@@ -18,3 +18,7 @@ If(!(Get-ChildItem "$ENV:ChocolateyInstall\lib\Pester*" Pester.psm1 -Recurse)) {
     }
 }
 Get-ChildItem "$ENV:ChocolateyInstall\lib\Pester*" Pester.psm1 -Recurse | Select-Object -Last 1 | Import-Module -Verbose
+
+Function Checkin {
+    TF.exe "Checkin" $pwd -recursive
+}
