@@ -1,4 +1,4 @@
-﻿[CmdletBinding(
+[CmdletBinding(
     SupportsShouldProcess=$true #Tells the shell that your function supports both -confirm and -whatif.
     ,ConfirmImpact="High" #Causes Confirm prompt when $ConfirmPreference is "High"
 )]
@@ -30,7 +30,7 @@ If(!(get-module PsGet -ListAvailable)) {
 
     #Install Pester
     If(!(get-module Pester -ListAvailable)) {
-        If ($pscmdlet.ShouldProcess("Install Pester (https://github.com/pester/Pester‎)")) {
+        If ($pscmdlet.ShouldProcess("Install PSCX (http:\\pscx.codeplex.com)")) {
             Install-Module Pester
         }
     }
@@ -57,8 +57,9 @@ If(!(get-module PsGet -ListAvailable)) {
 #}
 
 
+
 Function TfCheckin ([string]$comment = (Read-Host "Enter comments")) {
-    TF.exe Checkin (Get-Location) /comment:$comment /recursive
+    TF.exe Checkin (Get-Location) /comment:"$comment" /recursive
 }
 
 
