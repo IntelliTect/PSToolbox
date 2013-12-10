@@ -39,22 +39,22 @@ If(!(get-module PsGet -ListAvailable)) {
 }
 
 #TODO: Move into a function file.
-If(!(Test-Path Function:Import-VsCommandLine)) {
-    function Get-Batchfile ($file) {
-        $cmd = "`"$file`" & set"
-        cmd /c $cmd | Foreach-Object {
-            $p, $v = $_.split('=')
-            Set-Item -path env:$p -value $v
-        }
-    }
-    function Import-VsCommandLine()
-    {
-        $VSCOMNTOOLS = (Get-Item "env:vs*comntools" | select -last 1).Value
-        $batchFile = Join-Path $VSCOMNTOOLS "vsvars32.bat"
-        Get-Batchfile $BatchFile
-    }
-    Import-VsCommandLine
-}
+#If(!(Test-Path Function:Import-VsCommandLine)) {
+#    function Get-Batchfile ($file) {
+#        $cmd = "`"$file`" & set"
+#        cmd /c $cmd | Foreach-Object {
+#            $p, $v = $_.split('=')
+#            Set-Item -path env:$p -value $v
+#        }
+#    }
+#    function Import-VsCommandLine()
+#    {
+#        $VSCOMNTOOLS = (Get-Item "env:vs*comntools" | select -last 1).Value
+#        $batchFile = Join-Path $VSCOMNTOOLS "vsvars32.bat"
+#        Get-Batchfile $BatchFile
+#    }
+#    Import-VsCommandLine
+#}
 
 
 Function TfCheckin ([string]$comment = (Read-Host "Enter comments")) {
