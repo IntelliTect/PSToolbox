@@ -21,10 +21,18 @@ Describe "Open-File" {
     }
     It "Open a temp file from pipeline" {
         $tempFile = [IO.Path]::GetTempFileName()
-        type function:\Open-File
         $tempFile | Open-File 
         $openedTempFile = ($psISE.CurrentPowerShellTab.Files | ?{ $_.FullPath -eq $tempFile })
         $openedTempFile.FullPath | Should Be $tempFile
+        Close-File $openedTempFile.FullPath
+    }
+
+    It "Open a vsvars Batch File" {
+        #Opening vsvars32.bat was failing so a test was created
+        $vsvarsbat = join-path (Get-Item "env:vs*comntools" | select -last 1).Value "vsvars32.bat"
+        $vsvarsbat | Open-File 
+        $openedTempFile = ($psISE.CurrentPowerShellTab.Files | ?{ $_.FullPath -eq $vsvarsbat })
+        $openedTempFile.FullPath | Should Be $vsvarsbat
         Close-File $openedTempFile.FullPath
     }
 }

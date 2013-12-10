@@ -1,4 +1,4 @@
-if(!(Test-Path variable:\psise)) { return; }
+If(!(Test-Path variable:\psise)) { Return; }
 
 
 Function Close-File ([Parameter(ValueFromPipeline=$true,Mandatory)][ValidateNotNull()][string] $fileName) {
@@ -10,7 +10,7 @@ Function Close-File ([Parameter(ValueFromPipeline=$true,Mandatory)][ValidateNotN
 
 Function Open-File([Parameter(ValueFromPipeline=$true,Mandatory)][ValidateNotNull()][string]$fileName) {
     PROCESS {
-        start (get-command powershell_ise.exe).Path -Wait $filename #Use start to ensure it is synchronous for testing purposes.
+        Start-Process (get-command powershell_ise.exe).Path -ArgumentList "-File `"$filename`"" -Wait #Use start to ensure it is synchronous for testing purposes.
     }
 }
 
