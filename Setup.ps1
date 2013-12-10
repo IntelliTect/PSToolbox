@@ -58,10 +58,10 @@ If(!(Test-Path Function:Import-VsCommandLine)) {
 
 
 Function TfCheckin {
-    TF.exe Checkin $pwd -recursive -comment:"" 
+    TF.exe Checkin (Get-Location) -recursive
 }
 
 
 Function TfGet {
-    TF.exe Get $pwd -recursive
+    TF.exe Get (Get-Location) -recursive
 }
