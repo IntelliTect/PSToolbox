@@ -4,40 +4,35 @@
 )]
 param ()
 
-#Install Chocolatey
-If(!($ENV:ChocolateyInstall)) {
-    if ($pscmdlet.ShouldProcess("Install Chocolatey (http:\\Chocolatey.org)")) {
-        Invoke-Expression ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))
-        $ENV:ChocolateyInstall="$ENV:Systemdrive\chocolatey\bin"
-        $ENV:PATH="$ENV:PATH;$ENV:ChocolateyInstall"
+#Install PsGet
+If(!(get-module PsGet -ListAvailable)) {
+    If ($pscmdlet.ShouldProcess("Install PsGet (http://psget.net)")) {
+        (new-object Net.WebClient).DownloadString("http://psget.net/GetPsGet.ps1") | Invoke-Expression
     }
 }
 
-If($ENV:ChocolateyInstall) {
+#Install Chocolatey
+#If(!($ENV:ChocolateyInstall)) {
+#    if ($pscmdlet.ShouldProcess("Install Chocolatey (http:\\Chocolatey.org)")) {
+#        Invoke-Expression ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))
+#        $ENV:ChocolateyInstall="$ENV:Systemdrive\chocolatey\bin"
+#        $ENV:PATH="$ENV:PATH;$ENV:ChocolateyInstall"
+#    }
+#}
+
+If(!(get-module PsGet -ListAvailable)) {
     #ToDo: Refactor into Install-ModuleFromChocolatey
     If(!(get-module Pscx -ListAvailable)) {
         If ($pscmdlet.ShouldProcess("Install PSCX (http:\\pscx.codeplex.com)")) {
-            CINST Pscx #Note: This runs the Pscx MSI which probably? executes Install-Module
+            Install-Module PSCX
         }
     }
-
-    #Install PsGet
-    If(!(get-module PsGet -ListAvailable)) {
-        If ($pscmdlet.ShouldProcess("Install PsGet (http:\\pscx.codeplex.com)")) {
-            CINST psget 
-        }
-    }
-
 
     #Install Pester
     If(!(get-module Pester -ListAvailable)) {
-        If(!(Get-ChildItem "$ENV:ChocolateyInstall\lib\Pester*" Pester.psm1 -Recurse)) {
-            If ($pscmdlet.ShouldProcess("Install Pester (https://github.com/pester/Pester)")) {
-                CINST Pester #Note: This probably comes from NuGet (not chocolatey) and probably? doesn't execute Install-Module
-            }
+        If ($pscmdlet.ShouldProcess("Install PSCX (http:\\pscx.codeplex.com)")) {
+            Install-Module Pester
         }
-        #TODO: Make conditional on chocolatey install as user may have declined that install
-        Get-ChildItem "$ENV:ChocolateyInstall\lib\Pester*" Pester.psm1 -Recurse | Select-Object -Last 1 | Install-Module -Verbose 
     }
 
     #TODO: Install TFS PowerTools but the chocolatey pacakage appears to be out of date -http://chocolatey.org/packages/tfpt
@@ -62,7 +57,11 @@ If(!(Test-Path Function:Import-VsCommandLine)) {
 }
 
 
-Function Checkin {
-    TF.exe "Checkin" $pwd -recursive
+Function TfCheckin {
+    TF.exe Checkin $pwd -recursive
 }
 
+
+Function TfGet {
+    TF.exe Get $pwd -recursive
+}
