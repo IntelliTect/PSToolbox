@@ -21,6 +21,14 @@ If($ENV:ChocolateyInstall) {
         }
     }
 
+    #Install PsGet
+    If(!(get-module PsGet -ListAvailable)) {
+        If ($pscmdlet.ShouldProcess("Install PsGet (http:\\pscx.codeplex.com)")) {
+            CINST psget 
+        }
+    }
+
+
     #Install Pester
     If(!(get-module Pester -ListAvailable)) {
         If(!(Get-ChildItem "$ENV:ChocolateyInstall\lib\Pester*" Pester.psm1 -Recurse)) {
