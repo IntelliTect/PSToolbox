@@ -58,8 +58,8 @@ If(!(Test-Path Function:Import-VsCommandLine)) {
 
 
 Function TfCheckin {
-    
-    TF.exe Checkin (Get-Location) -recursive -comment:"$(Read-Host "Comments")" 
+    $comment = Read-Host "Comments"
+    TF.exe Checkin (Get-Location) -recursive -comment:"$comment" 
 }
 
 
