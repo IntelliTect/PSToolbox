@@ -19,7 +19,7 @@ Describe "Open-File" {
         $openedTempFile.FullPath | Should Be $tempFile
         Close-File $openedTempFile.FullPath
     }
-        It "Open a temp file from pipeline" {
+    It "Open a temp file from pipeline" {
         $tempFile = [IO.Path]::GetTempFileName()
         type function:\Open-File
         $tempFile | Open-File 
