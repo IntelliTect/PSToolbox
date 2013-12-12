@@ -20,11 +20,11 @@ Describe "Get-Disk" {
 
     It "has a GroupEndData" {
         $target = Get-Disk
-        $target[5].GetType().Name | Should Be "GroupEndData"
+        $target[($target.Count -2)].GetType().Name | Should Be "GroupEndData"
     }
 
     It "has a FormatEndData" {
         $target = Get-Disk
-        $target[6].GetType().Name | Should Be "FormatEndData"
+        $target[($target.Count -1)].GetType().Name | Should Be "FormatEndData"
     }
 }

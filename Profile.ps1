@@ -6,3 +6,9 @@ Get-childItem (Join-Path $here Functions) *.ps1 |
             $_.Name -notlike "__*.ps1" -AND 
                 ($_.Fullname -notlike "*_ISE.ps1" -OR (Test-Path variable:\psise)) 
     } | %{ . $_.FullName }
+
+
+Remove-Item alias:dir
+Remove-Item alias:ls
+Set-Alias dir Get-DirWithSize
+Set-Alias ls Get-DirWithSize
