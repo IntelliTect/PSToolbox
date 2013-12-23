@@ -66,3 +66,7 @@ Function TfCheckin ([string]$comment = (Read-Host "Enter comments")) {
 Function TfGet {
     TF.exe Get (Get-Location) -recursive
 }
+
+if(!(Test-Path ENV:VSINSTALLDIR)) {
+    Import-VisualStudioVars 2012
+}
