@@ -20,7 +20,7 @@ If(!(get-module PsGet -ListAvailable)) {
 #    }
 #}
 
-If(!(get-module PsGet -ListAvailable)) {
+If(get-module PsGet -ListAvailable) {
     #ToDo: Refactor into Install-ModuleFromChocolatey
     If(!(get-module Pscx -ListAvailable)) {
         If ($pscmdlet.ShouldProcess("Install PSCX (http:\\pscx.codeplex.com)")) {
