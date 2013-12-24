@@ -38,27 +38,9 @@ If(get-module PsGet -ListAvailable) {
     #TODO: Install TFS PowerTools but the chocolatey pacakage appears to be out of date -http://chocolatey.org/packages/tfpt
 }
 
-#TODO: Move into a function file.
-#If(!(Test-Path Function:Import-VsCommandLine)) {
-#    function Get-Batchfile ($file) {
-#        $cmd = "`"$file`" & set"
-#        cmd /c $cmd | Foreach-Object {
-#            $p, $v = $_.split('=')
-#            Set-Item -path env:$p -value $v
-#        }
-#    }
-#    function Import-VsCommandLine()
-#    {
-#        $VSCOMNTOOLS = (Get-Item "env:vs*comntools" | select -last 1).Value
-#        $batchFile = Join-Path $VSCOMNTOOLS "vsvars32.bat"
-#        Get-Batchfile $BatchFile
-#    }
-#    Import-VsCommandLine
-#}
-
-
 If(!(Test-Path ENV:VSINSTALLDIR)) {
-    Import-VisualStudioVars 2012
+    . $PSScriptRoot\Functions\Import-VisualStudioVars.ps1
+    Import-VisualStudioVars
 }
 
 Function TfCheckin ([string]$comment = (Read-Host "Enter comments")) {
