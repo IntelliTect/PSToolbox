@@ -38,7 +38,7 @@ If(get-module PsGet -ListAvailable) {
     #TODO: Install TFS PowerTools but the chocolatey pacakage appears to be out of date -http://chocolatey.org/packages/tfpt
 }
 
-If(!(Test-Path ENV:VSINSTALLDIR)) {
+If(Test-Path ENV:VSINSTALLDIR) {
     . $PSScriptRoot\Functions\Import-VisualStudioVars.ps1
     Import-VisualStudioVars
 }
