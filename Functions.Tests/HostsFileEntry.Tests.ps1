@@ -77,12 +77,13 @@ Describe "Append-HostFileEntry" {
             $result.IPAddress | Should Be "10.99.99.99"
             $result.DnsName | Should Be "nowhere1.local"
         }
-        It "Add new entry" {
-            [IntelliTect.Net.HostsFileEntry] $result = Add-HostsFileEntry "10.99.99.99" "nowhere.local" -PassThru -confirm:$false
+        It "Add new entry with PassThru" {
+            [IntelliTect.Net.HostsFileEntry] $result = Add-HostsFileEntry "10.99.99.99" "nowhere.local" -PassThru
             $result | Should Not Be $null
             $result.IPAddress | Should Be "10.99.99.99"
             $result.DnsName | Should Be "nowhere.local"
         }
+        #TODO: Test -confirm
     }
 }
 
@@ -96,6 +97,6 @@ Describe "Remove-HostsFileEntry" {
             Remove-HostsFileEntry -DnsName "nowhere.local"
             Get-HostsFileEntry "nowhere.local" | Should Be $null 
         }
-
+        #ToDo: Test -confirm
     }
 }

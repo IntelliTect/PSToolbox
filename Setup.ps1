@@ -38,7 +38,7 @@ If(get-module PsGet -ListAvailable) {
     #TODO: Install TFS PowerTools but the chocolatey pacakage appears to be out of date -http://chocolatey.org/packages/tfpt
 }
 
-If(Test-Path ENV:VSINSTALLDIR) {
+If(!(Test-Path ENV:VSINSTALLDIR)) {
     . $PSScriptRoot\Functions\Import-VisualStudioVars.ps1
     Import-VisualStudioVars
 }
@@ -58,4 +58,4 @@ Function Test-CurrentFile {
     Invoke-Pester $psISE.CurrentFile.FullPath.Replace(".Tests","").Replace(".ps1",".Tests.ps1");
 }
 
-dir .\,.\Functions,.\Functions.Tests *.ps1 | ?{ $_.Name -notlike "*disk*" -AND $_.Name -notlike "__*" } | %{ edit $_.FullName }
+#dir .\,.\Functions,.\Functions.Tests *.ps1 | ?{ $_.Name -notlike "*disk*" -AND $_.Name -notlike "__*" } | %{ edit $_.FullName }
