@@ -43,11 +43,19 @@ If(Test-Path ENV:VSINSTALLDIR) {
     Import-VisualStudioVars
 }
 
-Function TfCheckin ([string]$comment = (Read-Host "Enter comments")) {
+Function Submit-Scc ([string]$comment = (Read-Host "Enter comments")) {
     TF.exe Checkin (Get-Location) /comment:"$comment" /recursive
 }
+Set-Alias TfCheckin Submit-Scc
 
 
-Function TfGet {
+Function Get-Scc {
     TF.exe Get (Get-Location) -recursive
 }
+Set-Alias TfGet Get-Scc
+
+Function Test-CurrentFile {
+    Invoke-Pester $psISE.CurrentFile.FullPath.Replace(".Tests","").Replace(".ps1",".Tests.ps1");
+}
+
+dir .\,.\Functions,.\Functions.Tests *.ps1 | ?{ $_.Name -notlike "*disk*" -AND $_.Name -notlike "__*" } | %{ edit $_.FullName }
