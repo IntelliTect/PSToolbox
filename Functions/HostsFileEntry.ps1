@@ -24,7 +24,7 @@ Add-Type -Language CSharp -TypeDefinition @"
     }
 "@
 
-#ToDo: Publish: Mandatory on a string checks for null or empty string.
+#ToDo: Verify and Publish: Mandatory on [string] parameters checks for null or empty string.
 
 Function New-HostsFileEntry(
     [Parameter(ValueFromPipeline=$true)][string] $line) {
@@ -110,8 +110,7 @@ Function Remove-HostsFileEntry {
 param
 (
     [Parameter(Position = 0)][string]$IPAddress,
-    [Parameter(Position = 1)][string]$DnsName,
-    [Parameter(Position = 2)][bool]$PassThru=$false
+    [Parameter(Position = 1)][string]$DnsName
 )
     if([string]::IsNullOrWhiteSpace($IPAddress) -and [string]::IsNullOrWhiteSpace($DnsName)) {
         throw "Either or both `$IPAddress or `$DnsName are required.";
