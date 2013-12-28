@@ -5,6 +5,8 @@ Function Open-File([Parameter(ValueFromPipeline=$true,Mandatory)][ValidateNotNul
     }
 }
 
+# TODO: Publish the fact that a string path implicitly converts to a FileInfo/DirectoryInfo so functions needing files should use [IO.FileInfo]/[IO.DirectoryInfo]
+
 <#TODO: Resolve name clash with PSCX
     Add support so that PSCX create the file if it doesn't exist
     Set PSCX to use ISE as the editor when running inside ISE (This can be done
@@ -16,7 +18,10 @@ if( (Test-Path Function:Edit-File) -AND ((Get-Item Function:Edit-File).ModuleNam
     #dir function: | ?{$_.ModuleName -eq "pscx" }
     Rename-Item Function:Edit-File PSCX:Edit-File
 }
-Function Edit-File([Parameter(ValueFromPipeline=$true,Mandatory)][ValidateNotNull()][string]$fileName)  {
+
+#TODO: Dir .\ *.txt -recurse | Edit-File creates files rather than using the files in the sub directories
+
+Function Edit-File([Parameter(ValueFromPipeline=$true,Mandatory)][ValidateNotNull()][IO.FileInfo]$fileName)  {
     PROCESS {
         If(!(Test-Path $fileName)) {
             New-Item -ItemType File $fileName;
