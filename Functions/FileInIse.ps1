@@ -1,6 +1,5 @@
 If(!(Test-Path variable:\psise)) { Return; }
 
-
 Function Close-File ([Parameter(ValueFromPipeline=$true,Mandatory)][ValidateNotNull()][string] $fileName) {
     PROCESS {
             $ISEFileToRemove = $psISE.CurrentPowerShellTab.Files | ?{$_.FullPath -eq (Resolve-Path $fileName)}
