@@ -54,7 +54,7 @@ Function Get-Scc {
 }
 Set-Alias TfGet Get-Scc
 
-If($psISE) {
+If(Test-Path variable:\psise) {
     Function Test-CurrentFile {
         Invoke-Pester $psISE.CurrentFile.FullPath.Replace(".Tests","").Replace(".ps1",".Tests.ps1");
     }
