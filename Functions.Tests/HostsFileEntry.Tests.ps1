@@ -38,9 +38,9 @@ Describe "New-HostsFileEntry" {
 Describe "Get-HostsFileEntry" {
     Context "Using a fake HOSTS file" {
         $mockHostsFilePath = [IO.Path]::GetTempFileName();
-        Get-Content (Get-HostsFilePath) | Select -First 100 | Set-Content $mockHostsFilePath
-        Add-HostsFileEntry "127.0.0.1" "localhost" 
+        Get-Content (Get-HostsFilePath) | Select -First 100 | Set-Content $mockHostsFilePath 
         Mock Get-HostsFilePath { return $mockHostsFilePath; }
+        Add-HostsFileEntry "127.0.0.1" "localhost"
         It "Find an existing entry using IP address" {
             $result = Get-HostsFileEntry 127.0.0.1 | select -First 1
             $result.IPAddress | Should Be 127.0.0.1
@@ -93,6 +93,7 @@ Describe "Remove-HostsFileEntry" {
         $mockHostsFilePath = [IO.Path]::GetTempFileName();
         Get-Content (Get-HostsFilePath) | Select -First 100 | Set-Content $mockHostsFilePath
         Mock Get-HostsFilePath { return $mockHostsFilePath; }
+        Add-HostsFileEntry "10.99.99.99" "nowhere.local" $true -confirm:$false
         It "Remove existing entry" {
             Get-HostsFileEntry "nowhere.local" | Should Not Be $null
             Remove-HostsFileEntry -DnsName "nowhere.local"
