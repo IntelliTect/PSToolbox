@@ -12,7 +12,7 @@ Describe "Import-VisualStudioVars" {
     Context "Mock out the call" {
         It "Test 2010" {
             #TODO: Consider modyfying environment variables so the test verifies both when VS 2010 is installed and when it isn't.
-            $expected = "C:\Program Files\Microsoft Visual Studio 10.0\Common7\Tools\..\..\VC\vcvarsall.bat"
+            $expected = "C:\Program Files (x86)\Microsoft Visual Studio 10.0\Common7\Tools\..\..\VC\vcvarsall.bat"
             Try {
                 Import-VisualStudioVars 2010
             }
