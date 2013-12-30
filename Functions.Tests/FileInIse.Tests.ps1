@@ -1,3 +1,5 @@
+If(!(Test-Path variable:\psise)) { Return; }
+
 $here = $PSScriptRoot
 $sut = $PSCommandPath.Replace(".Tests", "")
 . $sut
