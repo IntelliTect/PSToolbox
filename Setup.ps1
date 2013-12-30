@@ -54,8 +54,9 @@ Function Get-Scc {
 }
 Set-Alias TfGet Get-Scc
 
-Function Test-CurrentFile {
-    Invoke-Pester $psISE.CurrentFile.FullPath.Replace(".Tests","").Replace(".ps1",".Tests.ps1");
+If($psISE) {
+    Function Test-CurrentFile {
+        Invoke-Pester $psISE.CurrentFile.FullPath.Replace(".Tests","").Replace(".ps1",".Tests.ps1");
+    }
 }
-
 #dir .\,.\Functions,.\Functions.Tests *.ps1 | ?{ $_.Name -notlike "*disk*" -AND $_.Name -notlike "__*" } | %{ edit $_.FullName }
