@@ -5,7 +5,7 @@ $sut = $PSCommandPath.Replace(".Tests", "")
 Function Push-EnvironmentBlock() {}
 Function Invoke-BatchFile([string]$Path, [string]$Parameters) {}
 
-Describe "New-HostsFileEntry" {
+Describe "Import-VisualStudioVars" {
     $expected = $null;
     Mock Push-EnvironmentBlock {}
     Mock Invoke-BatchFile { $path | Should be $expected  }
