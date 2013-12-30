@@ -1,4 +1,4 @@
-##############################################################################
+﻿##############################################################################
 ##
 ## New-CommandWrapper
 ##
@@ -52,55 +52,56 @@ of 50 to 75. It doesn't alter the pipeline, but does display some
 information on the screen before processing the original pipeline.
 
 #>
+function New-CommandWrapper{
+    param(
+        ## The name of the command to extend
+        [Parameter(Mandatory = $true)]
+        $Name,
 
-param(
-    ## The name of the command to extend
-    [Parameter(Mandatory = $true)]
-    $Name,
+        ## Script to invoke before the command begins
+        [ScriptBlock] $Begin,
 
-    ## Script to invoke before the command begins
-    [ScriptBlock] $Begin,
+        ## Script to invoke for each input element
+        [ScriptBlock] $Process,
 
-    ## Script to invoke for each input element
-    [ScriptBlock] $Process,
+        ## Script to invoke at the end of the command
+        [ScriptBlock] $End,
 
-    ## Script to invoke at the end of the command
-    [ScriptBlock] $End,
+        ## Parameters to add, and their functionality.
+        ##
+        ## The Key of the hashtable can be either a simple parameter name,
+        ## or a more advanced parameter description.
+        ##
+        ## If you want to add additional parameter validation (such as a
+        ## parameter type,) then the key can itself be a hashtable with the keys
+        ## 'Name' and 'Attributes'. 'Attributes' is the text you would use when
+        ## defining this parameter as part of a function.
+        ##
+        ## The Value of each hashtable entry is a scriptblock to invoke
+        ## when this parameter is selected. To customize the pipeline,
+        ## assign a new scriptblock to the $newPipeline variable. Use the
+        ## special text, __ORIGINAL_COMMAND__, to represent the original
+        ## command. The $targetParameters variable represents a hashtable
+        ## containing the parameters that will be passed to the original
+        ## command.
+        [HashTable] $AddParameter
+    )
 
-    ## Parameters to add, and their functionality.
-    ##
-    ## The Key of the hashtable can be either a simple parameter name,
-    ## or a more advanced parameter description.
-    ##
-    ## If you want to add additional parameter validation (such as a
-    ## parameter type,) then the key can itself be a hashtable with the keys
-    ## 'Name' and 'Attributes'. 'Attributes' is the text you would use when
-    ## defining this parameter as part of a function.
-    ##
-    ## The Value of each hashtable entry is a scriptblock to invoke
-    ## when this parameter is selected. To customize the pipeline,
-    ## assign a new scriptblock to the $newPipeline variable. Use the
-    ## special text, __ORIGINAL_COMMAND__, to represent the original
-    ## command. The $targetParameters variable represents a hashtable
-    ## containing the parameters that will be passed to the original
-    ## command.
-    [HashTable] $AddParameter
-)
+    Set-StrictMode -Version Latest
 
-Set-StrictMode -Version Latest
+    ## Store the target command we are wrapping, and its command type
+    $target = $Name
+    $commandType = "Cmdlet"
 
-## Store the target command we are wrapping, and its command type
-$target = $Name
-$commandType = "Cmdlet"
+    ## If a function already exists with this name (perhaps it's already been
+    ## wrapped,) rename the other function and chain to its new name.
+    if(Test-Path function:\$Name)
+    {
+        $target = "$Name" + "-" + [Guid]::NewGuid().ToString().Replace("-","")
+        Rename-Item function:\GLOBAL:$Name GLOBAL:$target
+        $commandType = "Function"
+    }
 
-## If a function already exists with this name (perhaps it's already been
-## wrapped,) rename the other function and chain to its new name.
-if(Test-Path function:\$Name)
-{
-    $target = "$Name" + "-" + [Guid]::NewGuid().ToString().Replace("-","")
-    Rename-Item function:\GLOBAL:$Name GLOBAL:$target
-    $commandType = "Function"
-}
 
 ## The template we use for generating a command proxy
 $proxy = @'
@@ -343,3 +344,103 @@ if($commandType -eq "Cmdlet")
 {
     $originalCommand.Visibility = "Private"
 }
+}
+<#
+
+.SYNOPSIS
+
+Adds colors and size quantization to all default output pipelines if the type is DirectoryInfo or FileInfo
+
+#>
+
+New-CommandWrapper Out-Default -Process {
+  $regex_opts = ([System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
+  $compressed = New-Object System.Text.RegularExpressions.Regex(
+    '\.(zip|tar|gz|rar|jar|war)$', $regex_opts)
+  $executable = New-Object System.Text.RegularExpressions.Regex(
+    '\.(exe|bat|cmd|msi|ps1|psm1|vbs|reg)$', $regex_opts)
+
+  if(($_ -is [System.IO.DirectoryInfo]) -or ($_ -is [System.IO.FileInfo]))
+  {
+    if(-not ($notfirst))
+    {
+      Write-Host "`n    Directory: " -noNewLine
+      Write-Host "$(pwd)`n" -foregroundcolor "Cyan"
+      Write-Host "Mode        Last Write Time       Length   Name"
+      Write-Host "----        ---------------       ------   ----"
+      $notfirst=$true
+    }
+
+    if ($_ -is [System.IO.DirectoryInfo])
+    {
+      Write-Host ("{0}   {1}                {2}" -f $_.mode, ([String]::Format("{0,10} {1,8}", $_.LastWriteTime.ToString("d"), $_.LastWriteTime.ToString("t"))), $_.name) -ForegroundColor "Cyan"
+    }
+    else
+    {
+      if ($compressed.IsMatch($_.Name))
+      {
+        $color = "DarkGreen"
+      }
+      elseif ($executable.IsMatch($_.Name))
+      {
+        $color =  "Red"
+      }
+      else
+      {
+        $color = "White"
+      }
+      Write-Host ("{0}   {1}   {2,10}   {3}" -f $_.mode, ([String]::Format("{0,10} {1,8}", $_.LastWriteTime.ToString("d"), $_.LastWriteTime.ToString("t"))), $_.length, $_.name) -ForegroundColor $color
+    }
+
+    $_ = $null
+  }
+} -end {
+  Write-Host
+}
+
+function Get-DirSize
+{
+  param ($dir)
+  $bytes = 0
+  $count = 0
+
+  Get-Childitem $dir | Foreach-Object {
+    if ($_ -is [System.IO.FileInfo])
+    {
+      $bytes += $_.Length
+      $count++
+    }
+  }
+
+  Write-Host "`n    " -NoNewline
+
+  if ($bytes -ge 1KB -and $bytes -lt 1MB)
+  {
+    Write-Host ("" + [Math]::Round(($bytes / 1KB), 2) + " KB") -ForegroundColor "White" -NoNewLine
+  }
+  elseif ($bytes -ge 1MB -and $bytes -lt 1GB)
+  {
+    Write-Host ("" + [Math]::Round(($bytes / 1MB), 2) + " MB") -ForegroundColor "White" -NoNewLine
+  }
+  elseif ($bytes -ge 1GB)
+  {
+    Write-Host ("" + [Math]::Round(($bytes / 1GB), 2) + " GB") -ForegroundColor "White" -NoNewLine
+  }
+  else
+  {
+    Write-Host ("" + $bytes + " bytes") -ForegroundColor "White" -NoNewLine
+  }
+  Write-Host " in " -NoNewline
+  Write-Host $count -ForegroundColor "White" -NoNewline
+  Write-Host " files"
+
+}
+
+function Get-DirWithSize
+{
+  param ($dir)
+  Get-Childitem $dir
+  Get-DirSize $dir
+}
+
+
