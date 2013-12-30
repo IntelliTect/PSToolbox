@@ -1,6 +1,10 @@
 $sut = $PSCommandPath.Replace(".Tests", "")
 . $sut
 
+#ToDO: These should be imported from PSCX... for some reason that fails to happen.
+Function Push-EnvironmentBlock() {}
+Function Invoke-BatchFile([string]$Path, [string]$Parameters) {}
+
 Describe "New-HostsFileEntry" {
     $expected = $null;
     Mock Push-EnvironmentBlock {}
