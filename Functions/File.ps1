@@ -14,9 +14,14 @@ Function Open-File([Parameter(ValueFromPipeline=$true,Mandatory)][ValidateNotNul
     Consider dynamically editing the PSCX:Edit-File and replacing the definition
         of EditFileImpl with the Edit-File function below.
 #>      
-if( (Test-Path Function:Edit-File) -AND ((Get-Item Function:Edit-File).ModuleName -eq "PSCX")) {
-    #dir function: | ?{$_.ModuleName -eq "pscx" }
-    Rename-Item Function:Edit-File PSCX:Edit-File
+if(Test-Path Function:Edit-File) {
+    if ((Get-Item Function:Edit-File).ModuleName -eq "PSCX") {
+        #dir function: | ?{$_.ModuleName -eq "pscx" }
+        Rename-Item Function:Edit-File Edit-File_PSCX
+    }
+    else {
+        Remove-Item Function:Edit-File -Force 
+    }
 }
 
 #TODO: Dir .\ *.txt -recurse | Edit-File creates files rather than using the files in the sub directories
