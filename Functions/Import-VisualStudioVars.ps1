@@ -45,7 +45,7 @@ Function Import-VisualStudioVars {
                 }
             }
             '2013' {
-                If(Test-Path Env:VS110COMNTOOLS) {
+                If(Test-Path Env:VS120COMNTOOLS) {
                     Push-EnvironmentBlock -Description "Before importing VS 2013 $Architecture environment variables"
                     Invoke-BatchFile "${env:VS120COMNTOOLS}..\..\VC\vcvarsall.bat" $Architecture
                 }
