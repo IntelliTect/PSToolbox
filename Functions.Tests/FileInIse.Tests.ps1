@@ -1,8 +1,15 @@
-If(!(Test-Path variable:\psise)) { Return; }
+if(!(Test-Path variable:\psise)) { Return; }
 
 $here = $PSScriptRoot
 $sut = $PSCommandPath.Replace(".Tests", "")
 . $sut
+
+function DebugBreak{}
+function Debug{
+    Set-PSBreakpoint -command DebugBreak
+    DebugBreak
+}
+
 
 Function OpenTempFile() {
         $tempFile = [IO.Path]::GetTempFileName()
