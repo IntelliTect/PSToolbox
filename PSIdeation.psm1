@@ -1,0 +1,1 @@
+. (Join-Path $PSScriptRoot "Main.ps1")
