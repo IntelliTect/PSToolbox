@@ -25,7 +25,7 @@ Describe "Import-VisualStudioVars" {
             Import-VisualStudioVars 2012    
         }
         It "Test 2013" {
-            $expected = "C:\Program Files (x86)\Microsoft Visual Studio 11.0\Common7\Tools\..\..\VC\vcvarsall.bat"
+            $expected = "C:\Program Files (x86)\Microsoft Visual Studio 12.0\Common7\Tools\..\..\VC\vcvarsall.bat"
             Import-VisualStudioVars 2013    
         }
         It "Test with no version parameter" {

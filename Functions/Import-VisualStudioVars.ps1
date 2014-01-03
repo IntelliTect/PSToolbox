@@ -35,7 +35,7 @@ Function Import-VisualStudioVars {
                 }
             }
  
-            '2012|2013' {
+            '2012' {
                 If(Test-Path Env:VS110COMNTOOLS) {
                     Push-EnvironmentBlock -Description "Before importing VS 2012 $Architecture environment variables"
                     Invoke-BatchFile "${env:VS110COMNTOOLS}..\..\VC\vcvarsall.bat" $Architecture
@@ -44,7 +44,15 @@ Function Import-VisualStudioVars {
                     Throw "Visual Studio $_ is not installed or the expected environment variable ('VS110COMNTOOLS') is not found."
                 }
             }
- 
+            '2013' {
+                If(Test-Path Env:VS110COMNTOOLS) {
+                    Push-EnvironmentBlock -Description "Before importing VS 2013 $Architecture environment variables"
+                    Invoke-BatchFile "${env:VS120COMNTOOLS}..\..\VC\vcvarsall.bat" $Architecture
+                }
+                Else {
+                    Throw "Visual Studio $_ is not installed or the expected environment variable ('VS120COMNTOOLS') is not found."
+                }
+            } 
             default {
                 $vscomntools = Get-Item "env:vs*comntools"
                 If($vscomntools) {
