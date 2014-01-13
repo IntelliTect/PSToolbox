@@ -12,13 +12,16 @@ If(!(get-module PsGet -ListAvailable)) {
 }
 
 #Install Chocolatey
-#If(!($ENV:ChocolateyInstall)) {
-#    if ($pscmdlet.ShouldProcess("Install Chocolatey (http:\\Chocolatey.org)")) {
-#        Invoke-Expression ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))
-#        $ENV:ChocolateyInstall="$ENV:Systemdrive\chocolatey\bin"
-#        $ENV:PATH="$ENV:PATH;$ENV:ChocolateyInstall"
-#    }
-#}
+If($PSVersionTable.PSVersion -lt "3.0") {
+    If(!($ENV:ChocolateyInstall)) {
+        if ($pscmdlet.ShouldProcess("Install Chocolatey (http:\\Chocolatey.org)")) {
+            Invoke-Expression ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))
+            $ENV:ChocolateyInstall="$ENV:Systemdrive\chocolatey\bin"
+            $ENV:PATH="$ENV:PATH;$ENV:ChocolateyInstall"
+        }
+    }
+    CINST PowerShell
+}
 
 If(get-module PsGet -ListAvailable) {
     #ToDo: Refactor into Install-ModuleFromChocolatey
@@ -63,3 +66,4 @@ If(Test-Path variable:\psise) {
     Set-Alias Test Test-CurrentFile
 }
 #dir .\,.\Functions,.\Functions.Tests *.ps1 | ?{ $_.Name -notlike "*disk*" -AND $_.Name -notlike "__*" } | %{ edit $_.FullName }
+#$psISE.CurrentPowerShellTab.DisplayName = "PSIdeation"
