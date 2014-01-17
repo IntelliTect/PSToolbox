@@ -11,17 +11,22 @@ If(!(get-module PsGet -ListAvailable)) {
     }
 }
 
-#Install Chocolatey
-If($PSVersionTable.PSVersion -lt "3.0") {
-    If(!($ENV:ChocolateyInstall)) {
-        if ($pscmdlet.ShouldProcess("Install Chocolatey (http:\\Chocolatey.org)")) {
-            Invoke-Expression ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))
-            $ENV:ChocolateyInstall="$ENV:Systemdrive\chocolatey\bin"
-            $ENV:PATH="$ENV:PATH;$ENV:ChocolateyInstall"
-        }
+If(!($ENV:ChocolateyInstall)) {
+    if ($pscmdlet.ShouldProcess("Install Chocolatey (http:\\Chocolatey.org)")) {
+        Invoke-Expression ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))
+        $ENV:ChocolateyInstall="$ENV:Systemdrive\chocolatey\bin"
+        $ENV:PATH="$ENV:PATH;$ENV:ChocolateyInstall"
     }
-    CINST PowerShell
 }
+
+#Install PowerShell
+If($PSVersionTable.PSVersion -lt "3.0") {
+    if ($pscmdlet.ShouldProcess("Install later version of PowerShell using Chocolatey")) {
+        CINST PowerShell
+    }
+}
+
+
 
 If(get-module PsGet -ListAvailable) {
     #ToDo: Refactor into Install-ModuleFromChocolatey
@@ -67,3 +72,27 @@ If(Test-Path variable:\psise) {
 }
 #dir .\,.\Functions,.\Functions.Tests *.ps1 | ?{ $_.Name -notlike "*disk*" -AND $_.Name -notlike "__*" } | %{ edit $_.FullName }
 #$psISE.CurrentPowerShellTab.DisplayName = "PSIdeation"
+
+Set-Alias Nuget "$ENV:ChocolateyInstall\chocolateyInstall\NuGet.exe" -Scope Global
+
+Function Build() {
+    [String] $ToolsDirectoryPath = (Join-Path $PSScriptRoot "Tools")
+    if(Test-Path $ToolsDirectoryPath) {
+        New-Item $ToolsDirectoryPath -ItemType Directory
+    }
+
+    #Remove-Item (Join-Path $PSScriptRoot "\..\Tools") -Recurse
+    #Copy-Item $PSScriptRoot $PSScriptRoot\..\Tools -Exclude "Tools" -Recurse -Force
+    #Move-Item $PSScriptRoot\..\Tools $PSScriptRoot\Tools -WhatIf
+    #TODO: Switc to use Copy-Item rather than Robocopy (good luck). :)
+    Robocopy $PSScriptRoot $PSScriptRoot\..\Tools /S /XC /MIR bin
+    RoboCopy $PSScriptRoot\..\Tools $PSScriptRoot\bin\Tools /s /MIR /MOVE
+    $currentDirectory = Get-Location;
+    try {
+        Set-Location $PSScriptRoot\bin\Tools
+        Nuget pack $PSScriptRoot\bin\Tools\Main.nuspec
+    }
+    Finally {
+        Set-Location $currentDirectory;
+    }
+}

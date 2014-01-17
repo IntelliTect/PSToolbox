@@ -1,24 +1,24 @@
 <?xml version="1.0"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
-    <id>PowerShell</id>
-    <title>Windows Management Framework and PowerShell 4.0</title>
-    <version>4.0.20131106</version>
-    <authors>Microsoft wrote PowerShell, IntelliTect created the Chocolatey Package</authors>
-    <owners>Mark Michaelis</owners>
-    <summary>Installs Windows Management Framework 4.0 and Windows PowerShell 4.0</summary>
-    <description>Windows Management Framework 4.0 includes updates to Windows PowerShell, Windows PowerShell ISE, Windows PowerShell Web Services (Management OData IIS Extension), Windows Remote Management (WinRM), Windows Management Instrumentation (WMI), the Server Manager WMI provider, and a new feature for 4.0, Windows PowerShell Desired State Configuration (DSC).</description>
-    <projectUrl>http://technet.microsoft.com/en-us/library/hh857339#BKMK_wps4</projectUrl>
-    <tags>PowerShell admin Reboot Scripting</tags>
-    <copyright>2013 Microsoft Corporation</copyright>
-    <licenseUrl>https://gist.github.com/gists/2841427/download</licenseUrl>
+    <id>PSIdeation</id>
+    <title>PSIdeation - The PowerShell Swiss Army Knife</title>
+    <version>4.0.20140113</version>
+    <authors>IntelliTect and...</authors>
+    <owners>IntelliTect Corporation</owners>
+    <summary>A Swiss army knife of tools for your PowerShell shell.</summary>
+    <description>The required description</description>
+    <projectUrl>http://IntelliTect.com/PSIdeation</projectUrl>
+    <tags>PowerShell</tags>
+    <copyright>2014 IntelliTect Corporation</copyright>
+    <licenseUrl>http://Empty</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <iconUrl>http://www.rssbus.com/ui/img/logo-powershell.png</iconUrl>
+    <iconUrl>http://Empty</iconUrl>
     <dependencies>
       <dependency id="DotNet4.5" version="" />
     </dependencies>
     <releaseNotes>
-            First PowerShell 4.0 Chocolatey Package
+            The first release.
     </releaseNotes>
   </metadata>
 </package>
