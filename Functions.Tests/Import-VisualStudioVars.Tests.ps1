@@ -15,25 +15,32 @@ Describe "Import-VisualStudioVars" {
     $expected = $null;
     $installed = $false;
     Mock Push-EnvironmentBlock {}
-    #Mock Invoke-BatchFile { $path | Should be $expected  }
+
     Context "Mock out the call" {
         
         It "Test 2008 Not Installed" {
-            #TODO: This should mock out the environemtn variable and not assume 2008 not installed
             Mock Test-Path { $false }
-            Try {
+            $existingVariable = $Env:VS90COMNTOOLS
+            $Env:VS90COMNTOOLS = "TEST_VARIABLE"
+            Try 
+            {
                 Import-VisualStudioVars "2008"
             }
-            Catch {
+            Catch 
+            {
                 $_ | Should Be "Visual Studio 2008 is not installed or the expected environment variable is not found."
             }
+            Finally
+            {
+                $Env:VS90COMNTOOLS = $existingVariable                
+            }
+            Assert-VerifiableMocks
         }
-
+        
         It "Test 2008 Installed" {
-            $existingVariable = $Env:VS90COMNTOOLS;
+            $existingVariable = $Env:VS90COMNTOOLS
             Try
             {
-                #Debug
                 $Env:VS90COMNTOOLS = "TEST_VARIABLE"
                 Mock Test-Path { $true }
                 Mock Invoke-BatchFile { ($Path.EndsWith("vcvarsall.bat") -and $Path.Contains("TEST_VARIABLE")) | Should be $true } -Verifiable 
@@ -45,30 +52,126 @@ Describe "Import-VisualStudioVars" {
             }
             Finally
             {
-                $Env:VS90COMNTOOLS = $existingVariable;
+                $Env:VS90COMNTOOLS = $existingVariable
             }
             Assert-VerifiableMocks
         }
-        #It "Test 2012" {
-        #    $installed = Test-Path "${Env:VS110COMNTOOLS}..\..\VC\vcvarsall.bat"
-        #    #TODO: Consider modyfying environment variables so the test verifies both when VS 2010 is installed and when it isn't.
-        #    #$expected = "C:\Program Files (x86)\Microsoft Visual Studio 10.0\Common7\Tools\..\..\VC\vcvarsall.bat"
-        #    Try {
-        #        Import-VisualStudioVars "2012"
-        #        #TODO: mock asserts
+        
+        It "Test 2010 Not Installed" {
+            Mock Test-Path { $false }
+            $existingVariable = $Env:VS100COMNTOOLS
+            $Env:VS100COMNTOOLS = "TEST_VARIABLE"
+            Try 
+            {
+                Import-VisualStudioVars "2010"
+            }
+            Catch 
+            {
+                $_ | Should Be "Visual Studio 2010 is not installed or the expected environment variable is not found."
+            }
+            Finally
+            {
+                $Env:VS100COMNTOOLS = $existingVariable                
+            }
+            Assert-VerifiableMocks
+        }
+        
+        #It "Test 2010 Installed" {
+        #    $existingVariable = $Env:VS100COMNTOOLS
+        #    Try
+        #    {
+        #        $Env:VS100COMNTOOLS = "TEST_VARIABLE"
+        #        Mock Test-Path { $true }
+        #        Mock Invoke-BatchFile { ($Path.EndsWith("vcvarsall.bat") -and $Path.Contains("TEST_VARIABLE")) | Should be $true } -Verifiable 
+        #        Import-VisualStudioVars "2010"
         #    }
-        #    Catch {
-        #        $(if ($installed) { Throw $_ } else { $_ | Should Be "Visual Studio 2012 is not installed or the expected environment variable is not found." } )
+        #    Catch [System.Exception]
+        #    {
+        #        Write-Host $_.Exception.Message
         #    }
+        #    Finally
+        #    {
+        #        $Env:VS100COMNTOOLS = $existingVariable
+        #    }
+        #    Assert-VerifiableMocks
         #}
-        #It "Test 2013" {
-        #    $expected = "C:\Program Files (x86)\Microsoft Visual Studio 12.0\Common7\Tools\..\..\VC\vcvarsall.bat"
-        #    Import-VisualStudioVars 2013    
-        #}
-        #It "Test with no version parameter" {
-        #    $path = $((Get-Item "env:vs*comntools" | sort value | select -last 1).Value)
-        #    $expected = "$path..\..\VC\vcvarsall.bat"
-        #    Import-VisualStudioVars   
+
+        It "Test 2012 Not Installed" {
+            Mock Test-Path { $false }
+            $existingVariable = $Env:VS110COMNTOOLS
+            $Env:VS110COMNTOOLS = "TEST_VARIABLE"
+            Try 
+            {
+                Import-VisualStudioVars "2012"
+            }
+            Catch 
+            {
+                $_ | Should Be "Visual Studio 2012 is not installed or the expected environment variable is not found."
+            }
+            Finally
+            {
+                $Env:VS110COMNTOOLS = $existingVariable                
+            }
+            Assert-VerifiableMocks
+        }
+
+        It "Test 2012 Installed" {
+            $existingVariable = $Env:VS110COMNTOOLS
+            Try
+            {
+                $Env:VS110COMNTOOLS = "TEST_VARIABLE"
+                Mock Test-Path { $true }
+                Mock Invoke-BatchFile { ($Path.EndsWith("vcvarsall.bat") -and $Path.Contains("TEST_VARIABLE")) | Should be $true } -Verifiable 
+                Import-VisualStudioVars "2012"
+            }
+            Catch [System.Exception]
+            {
+                Write-Host $_.Exception.Message
+            }
+            Finally
+            {
+                $Env:VS110COMNTOOLS = $existingVariable
+            }
+            Assert-VerifiableMocks
+        }
+        
+        It "Test 2013 Not Installed" {
+            Mock Test-Path { $false }
+            $existingVariable = $Env:VS120COMNTOOLS
+            $Env:VS120COMNTOOLS = "TEST_VARIABLE"
+            Try 
+            {
+                Import-VisualStudioVars "2013"
+            }
+            Catch 
+            {
+                $_ | Should Be "Visual Studio 2013 is not installed or the expected environment variable is not found."
+            }
+            Finally
+            {
+                $Env:VS120COMNTOOLS = $existingVariable                
+            }
+            Assert-VerifiableMocks
+        }
+        
+        #It "Test 2013 Installed" {
+        #    $existingVariable = $Env:VS120COMNTOOLS
+        #    Try
+        #    {
+        #        $Env:VS120COMNTOOLS = "TEST_VARIABLE"
+        #        Mock Test-Path { $true }
+        #        Mock Invoke-BatchFile { ($Path.EndsWith("vcvarsall.bat") -and $Path.Contains("TEST_VARIABLE")) | Should be $true } -Verifiable 
+        #        Import-VisualStudioVars "2013"
+        #    }
+        #    Catch [System.Exception]
+        #    {
+        #        Write-Host $_.Exception.Message
+        #    }
+        #    Finally
+        #    {
+        #        $Env:VS120COMNTOOLS = $existingVariable
+        #    }
+        #    Assert-VerifiableMocks
         #}
     }
 }
