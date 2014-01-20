@@ -75,23 +75,4 @@ If(Test-Path variable:\psise) {
 
 Set-Alias Nuget "$ENV:ChocolateyInstall\chocolateyInstall\NuGet.exe" -Scope Global
 
-Function Build() {
-    #Remove-Item (Join-Path $PSScriptRoot "\..\Tools") -Recurse
-    #Copy-Item $PSScriptRoot $PSScriptRoot\..\Tools -Exclude "Tools" -Recurse -Force
-    #Move-Item $PSScriptRoot\..\Tools $PSScriptRoot\Tools -WhatIf
-    #TODO: Switc to use Copy-Item rather than Robocopy (good luck). :)
-    Robocopy $PSScriptRoot $PSScriptRoot\..\Tools * /S /XC /MIR /XD bin
-    if(!(Test-Path $PSScriptRoot\bin)) {
-        New-Item "$PSScriptRoot\bin" -ItemType Directory
-    }
-    Remove-Item $PSScriptRoot\bin\Tools -Recurse
-    Move $PSScriptRoot\..\Tools $PSScriptRoot\bin\Tools
-    $currentDirectory = Get-Location;
-    try {
-        Set-Location $PSScriptRoot\bin\Tools
-        Nuget pack $PSScriptRoot\bin\Tools\Main.nuspec
-    }
-    Finally {
-        Set-Location $currentDirectory;
-    }
-}
+
