@@ -1,6 +1,15 @@
 
 #TODO: Rename this and the tests file to not include the verb.
 
+function FolderExcludeCopy([string]$sourceDir, [string]$destDir, [string[]]$excludeFilters, [string]$excludeDirs, [bool]$deleteExistedDestDir=$true) {
+   if ($deleteExistedDestDir -and (Test-Path $destDir)) {
+    Write-Host "clean destination folder $destdir" -ForegroundColor Cyan
+    Remove-Item  $destDir -Recurse -Force
+   }
+   Get-ChildItem $sourceDir -Recurse -Exclude $excludeFilters | ? {$_.FullName -inotMatch $excludeDirs } |  Copy-Item -Force -Destination {Join-Path $destDir $_.FullName.Substring($sourceDir.length)}   
+}
+
+
 Function New-NugetPackage(
     [string] $inputDirectory=(Get-Location).Path, 
     [string] $outputDirectory=(Join-Path (Get-Location).Path "bin"), 
@@ -29,7 +38,9 @@ Function New-NugetPackage(
     #             Remove-Item (Join-Path $PSScriptRoot "\..\Tools") -Recurse
     #             Copy-Item $PSScriptRoot $PSScriptRoot\..\Tools -Exclude "Tools" -Recurse -Force
     #             Move-Item $PSScriptRoot\..\Tools $PSScriptRoot\Tools -WhatIf
-    Robocopy $inputDirectory $tempDirectory * /S /XC /MIR /XD bin | Write-Debug
+    #Robocopy $inputDirectory $tempDirectory * /S /XC /MIR /XD bin | Write-Debug
+    FolderExcludeCopy $inputDirectory $tempDirectory "" "bin" $false
+
 #    if(!(Test-Path $PSScriptRoot\bin)) {
 #        New-Item "$PSScriptRoot\bin" -ItemType Directory
 #    }
