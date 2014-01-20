@@ -1,3 +1,6 @@
+
+#TODO: Rename this and the tests file to not include the verb.
+
 Function New-NugetPackage(
     [string] $inputDirectory=(Get-Location).Path, 
     [string] $outputDirectory=(Get-Location).Path, 
