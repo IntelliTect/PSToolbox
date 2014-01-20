@@ -16,10 +16,10 @@ Function New-NugetPackage(
     $tempDirectory = Join-Path $tempDirectory "Tools"
 
     If(!(Test-Path $tempDirectory)) {
-        New-Item $tempDirectory -ItemType Directory
+        New-Item $tempDirectory -ItemType Directory | Write-Debug
     }
     If(!(Test-Path $outputDirectory)) {
-        New-Item $outputDirectory -ItemType Directory
+        New-Item $outputDirectory -ItemType Directory | Write-Debug
     }
     $outputDirectory = Resolve-Path $outputDirectory
            
@@ -47,7 +47,17 @@ Function New-NugetPackage(
     $currentDirectory = Get-Location;
     try {
         Set-Location $tempDirectory
-        Nuget Pack $nuspecFile -OutputDirectory $outputDirectory  | Write-Debug
+        Nuget Pack $nuspecFile -OutputDirectory $outputDirectory | %{
+            Write-Debug $_
+            if($_ -like "*Successfully created package*") { 
+                Write-Host $_ 
+                $packageName = $_ -replace "Successfully created package ", ""
+                $packageName = $packageName.Trim(".").Trim("'")
+                Write-host $packageName
+                Get-Item $packageName;
+            }
+        }
+
     }
     Finally {
         Set-Location $currentDirectory;
