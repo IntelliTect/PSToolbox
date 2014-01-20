@@ -19,17 +19,13 @@ Function New-NugetPackage(
         New-Item $outputDirectory -ItemType Directory
     }
     $outputDirectory = Resolve-Path $outputDirectory
-        
- 
-    #Remove-Item (Join-Path $PSScriptRoot "\..\Tools") -Recurse
-    #Copy-Item $PSScriptRoot $PSScriptRoot\..\Tools -Exclude "Tools" -Recurse -Force
-    #Move-Item $PSScriptRoot\..\Tools $PSScriptRoot\Tools -WhatIf
-    #TODO: Switcc to use Copy-Item rather than Robocopy (good luck). :)
-
-
-    
+           
     #TODO Replace Robocopy with Raw Powershell commands
     #   Copy/upadate (copy if newer or missing) files in the $PSScriptRoot directory into $PSScriptRoot\bin\Tools
+    #        What wasn't working:
+    #             Remove-Item (Join-Path $PSScriptRoot "\..\Tools") -Recurse
+    #             Copy-Item $PSScriptRoot $PSScriptRoot\..\Tools -Exclude "Tools" -Recurse -Force
+    #             Move-Item $PSScriptRoot\..\Tools $PSScriptRoot\Tools -WhatIf
     Robocopy $inputDirectory $tempDirectory * /S /XC /MIR /XD bin
 #    if(!(Test-Path $PSScriptRoot\bin)) {
 #        New-Item "$PSScriptRoot\bin" -ItemType Directory
