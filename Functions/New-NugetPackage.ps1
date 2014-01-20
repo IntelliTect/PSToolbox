@@ -3,7 +3,7 @@
 
 Function New-NugetPackage(
     [string] $inputDirectory=(Get-Location).Path, 
-    [string] $outputDirectory=(Get-Location).Path, 
+    [string] $outputDirectory=(Join-Path (Get-Location).Path "bin"), 
     [string] $tempDirectory=([IO.Path]::GetTempPath()) ) {
     
     #TODO: Handle if 0 or more than 1 file is returned
@@ -29,7 +29,7 @@ Function New-NugetPackage(
     #             Remove-Item (Join-Path $PSScriptRoot "\..\Tools") -Recurse
     #             Copy-Item $PSScriptRoot $PSScriptRoot\..\Tools -Exclude "Tools" -Recurse -Force
     #             Move-Item $PSScriptRoot\..\Tools $PSScriptRoot\Tools -WhatIf
-    Robocopy $inputDirectory $tempDirectory * /S /XC /MIR /XD bin
+    Robocopy $inputDirectory $tempDirectory * /S /XC /MIR /XD bin | Write-Debug
 #    if(!(Test-Path $PSScriptRoot\bin)) {
 #        New-Item "$PSScriptRoot\bin" -ItemType Directory
 #    }
@@ -47,7 +47,7 @@ Function New-NugetPackage(
     $currentDirectory = Get-Location;
     try {
         Set-Location $tempDirectory
-        Nuget Pack $nuspecFile -OutputDirectory $outputDirectory
+        Nuget Pack $nuspecFile -OutputDirectory $outputDirectory  | Write-Debug
     }
     Finally {
         Set-Location $currentDirectory;
