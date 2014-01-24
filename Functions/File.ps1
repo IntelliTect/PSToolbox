@@ -34,7 +34,7 @@ Function Edit-File([Parameter(ValueFromPipeline=$true,Mandatory)][ValidateNotNul
         Open-File (Resolve-Path $fileName)
     }
 }
-Set-Alias Edit Edit-File;
+Set-Alias Edit Edit-File -Scope Global
 Set-Item "Function:Edit-File" -Options "ReadOnly" #Used to prevent the PSCX module from overriding 
                                                   # this function but causes an error to occur when 
                                                   # PSCX loads.  Use remove-item with -force to remove

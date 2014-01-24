@@ -26,6 +26,8 @@ If($PSVersionTable.PSVersion -lt "3.0") {
     }
 }
 
+
+
 If(get-module PsGet -ListAvailable) {
     #ToDo: Refactor into Install-ModuleFromChocolatey
     If(!(get-module Pscx -ListAvailable)) {
