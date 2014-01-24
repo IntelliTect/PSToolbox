@@ -6,6 +6,8 @@ function FolderExcludeCopy([string]$sourceDir, [string]$destDir, [string[]]$excl
     Write-Host "clean destination folder $destdir" -ForegroundColor Cyan
     Remove-Item  $destDir -Recurse -Force
    }
+   #join the excluded directories into a string
+   $excludeDirs = $excludeDirs -join "|"
    Get-ChildItem $sourceDir -Recurse -Exclude $excludeFilters | ? {$_.FullName -inotMatch $excludeDirs } |  Copy-Item -Force -Destination {Join-Path $destDir $_.FullName.Substring($sourceDir.length)}   
 }
 
