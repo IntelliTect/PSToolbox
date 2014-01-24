@@ -1,0 +1,1 @@
+New-NugetPackage -inputDirectory $PSScriptRoot -outputDirectory (Join-Path $PSScriptRoot bin)
