@@ -24,8 +24,6 @@ if(Test-Path Function:Edit-File) {
     }
 }
 
-#TODO: Dir .\ *.txt -recurse | Edit-File creates files rather than using the files in the sub directories
-
 Function Edit-File([Parameter(ValueFromPipeline=$true,Mandatory)][ValidateNotNull()][IO.FileInfo]$fileName)  {
     PROCESS {
         If(!(Test-Path $fileName)) {

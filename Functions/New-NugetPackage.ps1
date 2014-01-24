@@ -11,7 +11,6 @@ function FolderExcludeCopy([string]$sourceDir, [string]$destDir, [string[]]$excl
    Get-ChildItem $sourceDir -Recurse -Exclude $excludeFilters | ? {$_.FullName -inotMatch $excludeDirs } |  Copy-Item -Force -Destination {Join-Path $destDir $_.FullName.Substring($sourceDir.length)}   
 }
 
-
 Function New-NugetPackage(
     [string] $inputDirectory=(Get-Location).Path, 
     [string] $outputDirectory=(Join-Path (Get-Location).Path "bin"), 
@@ -33,23 +32,23 @@ Function New-NugetPackage(
         New-Item $outputDirectory -ItemType Directory | Write-Debug
     }
     $outputDirectory = Resolve-Path $outputDirectory
-           
-    #TODO Replace Robocopy with Raw Powershell commands
+            
     #   Copy/upadate (copy if newer or missing) files in the $PSScriptRoot directory into $PSScriptRoot\bin\Tools
     #        What wasn't working:
     #             Remove-Item (Join-Path $PSScriptRoot "\..\Tools") -Recurse
     #             Copy-Item $PSScriptRoot $PSScriptRoot\..\Tools -Exclude "Tools" -Recurse -Force
     #             Move-Item $PSScriptRoot\..\Tools $PSScriptRoot\Tools -WhatIf
     #Robocopy $inputDirectory $tempDirectory * /S /XC /MIR /XD bin | Write-Debug
-    FolderExcludeCopy $inputDirectory $tempDirectory "" "bin" $false
+    #    if(!(Test-Path $PSScriptRoot\bin)) {
+    #        New-Item "$PSScriptRoot\bin" -ItemType Directory
+    #    }
+    #    If(Test-Path $PSScriptRoot\bin\Tools) {
+    #        Remove-Item $PSScriptRoot\bin\Tools -Recurse
+    #    }
+    #    Copy $PSScriptRoot\..\Tools $PSScriptRoot\bin\Tools -Recurse
 
-#    if(!(Test-Path $PSScriptRoot\bin)) {
-#        New-Item "$PSScriptRoot\bin" -ItemType Directory
-#    }
-#    If(Test-Path $PSScriptRoot\bin\Tools) {
-#        Remove-Item $PSScriptRoot\bin\Tools -Recurse
-#    }
-#    Copy $PSScriptRoot\..\Tools $PSScriptRoot\bin\Tools -Recurse
+    #Replace the above Robocopy command with Raw Powershell commands
+    FolderExcludeCopy $inputDirectory $tempDirectory "" "bin" $false
     
     If(!(Get-Command Nuget)) {
         #TODO: This needs to check other locations to avoid the dependency on Nuget
