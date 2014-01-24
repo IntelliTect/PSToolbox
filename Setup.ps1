@@ -76,3 +76,4 @@ If(Test-Path variable:\psise) {
 Set-Alias Nuget "$ENV:ChocolateyInstall\chocolateyInstall\NuGet.exe" -Scope Global
 
 
+import-module (Join-Path $PSScriptRoot "PSIdeation.psm1") -Verbose
