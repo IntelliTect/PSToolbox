@@ -6,10 +6,9 @@ function FolderExcludeCopy([string]$sourceDir, [string]$destDir, [string[]]$excl
     Write-Host "clean destination folder $destdir" -ForegroundColor Cyan
     Remove-Item  $destDir -Recurse -Force
    }
-   #join the excluded directories into a string
-   $excludeDirs = $excludeDirs -join "|"
    Get-ChildItem $sourceDir -Recurse -Exclude $excludeFilters | ? {$_.FullName -inotMatch $excludeDirs } |  Copy-Item -Force -Destination {Join-Path $destDir $_.FullName.Substring($sourceDir.length)}   
 }
+
 
 Function New-NugetPackage(
     [string] $inputDirectory=(Get-Location).Path, 
@@ -32,34 +31,34 @@ Function New-NugetPackage(
         New-Item $outputDirectory -ItemType Directory | Write-Debug
     }
     $outputDirectory = Resolve-Path $outputDirectory
-            
+           
+    #TODO Replace Robocopy with Raw Powershell commands
     #   Copy/upadate (copy if newer or missing) files in the $PSScriptRoot directory into $PSScriptRoot\bin\Tools
     #        What wasn't working:
     #             Remove-Item (Join-Path $PSScriptRoot "\..\Tools") -Recurse
     #             Copy-Item $PSScriptRoot $PSScriptRoot\..\Tools -Exclude "Tools" -Recurse -Force
     #             Move-Item $PSScriptRoot\..\Tools $PSScriptRoot\Tools -WhatIf
     #Robocopy $inputDirectory $tempDirectory * /S /XC /MIR /XD bin | Write-Debug
-    #    if(!(Test-Path $PSScriptRoot\bin)) {
-    #        New-Item "$PSScriptRoot\bin" -ItemType Directory
-    #    }
-    #    If(Test-Path $PSScriptRoot\bin\Tools) {
-    #        Remove-Item $PSScriptRoot\bin\Tools -Recurse
-    #    }
-    #    Copy $PSScriptRoot\..\Tools $PSScriptRoot\bin\Tools -Recurse
-
-    #Replace the above Robocopy command with Raw Powershell commands
     FolderExcludeCopy $inputDirectory $tempDirectory "" "bin" $false
+
+#    if(!(Test-Path $PSScriptRoot\bin)) {
+#        New-Item "$PSScriptRoot\bin" -ItemType Directory
+#    }
+#    If(Test-Path $PSScriptRoot\bin\Tools) {
+#        Remove-Item $PSScriptRoot\bin\Tools -Recurse
+#    }
+#    Copy $PSScriptRoot\..\Tools $PSScriptRoot\bin\Tools -Recurse
     
-    If(!(Get-Command Nuget)) {
-        #TODO: This needs to check other locations to avoid the dependency on Nuget
-        #      or to dynamically install it if necessary.
-        Set-Alias Nuget "$ENV:ChocolateyInstall\chocolateyInstall\NuGet.exe"
-    }
+    $NugetPath = (Get-ChildItem "$PSScriptRoot\..\packages" nuget.exe -Recurse | Select-Object -Last 1).FullName
+    #If(!(Get-Command Nuget)) {
+    #    $NugetPath = (Get-ChildItem "$PSScriptRoot\..\packages" nuget.exe -Recurse | Select-Object -Last 1).FullName
+    #    Set-Alias Nuget $NugetPath
+    #}
 
     $currentDirectory = Get-Location;
     try {
         Set-Location $tempDirectory
-        Nuget Pack $nuspecFile -OutputDirectory $outputDirectory | %{
+        $NugetPath Pack $nuspecFile -OutputDirectory $outputDirectory | %{
             Write-Debug $_
             if($_ -like "*Successfully created package*") { 
                 Write-Host $_ 
