@@ -1,0 +1,8 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Compile Include="helloworld.cs" />
+  </ItemGroup>
+  <Target Name="Build">
+    <Exec Command="@PowerShell.exe -noprofile -File Build.ps1"/>  
+  </Target>
+</Project>
