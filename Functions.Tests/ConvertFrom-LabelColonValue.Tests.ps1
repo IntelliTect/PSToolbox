@@ -30,7 +30,7 @@ Describe "ConvertFrom-LabelColonValue" {
         $result.Changeset | Should Be 2842
     }
 
-        It "Parse basic lavelColonValue 2" {
+        It "Parse basic labelColonValue 2" {
         $labelColonValue = @"
         Local information:
           Local path : C:\Data\SCC\SPUNK\IntelliTect.VS.com\2\SPIdeation\DEV\PSDefault\Functions\New-NugetPackage.ps1

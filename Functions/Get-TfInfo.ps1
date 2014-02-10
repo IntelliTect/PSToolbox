@@ -8,7 +8,4 @@ Function Get-TfInfo([string] $path) {
     }
     $result = ConvertFrom-LabelColonValue $output;
     return $result
-
-
-
 }
