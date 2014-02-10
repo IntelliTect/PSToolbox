@@ -58,7 +58,7 @@ Function New-NugetPackage(
     $currentDirectory = Get-Location;
     try {
         Set-Location $tempDirectory
-        $NugetPath Pack $nuspecFile -OutputDirectory $outputDirectory | %{
+        Invoke-Expression "$NugetPath Pack $nuspecFile -OutputDirectory $outputDirectory" | %{
             Write-Debug $_
             if($_ -like "*Successfully created package*") { 
                 Write-Host $_ 
