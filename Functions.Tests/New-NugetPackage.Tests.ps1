@@ -9,6 +9,10 @@ function Debug{
 }
 
 Describe "New-NugetPackage" {
+    It "Places all content into Content directory and only Install.ps1 (or ChocolateInstall.ps1) into Tools directory.  Not sure what goes in the root?" {
+        throw "Correct file layout in NuGet package not implemented yet."
+    }
+
     It "Create Nuget package using the defaults" {
         $tempPath = Join-Path ([IO.Path]::GetTempPath()) "NewNugetPackage.Tests";
         If(Test-Path $tempPath) {
