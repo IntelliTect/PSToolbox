@@ -1,6 +1,7 @@
 . (Join-Path $PSScriptRoot "ConvertFrom-LabelColonValue.ps1")
 
 Function Get-TfInfo([string] $path) {
+    $items = 
     $output = tf info $path
     If($output -match "No items match*") {
         Write-Verbose $output

@@ -15,7 +15,7 @@ Function Open-File([Parameter(ValueFromPipeline=$true,Mandatory)][ValidateNotNul
         of EditFileImpl with the Edit-File function below.
 #>      
 if(Test-Path Function:Edit-File) {
-    if ((Get-Item Function:Edit-File).ModuleName -eq "PSCX") {
+    if ( ((Get-Item Function:Edit-File).ModuleName -eq "PSCX") -and (!(Get-Item Function:Edit-File_PSCX)) ) {
         #dir function: | ?{$_.ModuleName -eq "pscx" }
         Rename-Item Function:Edit-File Edit-File_PSCX
     }
