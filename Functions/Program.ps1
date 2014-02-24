@@ -37,10 +37,19 @@ Function Get-ProgramUsingWmi ([string] $Filter = "*") {
 }
 
 #[CmdletBinding]
-Function Uninstall-Program([Parameter(Mandatory)][String] $Name) {
-    $program = Get-Program $Name;
+#ToDo: Add support for piping Get-Program to Uninstall-Program (without selecting the name specicially)
+Function Uninstall-Program([Parameter(Mandatory, ValueFromPipeline=$True)]$Program) {
+    if($Program -is [string]) {
+        $Program = Get-Program $Program;  # Note: This converts program from a string to a PSCustomObject
+        if(!$Program) {
+            Throw "Cannot find path '$program' because it does not exist."
+        }
+    }
+    elseif ($Program -isnot [PSCustomObject] -or (!($Program | Get-Member "UninstallString"))){
+        throw "`$Program is not a valid type and doesn't support an UninstallString property"
+    }
     
-    $uninstallString = $program.UninstallString
+    $uninstallString = $Program.UninstallString
     Invoke-Uninstall $uninstallString
 }
 
