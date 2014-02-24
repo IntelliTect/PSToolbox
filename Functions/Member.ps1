@@ -91,8 +91,7 @@ LASTEDIT:  04/20/2010 12:12:42
 }
  
  
-function Parse-XML([string] $XMLString, [String] $XPath, [int] $Status )
-{
+Function ConvertTo-Xml([string] $XMLString, [String] $XPath, [int] $Status ) {
     $XMLResult = [XML] $XMLString;
      
     if($XMLResult -ne $null)
