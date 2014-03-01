@@ -38,6 +38,7 @@ Function Get-ProgramUsingWmi ([string] $Filter = "*") {
 
 #[CmdletBinding]
 #ToDo: Add support for piping Get-Program to Uninstall-Program (without selecting the name specicially)
+#ToDo: Although using Function Get-ProgramUsingWmi is significantly slower, the object returns supports an Uninstall() method.
 Function Uninstall-Program([Parameter(Mandatory, ValueFromPipeline=$True)]$Program) {
     if($Program -is [string]) {
         $Program = Get-Program $Program;  # Note: This converts program from a string to a PSCustomObject
