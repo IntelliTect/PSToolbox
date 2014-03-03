@@ -27,13 +27,21 @@ Function Get-ProgramUsingWmi ([string] $Filter = "*") {
 }
 
 <#Private#> Function Invoke-Uninstall([string] $uninstallString) {
+    #Bug, #TODO: Get-Program sugarsync* | uninstall-program doesn't work
     Write-Verbose "Invoke-Expression $uninstallString"
-    if ($uninstallString.Trim()[0] -eq '"') { 
-        Invoke-Expression "& $uninstallString" 
+
+    If(Test-Path $uninstallString) {
+        $uninstallString = (Resolve-Path $uninstallstring).Path
+        $uninstallString = "`"$uninstallString`""
     }
-    else { 
-        Invoke-Expression $uninstallString
-    }
+
+    Invoke-Expression "& $uninstallString"
+#    if ($uninstallString.Trim()[0] -ne '"') { 
+#        Invoke-Expression ("& {0}" -f (Resolve-Path $uninstallString))
+#    }
+#    else { 
+#        Invoke-Expression (Resolve-Path $uninstallString)
+#    }
 }
 
 #[CmdletBinding]
