@@ -32,14 +32,14 @@ If(get-module PsGet -ListAvailable) {
     #ToDo: Refactor into Install-ModuleFromChocolatey
     If(!(get-module Pscx -ListAvailable)) {
         If ($pscmdlet.ShouldProcess("Install PSCX (http:\\pscx.codeplex.com)")) {
-            Install-Module PSCX
+            Install-Module PSCX -verbose
         }
     }
 
     #Install Pester
     If(!(get-module Pester -ListAvailable)) {
         If ($pscmdlet.ShouldProcess("Install PSCX (http:\\pscx.codeplex.com)")) {
-            Install-Module Pester
+            Install-Module Pester -verbose
         }
     }
 

@@ -1,0 +1,2843 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>PhotoLibrary</name>
+    </assembly>
+    <members>
+        <member name="T:PhotoLibrary.Exif.SubjectDistanceRangeOptions">
+            <summary>
+            The possible values for <see cref="P:PhotoLibrary.Photo.Sharpness"/>
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.SubjectDistanceRangeOptions.unknown">
+            <summary>
+            Unknown.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.SubjectDistanceRangeOptions.Macro">
+            <summary>
+            Macro.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.SubjectDistanceRangeOptions.CloseView">
+            <summary>
+            Close view.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.SubjectDistanceRangeOptions.DistantView">
+            <summary>
+            Distant view.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.SubjectDistanceRangeOptions.reserved">
+            <summary>
+            Reserved.
+            </summary>
+        </member>
+        <member name="T:PhotoLibrary.Exif.SharpnessOptions">
+            <summary>
+            The possible values for <see cref="P:PhotoLibrary.Photo.Sharpness"/>
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.SharpnessOptions.Normal">
+            <summary>
+            Normal.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.SharpnessOptions.Soft">
+            <summary>
+            Soft.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.SharpnessOptions.Hard">
+            <summary>
+            Hard.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.SharpnessOptions.reserved">
+            <summary>
+            Reserved.
+            </summary>
+        </member>
+        <member name="T:PhotoLibrary.Exif.SaturationOptions">
+            <summary>
+            The possible values for <see cref="P:PhotoLibrary.Photo.Saturation"/>
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.SaturationOptions.Normal">
+            <summary>
+            Normal.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.SaturationOptions.LowSaturation">
+            <summary>
+            Low saturation.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.SaturationOptions.HighSaturation">
+            <summary>
+            High saturation.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.SaturationOptions.reserved">
+            <summary>
+            Reserved.
+            </summary>
+        </member>
+        <member name="T:PhotoLibrary.Exif.ContrastOptions">
+            <summary>
+            The possible values for <see cref="P:PhotoLibrary.Photo.Contrast"/>
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ContrastOptions.Normal">
+            <summary>
+            Normal.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ContrastOptions.Soft">
+            <summary>
+            Soft.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ContrastOptions.Hard">
+            <summary>
+            Hard.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ContrastOptions.reserved">
+            <summary>
+            Reserved.
+            </summary>
+        </member>
+        <member name="T:PhotoLibrary.Exif.GainControlOptions">
+            <summary>
+            The possible values for <see cref="P:PhotoLibrary.Photo.GainControl"/>
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.GainControlOptions.None">
+            <summary>
+            None.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.GainControlOptions.LowGainUp">
+            <summary>
+            Low gain up.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.GainControlOptions.HighGainUp">
+            <summary>
+            High gain up.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.GainControlOptions.LowGainDown">
+            <summary>
+            Low gain down.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.GainControlOptions.HighGainDown">
+            <summary>
+            High gain down.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.GainControlOptions.reserved">
+            <summary>
+            Reserved.
+            </summary>
+        </member>
+        <member name="T:PhotoLibrary.Exif.SceneCaptureTypeOptions">
+            <summary>
+            The possible values for <see cref="P:PhotoLibrary.Photo.SceneCaptureType"/>
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.SceneCaptureTypeOptions.Standard">
+            <summary>
+            Standard.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.SceneCaptureTypeOptions.Landscape">
+            <summary>
+            Landscape.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.SceneCaptureTypeOptions.Portrait">
+            <summary>
+            Portrait.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.SceneCaptureTypeOptions.NightScene">
+            <summary>
+            Night scene.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.SceneCaptureTypeOptions.reserved">
+            <summary>
+            Reserved.
+            </summary>
+        </member>
+        <member name="T:PhotoLibrary.Exif.ExposureModeOptions">
+            <summary>
+            The possible values for <see cref="P:PhotoLibrary.Photo.ExposureMode"/>
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ExposureModeOptions.AutoExposure">
+            <summary>
+            Auto exposure.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ExposureModeOptions.ManualExposure">
+            <summary>
+            Manual exposure.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ExposureModeOptions.AutoBracket">
+            <summary>
+            Auto bracket.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ExposureModeOptions.reserved">
+            <summary>
+            Reserved.
+            </summary>
+        </member>
+        <member name="T:PhotoLibrary.Exif.WhiteBalanceOptions">
+            <summary>
+            The possible values for <see cref="P:PhotoLibrary.Photo.ExposureMode"/>
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.WhiteBalanceOptions.Auto">
+            <summary>
+            Auto white balance.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.WhiteBalanceOptions.Manual">
+            <summary>
+            Manual white balance.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.WhiteBalanceOptions.reserved">
+            <summary>
+            Reserved.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.WhiteBalanceOptions.uknown">
+            <summary>
+            Uknown.
+            </summary>
+        </member>
+        <member name="T:PhotoLibrary.Exif.SceneTypeOptions">
+            <summary>
+            The possible values for <see cref="P:PhotoLibrary.Photo.SceneType"/>
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.SceneTypeOptions.DirectlyPhotographedImage">
+            <summary>
+            A directly photographed image.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.SceneTypeOptions.reserved">
+            <summary>
+            Reserved.
+            </summary>
+        </member>
+        <member name="T:PhotoLibrary.Exif.FileSourceOptions">
+            <summary>
+            The possible values for <see cref="P:PhotoLibrary.Photo.FileSource"/>
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.FileSourceOptions.DSC">
+            <summary>
+            Digital Still Camera (DSC).
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.FileSourceOptions.reserved">
+            <summary>
+            Reserved.
+            </summary>
+        </member>
+        <member name="T:PhotoLibrary.Exif.SensingMethodOptions">
+            <summary>
+            The possible values for <see cref="P:PhotoLibrary.Photo.SensingMethod"/>
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.SensingMethodOptions.NotDefined">
+            <summary>
+            Not defined.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.SensingMethodOptions.OneChipColorAreaSensor">
+            <summary>
+            One-chip color area sensor.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.SensingMethodOptions.TwoChipColorAreaSensor">
+            <summary>
+            Two-chip color area sensor.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.SensingMethodOptions.ThreeChipColorAreaSensor">
+            <summary>
+            Three-chip color area sensor.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.SensingMethodOptions.ColorSequentialAreaSensor">
+            <summary>
+            Color sequential area sensor.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.SensingMethodOptions.TrilinearSensor">
+            <summary>
+            Trilinear sensor.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.SensingMethodOptions.ColorSequentialLinearSensor">
+            <summary>
+            Color sequential linear sensor.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.SensingMethodOptions.reserved">
+            <summary>
+            Reserved.
+            </summary>
+        </member>
+        <member name="T:PhotoLibrary.Exif.FlashStatusOptions">
+            <summary>
+            The possible values for <see cref="P:PhotoLibrary.Photo.Flash"/>
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.FlashStatusOptions.FlashDidNotFire">
+            <summary>
+            Flash did not fire.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.FlashStatusOptions.FlashFired">
+            <summary>
+            Flash fired.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.FlashStatusOptions.StrobeReturnLightNotDetected">
+            <summary>
+            Strobe return light not detected.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.FlashStatusOptions.StrobeReturnLightDetected">
+            <summary>
+            Strobe return light detected.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.FlashStatusOptions.FlashFiredCompulsoryFlashMode">
+            <summary>
+            Flash fired, compulsory flash mode.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.FlashStatusOptions.FlashFiredCompulsoryFlashModeReturnLightDetected">
+            <summary>
+            Flash fired, compulsory flash mode, return light detected.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.FlashStatusOptions.FlashDidNotFireCompulsoryFlashMode">
+            <summary>
+            Flash did not fire, compulsory flash mode.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.FlashStatusOptions.FlashDidNotFireAutoMode">
+            <summary>
+            Flash did not fire, auto mode.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.FlashStatusOptions.FlashFiredAutoMode">
+            <summary>
+            Flash fired, auto mode.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.FlashStatusOptions.FlashFiredAutoModeReturnLightNotDetected">
+            <summary>
+            Flash fired, auto mode, return light not detected
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.FlashStatusOptions.FlashFiredAutoModeReturLightDetected">
+            <summary>
+            Flash fired, auto mode, return light detected.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.FlashStatusOptions.NoFlashFunction">
+            <summary>
+            No flash function.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.FlashStatusOptions.FlashFiredRedEyeReductionMode">
+            <summary>
+            Flash fired, red-eye reduction mode.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.FlashStatusOptions.FlashFiredRedEyeReductionModeReturnLightNotDetected">
+            <summary>
+            Flash fired, red-eye reduction mode, return light not detected.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.FlashStatusOptions.FlashFiredRedEyeReductionModeReturnLightDetected">
+            <summary>
+            Flash fired, red-eye reduction mode, return light detected.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.FlashStatusOptions.FlashFiredCompulsoryFlashModeRedEyeReductionMode">
+            <summary>
+            Flash fired, compulsory flash mode, red-eye reduction mode.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.FlashStatusOptions.FlashFiredCompulsoryFlashModeRedEyeReductionModeReturnLightNotDetected">
+            <summary>
+            Flash fired, compulsory flash mode, red-eye reduction mode, return light not detected.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.FlashStatusOptions.FlashFiredCompulsoryFlashModeRedEyeReductionModeReturnLightDetected">
+            <summary>
+            Flash fired, compulsory flash mode, red-eye reduction mode, return light detected.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.FlashStatusOptions.FlashFiredAutoModeRedEyeReductionMode">
+            <summary>
+            Flash fired, auto mode, red-eye reduction mode.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.FlashStatusOptions.FlashFiredAutoModeReturnLightNotDetectedRedEyeReductionMode">
+            <summary>
+            Flash fired, auto mode, return light not detected, red-eye reduction mode.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.FlashStatusOptions.FlashFiredAutoModeReturnLightDetectedRedEyeReductionMode">
+            <summary>
+            Flash fired, auto mode, return light detected, red-eye reduction mode.
+            </summary>
+        </member>
+        <member name="T:PhotoLibrary.Exif.LightSourceOptions">
+            <summary>
+            The possible values for <see cref="P:PhotoLibrary.Photo.LightSource"/>
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.LightSourceOptions.unknown">
+            <summary>
+            Uknown.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.LightSourceOptions.Daylight">
+            <summary>
+            Daylight.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.LightSourceOptions.Fluorescent">
+            <summary>
+            Flourescent.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.LightSourceOptions.Tungsten">
+            <summary>
+            Tungsten (incandescent light).
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.LightSourceOptions.Flash">
+            <summary>
+            Flash.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.LightSourceOptions.FineWeather">
+            <summary>
+            Fine weather.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.LightSourceOptions.CloudyWeather">
+            <summary>
+            Cloudy weather.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.LightSourceOptions.Shade">
+            <summary>
+            Shade.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.LightSourceOptions.DaylightFluorescent">
+            <summary>
+            Daylight fluorescent (D 5700 – 7100K).
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.LightSourceOptions.DayWhiteFluorescent">
+            <summary>
+            Day white fluorescent (N 4600 – 5400K).
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.LightSourceOptions.CoolWhiteFluorescent">
+            <summary>
+            Cool white fluorescent (W 3900 – 4500K).
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.LightSourceOptions.WhiteFluorescent">
+            <summary>
+            White fluorescent (WW 3200 – 3700K).
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.LightSourceOptions.StandardLightA">
+            <summary>
+            Standard light A.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.LightSourceOptions.StandardLightB">
+            <summary>
+            Standard light B.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.LightSourceOptions.StandardLightC">
+            <summary>
+            Standard light C.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.LightSourceOptions.D55">
+            <summary>
+            D55.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.LightSourceOptions.D65">
+            <summary>
+            D65.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.LightSourceOptions.D75">
+            <summary>
+            D75.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.LightSourceOptions.D50">
+            <summary>
+            D50.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.LightSourceOptions.ISOStudioTungsten">
+            <summary>
+            ISO studio tungsten.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.LightSourceOptions.Other">
+            <summary>
+            Other.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.LightSourceOptions.OtherLightSource">
+            <summary>
+            other light source.
+            </summary>
+        </member>
+        <member name="T:PhotoLibrary.Exif.MeteringModeOptions">
+            <summary>
+            The possible values for <see cref="P:PhotoLibrary.Photo.MeteringMode"/>
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.MeteringModeOptions.unknown">
+            <summary>
+            Unknown.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.MeteringModeOptions.Average">
+            <summary>
+            Average.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.MeteringModeOptions.CenterWeightedAverage">
+            <summary>
+            Center weighted average.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.MeteringModeOptions.Spot">
+            <summary>
+            Sport.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.MeteringModeOptions.MultiSpot">
+            <summary>
+            Multi spot.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.MeteringModeOptions.Pattern">
+            <summary>
+            Pattern.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.MeteringModeOptions.Partial">
+            <summary>
+            Partial.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.MeteringModeOptions.reserved">
+            <summary>
+            Reserved.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.MeteringModeOptions.other">
+            <summary>
+            Other.
+            </summary>
+        </member>
+        <member name="T:PhotoLibrary.Exif.ExposureProgramOptions">
+            <summary>
+            The possible values for <see cref="P:PhotoLibrary.Photo.ExposureProgram"/>
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ExposureProgramOptions.NotDefined">
+            <summary>
+            Not defined.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ExposureProgramOptions.Manual">
+            <summary>
+            Manual.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ExposureProgramOptions.NormalProgram">
+            <summary>
+            Normal program.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ExposureProgramOptions.AperturePriority">
+            <summary>
+            Aperture priority.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ExposureProgramOptions.ShutterPriority">
+            <summary>
+            Shutter priority.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ExposureProgramOptions.CreativeProgram">
+            <summary>
+            Creative program (biased toward depth of field).
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ExposureProgramOptions.ActionProgram">
+            <summary>
+            Action program (biased toward fast shutter speed).
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ExposureProgramOptions.PortraidMode">
+            <summary>
+            Portrait mode (for closeup photos with the background out of focus).
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ExposureProgramOptions.LandscapeMode">
+            <summary>
+            Landscape mode (for landscape photos with the background in focus)
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ExposureProgramOptions.reserved">
+            <summary>
+            Reserved.
+            </summary>
+        </member>
+        <member name="T:PhotoLibrary.Exif.ResolutionUnitOptions">
+            <summary>
+            Value options for <see cref="P:PhotoLibrary.Photo.ResolutionUnit"/>
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ResolutionUnitOptions.Inches">
+            <summary>
+            Property is measured in inches.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ResolutionUnitOptions.Centemeters">
+            <summary>
+            Property is measured in centimeters.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ResolutionUnitOptions.Reserved">
+            <summary>
+            Property unit of measurement is unknown.
+            </summary>
+        </member>
+        <member name="T:PhotoLibrary.Exif.ColorSpaceOptions">
+            <summary>
+            Value options for <see cref="P:PhotoLibrary.Photo.ColorSpace"/>
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ColorSpaceOptions.sRGB">
+            <summary>
+            sRGB color space
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ColorSpaceOptions.Uncalibrated">
+            <summary>
+            Uncalibrated color space.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ColorSpaceOptions.reserved">
+            <summary>
+            Unknown color space.
+            </summary>
+        </member>
+        <member name="T:PhotoLibrary.Exif.OrientationDirectionOptions">
+            <summary>
+            Value options for <see cref="P:PhotoLibrary.Photo.Orientation"/>
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.OrientationDirectionOptions.Normal">
+            <summary>
+            The Photo is in the normal rotation.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.OrientationDirectionOptions.Clockwise180">
+            <summary>
+            The Photo is rotated clockwise 180 degrees.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.OrientationDirectionOptions.Clockwise270">
+            <summary>
+            The Photo is rotated clockwise 270 degrees.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.OrientationDirectionOptions.Clockwise90">
+            <summary>
+            The Photo is rotated clockwise 90 degrees.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.OrientationDirectionOptions.unknown">
+            <summary>
+            unknown.
+            </summary>
+        </member>
+        <member name="T:PhotoLibrary.Exif.RotateOptions">
+            <summary>
+            Rotation options for rotating a <see cref="T:PhotoLibrary.Photo"/>.
+            <seealso cref="M:PhotoLibrary.Photo.Rotate(PhotoLibrary.Exif.RotateOptions)"/>
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.RotateOptions.Clockwise">
+            <summary>
+            Rotate the image clockwise 90 degrees.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.RotateOptions.CounterClockwise">
+            <summary>
+            Rotate the image counter clockwise 90 degrees.
+            </summary>
+        </member>
+        <member name="T:PhotoLibrary.Exif.ExifCopyright">
+            <summary>
+            The data structure for <see cref="P:PhotoLibrary.Photo.Copyright"/>.
+            </summary>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifCopyright.#ctor">
+            <summary>
+            Default constructor.
+            </summary>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifCopyright.#ctor(System.String)">
+            <summary>
+            Create a new instance of this class using a supploed Photographer string.
+            </summary>
+            <param name="photographer">The Photographer string.</param>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifCopyright.#ctor(System.String,System.String)">
+            <summary>
+            Create a new instance of this class using a supploed Photographer and Editor string.
+            </summary>
+            <param name="photographer">The Photographer string.</param>
+            <param name="editor">The Editor string.</param>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifCopyright.ToExifCopyright(System.String)">
+            <summary>
+            Returns an <see cref="T:PhotoLibrary.Exif.ExifCopyright"/> using a supplied EXIF Formated Copyright string.
+            </summary>
+            <param name="exifCopyrightString">The Copyright string.</param>
+            <remarks>This string must be in the correct EXIF format.</remarks>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifCopyright.ToExifFormat">
+            <summary>
+            Outputs the properties of this class in a manner that can be formatted
+            according to the Exif standard.
+            </summary>
+            <returns>Returns null terminated ASCII string.</returns>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifCopyright.ToString">
+            <summary>
+            Returns a string representation of this class.
+            </summary>
+            <returns>A single line string to display in the designer.</returns>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifCopyright.FormatString(System.String)">
+            <summary>
+            Formats a string to be displayed in the colapsed designer view.
+            </summary>
+            <param name="delimiter">The delimiter to use when formatting.</param>
+            <returns>A formatted string</returns>
+        </member>
+        <member name="P:PhotoLibrary.Exif.ExifCopyright.Photographer">
+            <summary>
+            Photographer copyright.
+            </summary>
+        </member>
+        <member name="P:PhotoLibrary.Exif.ExifCopyright.Editor">
+            <summary>
+            Editor copyright.
+            </summary>
+        </member>
+        <member name="T:PhotoLibrary.Exif.ExifCopyrightConverter">
+            <summary>
+            Handles displaying <see cref="T:PhotoLibrary.Exif.ExifCopyright"/> in the designer.
+            </summary>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifCopyrightConverter.CanConvertTo(System.ComponentModel.ITypeDescriptorContext,System.Type)">
+            <summary>
+            Returns whether this converter can convert the object to the specified type, using the specified context.
+            </summary>
+            <param name="context">An <see cref="T:System.ComponentModel.ITypeDescriptorContext"/> that provides a format context.</param>
+            <param name="destinationType">A <see cref="T:System.Type"/> that represents the type you want to convert to.</param>
+            <returns><b>true</b> if the converter can perform the conversion; otherwise, <b>false</b>.</returns>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifCopyrightConverter.ConvertTo(System.ComponentModel.ITypeDescriptorContext,System.Globalization.CultureInfo,System.Object,System.Type)">
+            <summary>
+            Converts the given value object to the specified type, using the specified context and culture information.
+            </summary>
+            <param name="context">An <see cref="T:System.ComponentModel.ITypeDescriptorContext"/> that provides a format context.</param>
+            <param name="culture">A <see cref="T:System.Globalization.CultureInfo"/> object. If a null reference (Nothing in Visual Basic) is passed, the current culture is assumed.</param>
+            <param name="value">The <see cref="T:System.Object"/> to convert.</param>
+            <param name="destinationType">The <see cref="T:System.Type"/> to convert the value parameter to.</param>
+            <returns>An <see cref="T:System.Object"/> that represents the converted value.</returns>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifCopyrightConverter.CanConvertFrom(System.ComponentModel.ITypeDescriptorContext,System.Type)">
+            <summary>
+            Gets a value indicating whether the converter can convert an object 
+            of the specified source type to the native type of the converter.
+            </summary>
+            <param name="context">An <see cref="T:System.ComponentModel.ITypeDescriptorContext"/> that can be used to gain additional context information.</param>
+            <param name="sourceType">A <see cref="T:System.Type"/> that represents the type you wish to convert from.</param>
+            <returns><b>true</b> if the converter can perform the conversion; otherwise, <b>false</b>.</returns>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifCopyrightConverter.ConvertFrom(System.ComponentModel.ITypeDescriptorContext,System.Globalization.CultureInfo,System.Object)">
+            <summary>
+            Converts the given object to the type of this converter, using the specified context and culture information.
+            </summary>
+            <param name="context">An <see cref="T:System.ComponentModel.ITypeDescriptorContext"/> that can be used to gain additional context information.</param>
+            <param name="culture">A <see cref="T:System.Globalization.CultureInfo"/> object.</param>
+            <param name="value">The <see cref="T:System.Object"/> to convert.</param>
+            <returns>An <see cref="T:System.Object"/> that represents the converted value.</returns>
+        </member>
+        <member name="T:PhotoLibrary.Exif.ExifPropertyItem">
+            <summary>
+            The ExifPropertyItem class is used to store an image's tag property data</summary>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyItem.#ctor(System.Int32,PhotoLibrary.Exif.ExifPropertyTag,System.String,System.Int16,System.Object[])">
+            <summary>Constructor</summary>
+            <param name="id">The ExifPropertyDataItem's id. <see cref="P:PhotoLibrary.Exif.ExifPropertyItem.Id"/>.</param>
+            <param name="tag">The particular ExifPropertyTag instance. <see cref="T:PhotoLibrary.Exif.ExifPropertyTag"/>.</param>
+            <param name="val">The value obtained from the image. <see cref="P:PhotoLibrary.Exif.ExifPropertyItem.Value"/>.</param>
+            <param name="type">The type value obtained from the image. <see cref="P:PhotoLibrary.Exif.ExifPropertyItem.Type"/>.</param>
+            <param name="valueOptions">The value options obtained from the tag. <see cref="P:PhotoLibrary.Exif.ExifPropertyItem.ValueOptions"/>.</param>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyItem.CompareTo(System.Object)">
+            <summary>
+            Compares the current instance with another object of the same type.
+            </summary>
+            <param name="obj">An object to compare with this instance.</param>
+            <returns>A 32-bit signed integer that indicates the relative order of the comparands.  The return value has these meanings:   Value Meaning    Less than zero This instance is less than obj. Zero This instance is equal to obj. Greater than zero This instance is greater than obj.
+            </returns>
+            <exception cref="T:System.ArgumentException">: obj is not the same type as this instance.</exception>
+        </member>
+        <member name="P:PhotoLibrary.Exif.ExifPropertyItem.Id">
+            <summary>Get the Id value.</summary>
+            <remarks>This value coreseponds to the <see cref="P:System.Drawing.Imaging.PropertyItem.Id"/> property.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Exif.ExifPropertyItem.Category">
+            <summary>
+            Get the Category value.
+            </summary>
+        </member>
+        <member name="P:PhotoLibrary.Exif.ExifPropertyItem.Name">
+            <summary>
+            Get the Name value.
+            </summary>
+        </member>
+        <member name="P:PhotoLibrary.Exif.ExifPropertyItem.Description">
+            <summary>
+            Get the Description value.
+            </summary>
+        </member>
+        <member name="P:PhotoLibrary.Exif.ExifPropertyItem.Value">
+            <summary>Get the Value as obtained from the image.</summary>
+            <remarks>Partial formatting may be applied depending upon the 
+            value of the ExifPropertyTags's format instruction, FormatInstr.
+            For example the ExposureTime tag property (Id=33434) with 
+            the FRACTION format instruction would format a Rational value 
+            of (10 300) into "1/30".</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Exif.ExifPropertyItem.PrettyPrintValue">
+            <summary>Get the Pretty Print Value.</summary>
+            <remarks>The pretty print value is determined by ValueOptions
+            that may exist in the PhotoTagMetadata's XML data.
+            <newpara></newpara>
+            For example the Flash tag property (Id=37385) provides options
+            for raw data that transforms the value 1 to the pretty print
+            value, "Flash fired".</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Exif.ExifPropertyItem.Type">
+            <summary>
+            Get the Type value.
+            </summary>
+            <remarks>This value coreseponds to the <see cref="P:System.Drawing.Imaging.PropertyItem.Type"/> property.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Exif.ExifPropertyItem.ValueOptions">
+            <summary>
+            An array containing the possible ValueOptions for the <see cref="P:PhotoLibrary.Exif.ExifPropertyItem.Value"/>.
+            </summary>
+        </member>
+        <member name="T:PhotoLibrary.Exif.ExifPropertyItemCollection">
+            <summary>
+            A collection of elements of type ExifPropertyItem
+            </summary>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyItemCollection.#ctor">
+            <summary>
+            Initializes a new empty instance of the ExifPropertyItemCollection class.
+            </summary>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyItemCollection.#ctor(PhotoLibrary.Exif.ExifPropertyItem[])">
+            <summary>
+            Initializes a new instance of the ExifPropertyItemCollection class, containing elements
+            copied from an array.
+            </summary>
+            <param name="items">
+            The array whose elements are to be added to the new ExifPropertyItemCollection.
+            </param>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyItemCollection.#ctor(PhotoLibrary.Exif.ExifPropertyItemCollection)">
+            <summary>
+            Initializes a new instance of the ExifPropertyItemCollection class, containing elements
+            copied from another instance of ExifPropertyItemCollection
+            </summary>
+            <param name="items">
+            The ExifPropertyItemCollection whose elements are to be added to the new ExifPropertyItemCollection.
+            </param>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyItemCollection.AddRange(PhotoLibrary.Exif.ExifPropertyItem[])">
+            <summary>
+            Adds the elements of an array to the end of this ExifPropertyItemCollection.
+            </summary>
+            <param name="items">
+            The array whose elements are to be added to the end of this ExifPropertyItemCollection.
+            </param>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyItemCollection.AddRange(PhotoLibrary.Exif.ExifPropertyItemCollection)">
+            <summary>
+            Adds the elements of another ExifPropertyItemCollection to the end of this ExifPropertyItemCollection.
+            </summary>
+            <param name="items">
+            The ExifPropertyItemCollection whose elements are to be added to the end of this ExifPropertyItemCollection.
+            </param>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyItemCollection.Add(PhotoLibrary.Exif.ExifPropertyItem)">
+            <summary>
+            Adds an instance of type ExifPropertyItem to the end of this ExifPropertyItemCollection.
+            </summary>
+            <param name="value">
+            The ExifPropertyItem to be added to the end of this ExifPropertyItemCollection.
+            </param>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyItemCollection.Contains(PhotoLibrary.Exif.ExifPropertyItem)">
+            <summary>
+            Determines whether a specfic ExifPropertyItem value is in this ExifPropertyItemCollection.
+            </summary>
+            <param name="value">
+            The ExifPropertyItem value to locate in this ExifPropertyItemCollection.
+            </param>
+            <returns>
+            true if value is found in this ExifPropertyItemCollection;
+            false otherwise.
+            </returns>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyItemCollection.IndexOf(PhotoLibrary.Exif.ExifPropertyItem)">
+            <summary>
+            Return the zero-based index of the first occurrence of a specific value
+            in this ExifPropertyItemCollection
+            </summary>
+            <param name="value">
+            The ExifPropertyItem value to locate in the ExifPropertyItemCollection.
+            </param>
+            <returns>
+            The zero-based index of the first occurrence of the _ELEMENT value if found;
+            -1 otherwise.
+            </returns>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyItemCollection.Insert(System.Int32,PhotoLibrary.Exif.ExifPropertyItem)">
+            <summary>
+            Inserts an element into the ExifPropertyItemCollection at the specified index
+            </summary>
+            <param name="index">
+            The index at which the ExifPropertyItem is to be inserted.
+            </param>
+            <param name="value">
+            The ExifPropertyItem to insert.
+            </param>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyItemCollection.Remove(PhotoLibrary.Exif.ExifPropertyItem)">
+            <summary>
+            Removes the first occurrence of a specific ExifPropertyItem from this ExifPropertyItemCollection.
+            </summary>
+            <param name="value">
+            The ExifPropertyItem value to remove from this ExifPropertyItemCollection.
+            </param>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyItemCollection.GetEnumerator">
+            <summary>
+            Returns an enumerator that can iterate through 
+             the <see cref="T:PhotoLibrary.Exif.ExifPropertyItemCollection.ExifPropertyItemEnumerator"/>.
+            </summary>
+            <seealso cref="T:System.Collections.IEnumerator"/>
+            <returns>An object that implements System.Collections.IEnumerator.</returns>
+        </member>
+        <member name="P:PhotoLibrary.Exif.ExifPropertyItemCollection.Item(System.Int32)">
+            <summary>
+            Gets or sets the ExifPropertyItem at the given index in the collection.
+            </summary>
+            <param name="index">The zero-based index of the entry to locate in the collection.</param>
+            <value>
+            The entry at the specified index of the collection.
+            </value>
+            <exception cref="T:System.ArgumentOutOfRangeException"><paramref name="index"/> is outside the valid range of indexes for the collection.</exception>
+        </member>
+        <member name="P:PhotoLibrary.Exif.ExifPropertyItemCollection.Item(PhotoLibrary.Exif.ExifPropertyName)">
+            <summary>
+            Gets or sets the ExifPropertyItem using <see cref="T:PhotoLibrary.Exif.ExifPropertyName"/> in the collection.
+            </summary>
+            <param name="exifPropertyName">The <see cref="T:PhotoLibrary.Exif.ExifPropertyName"/> of the entry to locate in the collection.</param>
+            <value>The entry of the specified <see cref="T:PhotoLibrary.Exif.ExifPropertyName"/>.</value>
+            <remarks>Returns null if the ExifPropertyTag doesn't exist</remarks>
+        </member>
+        <member name="T:PhotoLibrary.Exif.ExifPropertyItemCollection.ExifPropertyItemEnumerator">
+            <summary>
+            Type-specific enumeration class, used by <see cref="M:PhotoLibrary.Exif.ExifPropertyTagCollection.GetEnumerator"/>.
+            </summary>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyItemCollection.ExifPropertyItemEnumerator.#ctor(PhotoLibrary.Exif.ExifPropertyItemCollection)">
+            <summary>
+            Constructof for ExifPropertyTagEnumerator.
+            </summary>
+            <param name="mappings">The ExifPropertyTagCollection</param>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyItemCollection.ExifPropertyItemEnumerator.Reset">
+            <summary>
+            Sets the enumerator to its initial position, which is before the first element in the collection.
+            </summary>
+            <exception cref="T:System.InvalidOperationException">: The collection was modified after the enumerator was created.</exception>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyItemCollection.ExifPropertyItemEnumerator.MoveNext">
+            <summary>
+            Advances the enumerator to the next element of the collection.  
+            </summary>
+            <returns>
+            true if the enumerator was successfully advanced to the next element; false if the enumerator has passed the end of the collection.
+            </returns>
+            <exception cref="T:System.InvalidOperationException">: The collection was modified after the enumerator was created.</exception>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyItemCollection.ExifPropertyItemEnumerator.System#Collections#IEnumerator#MoveNext">
+            <summary>
+            Advances the enumerator to the next element of the collection.  
+            </summary>
+            <returns>
+            true if the enumerator was successfully advanced to the next element; false if the enumerator has passed the end of the collection.
+            </returns>
+            <exception cref="T:System.InvalidOperationException">: The collection was modified after the enumerator was created.</exception>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyItemCollection.ExifPropertyItemEnumerator.System#Collections#IEnumerator#Reset">
+            <summary>
+            Sets the enumerator to its initial position, which is before the first element in the collection.
+            </summary>
+            <exception cref="T:System.InvalidOperationException">: The collection was modified after the enumerator was created.</exception>
+        </member>
+        <member name="P:PhotoLibrary.Exif.ExifPropertyItemCollection.ExifPropertyItemEnumerator.Current">
+            <summary>
+            Gets the current element in the collection.
+            </summary>
+        </member>
+        <member name="P:PhotoLibrary.Exif.ExifPropertyItemCollection.ExifPropertyItemEnumerator.System#Collections#IEnumerator#Current">
+            <summary>
+            Gets the current element in the collection.
+            </summary>
+        </member>
+        <member name="T:PhotoLibrary.Exif.ExifPropertyTagNotFoundException">
+            <summary>
+            The generic ExifPropertyItemCollection Exception class.</summary>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagNotFoundException.#ctor(System.String)">
+            <summary>Generic ExifPropertyItemCollection Exception.</summary>
+            <param name="message">A message that describes the error.</param>
+        </member>
+        <member name="T:PhotoLibrary.Exif.ExifPropertiesLoadDataException">
+            <summary>
+            Exception thrown within <see cref="M:PhotoLibrary.Exif.ExifPropertyTagCollection.LoadExifPropertyTags(System.String)"/>.
+            </summary>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertiesLoadDataException.#ctor(System.String)">
+            <summary>Initializes a new instance of the ExifPropertiesLoadDataException class 
+            with a specified error message.</summary>
+            <param name="message">A message that describes the error.</param>
+        </member>
+        <member name="T:PhotoLibrary.Exif.ExifPropertyName">
+            <summary>
+            Tags related to the System.Image.Bitmap.PropertyName class.
+            </summary>
+            <remarks>Based on EXIF 2.1</remarks>
+        </member>
+        <member name="T:PhotoLibrary.Exif.OptionKeyType">
+            <summary>The possible key types to be used in the OptionDescription.</summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.OptionKeyType.INT">
+            <summary>Integer</summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.OptionKeyType.CHAR">
+            <summary>Single character</summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.OptionKeyType.STRING">
+            <summary>String</summary>
+        </member>
+        <member name="T:PhotoLibrary.Exif.FormatInstr">
+            <summary>The possible specialized formatting instruction 
+            when reading an image's tag property value.</summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.FormatInstr.NO_OP">
+            <summary>No formatting instruction</summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.FormatInstr.FRACTION">
+            <summary>Instruction to change the value to a fraction.</summary>
+            <remarks>This is only applicable to RATIONAL and SRATIONAL tags.</remarks>
+        </member>
+        <member name="F:PhotoLibrary.Exif.FormatInstr.ALLCHAR">
+            <summary>Instruction to format the bytes as a non-null terminated string.</summary>
+            <remarks>This is only applicable to UNDEFINED tags.</remarks>
+        </member>
+        <member name="F:PhotoLibrary.Exif.FormatInstr.USERCOMMENT">
+            <summary>Instruction to format the bytes as a non-null terminated string.
+            That can be encoded using either ASCII, JIS, Unicode or Undefined</summary>
+            <remarks>This is only applicable to UNDEFINED tags.</remarks>
+        </member>
+        <member name="F:PhotoLibrary.Exif.FormatInstr.UNICODE">
+            <summary>Instruction to format the bytes as a non-null terminated unicode string.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.FormatInstr.BASE64">
+            <summary>Instruction to format the bytes as a Base-64 string.</summary>
+            <remarks>This is only applicable to BYTE tags.</remarks>
+        </member>
+        <member name="T:PhotoLibrary.Exif.ExifPropertyTag">
+            <summary>
+            The ExifPropertyTag class stores textual and formatting data 
+            specific to a <see cref="T:System.Drawing.Imaging.PropertyItem"/>.
+            </summary>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTag.PrettyPrintValue(System.String)">
+            <summary>Returns a pretty-print format of a ExifPropertyTag item's value.</summary>
+            <remarks>This method uses any <see cref="P:PhotoLibrary.Exif.ExifPropertyTag.ValueOptions"/> to determine the pretty-print value.
+            If there are no <see cref="P:PhotoLibrary.Exif.ExifPropertyTag.ValueOptions"/> it returns an empty string.</remarks>
+            <param name="rawValue">The value</param>
+            <returns>pretty-print value</returns>
+        </member>
+        <member name="P:PhotoLibrary.Exif.ExifPropertyTag.Name">
+            <summary>The name of the ExifPropertyTag item.</summary>
+        </member>
+        <member name="P:PhotoLibrary.Exif.ExifPropertyTag.Description">
+            <summary>The description of the ExifPropertyTag item.</summary>
+        </member>
+        <member name="P:PhotoLibrary.Exif.ExifPropertyTag.ValueOptions">
+            <summary>Pretty-print options specific to the ExifPropertyTag item.</summary>
+            <remarks>The ValueOptions array can be one of three types:
+            <newpara></newpara><para></para>
+            OptionDescription - An individual Key to Value definition;
+            OptionRangeDescription - A Key range to Value definition;
+            OptionOtherwiseDescription - The default definition.
+            </remarks>
+        </member>
+        <member name="P:PhotoLibrary.Exif.ExifPropertyTag.FormatInstr">
+            <summary>A specialized formatting instruction for the ExifPropertyTag item.</summary>
+        </member>
+        <member name="P:PhotoLibrary.Exif.ExifPropertyTag.FormatInstrSpecified">
+            <summary>Is a specialized formatting instruction specified?</summary>
+        </member>
+        <member name="P:PhotoLibrary.Exif.ExifPropertyTag.Id">
+            <summary>The id of the ExifPropertyTag item.</summary>
+        </member>
+        <member name="P:PhotoLibrary.Exif.ExifPropertyTag.Category">
+            <summary>The category of the ExifPropertyTag item.</summary>
+        </member>
+        <member name="T:PhotoLibrary.Exif.OptionDescription">
+            <summary>Defines a Key to Value option description.</summary>
+        </member>
+        <member name="P:PhotoLibrary.Exif.OptionDescription.Key">
+            <summary>The key</summary>
+        </member>
+        <member name="P:PhotoLibrary.Exif.OptionDescription.KeyType">
+            <summary>The key's 'typeof'</summary>
+        </member>
+        <member name="P:PhotoLibrary.Exif.OptionDescription.Value">
+            <summary>The description</summary>
+        </member>
+        <member name="T:PhotoLibrary.Exif.OptionOtherwiseDescription">
+            <summary>Defines the default option description.</summary>
+        </member>
+        <member name="P:PhotoLibrary.Exif.OptionOtherwiseDescription.Value">
+            <summary>The default description</summary>
+        </member>
+        <member name="T:PhotoLibrary.Exif.OptionRangeDescription">
+            <summary>Defines a Key Range to Value option description.</summary>
+        </member>
+        <member name="P:PhotoLibrary.Exif.OptionRangeDescription.From">
+            <summary>The start of the range (inclusive)</summary>
+        </member>
+        <member name="P:PhotoLibrary.Exif.OptionRangeDescription.To">
+            <summary>The end of the range (inclusive)</summary>
+        </member>
+        <member name="P:PhotoLibrary.Exif.OptionRangeDescription.Value">
+            <summary>The description</summary>
+        </member>
+        <member name="T:PhotoLibrary.Exif.ExifPropertyTagCategory">
+            <summary>
+            Provides a dynamic Category attribute of the Property from the ExifPropertyTag
+            </summary>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagCategory.#ctor">
+            <summary>
+            The default contructor.
+            </summary>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagCategory.#ctor(System.String)">
+            <summary>
+            Overloaded contructor.
+            </summary>
+            <param name="name">The name.</param>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagCategory.GetLocalizedString(System.String)">
+            <summary>
+            Override GetLocalizedString since this is the only method we can use to set
+            the category attribute.
+            </summary>
+            <param name="value">The string representation of the <see cref="T:PhotoLibrary.Exif.ExifPropertyName"/>.</param>
+            <returns>A string representing the Category of the <see cref="T:PhotoLibrary.Exif.ExifPropertyTag"/></returns>
+        </member>
+        <member name="T:PhotoLibrary.Exif.ExifPropertyTagCollection">
+            <summary>
+            A collection that stores <see cref="T:PhotoLibrary.Exif.ExifPropertyTag"/> objects.
+            </summary>
+            <seealso cref="T:PhotoLibrary.Exif.ExifPropertyTagCollection"/>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagCollection.#ctor">
+            <summary>
+            Initializes a new instance of <see cref="T:PhotoLibrary.Exif.ExifPropertyTagCollection"/>.
+            </summary>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagCollection.Initialize">
+            <summary>
+            Initializes the <see cref="T:PhotoLibrary.Exif.ExifPropertyTagCollection"/>.
+            </summary>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagCollection.LoadExifPropertyTags(System.String)">
+            <summary>Loads the XML tag property data.</summary>
+            <param name="xmlFileName">An external image file name, or null.</param>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagCollection.#ctor(PhotoLibrary.Exif.ExifPropertyTagCollection)">
+            <summary>
+            Initializes a new instance of <see cref="T:PhotoLibrary.Exif.ExifPropertyTagCollection"/> based on another <see cref="T:PhotoLibrary.Exif.ExifPropertyTagCollection"/>.
+            </summary>
+            <param name="value">
+            A <see cref="T:PhotoLibrary.Exif.ExifPropertyTagCollection"/> from which the contents are copied
+            </param>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagCollection.#ctor(PhotoLibrary.Exif.ExifPropertyTag[])">
+            <summary>
+            Initializes a new instance of <see cref="T:PhotoLibrary.Exif.ExifPropertyTagCollection"/> containing any array of <see cref="T:PhotoLibrary.Exif.ExifPropertyTag"/> objects.
+            </summary>
+            <param name="value">
+            A array of <see cref="T:PhotoLibrary.Exif.ExifPropertyTag"/> objects with which to intialize the collection
+            </param>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagCollection.Add(PhotoLibrary.Exif.ExifPropertyTag)">
+            <summary>
+            Adds a <see cref="T:PhotoLibrary.Exif.ExifPropertyTag"/> with the specified value to the 
+            <see cref="T:PhotoLibrary.Exif.ExifPropertyTagCollection"/>.
+            </summary>
+            <param name="value">The <see cref="T:PhotoLibrary.Exif.ExifPropertyTag"/> to add.</param>
+            <returns>
+            The index at which the new element was inserted.
+            </returns>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagCollection.AddRange(PhotoLibrary.Exif.ExifPropertyTag[])">
+            <summary>
+            Copies the elements of an array to the end of the <see cref="T:PhotoLibrary.Exif.ExifPropertyTagCollection"/>.
+            </summary>
+            <param name="value">
+            An array of type <see cref="T:PhotoLibrary.Exif.ExifPropertyTag"/> containing the objects to add to the collection.
+            </param>
+            <seealso cref="M:PhotoLibrary.Exif.ExifPropertyTagCollection.Add(PhotoLibrary.Exif.ExifPropertyTag)"/>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagCollection.AddRange(PhotoLibrary.Exif.ExifPropertyTagCollection)">
+            <summary>
+            Adds the contents of another <see cref="T:PhotoLibrary.Exif.ExifPropertyTagCollection"/> to the end of the collection.
+            </summary>
+            <param name="value">
+            A <see cref="T:PhotoLibrary.Exif.ExifPropertyTagCollection"/> containing the objects to add to the collection.
+            </param>
+            <seealso cref="M:PhotoLibrary.Exif.ExifPropertyTagCollection.Add(PhotoLibrary.Exif.ExifPropertyTag)"/>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagCollection.Contains(PhotoLibrary.Exif.ExifPropertyTag)">
+            <summary>
+            Gets a value indicating whether the 
+               <see cref="T:PhotoLibrary.Exif.ExifPropertyTagCollection"/> contains the specified <see cref="T:PhotoLibrary.Exif.ExifPropertyTag"/>.
+            </summary>
+            <param name="value">The <see cref="T:PhotoLibrary.Exif.ExifPropertyTag"/> to locate.</param>
+            <returns>
+            <para><see langword="true"/> if the <see cref="T:PhotoLibrary.Exif.ExifPropertyTag"/> is contained in the collection; 
+              otherwise, <see langword="false"/>.</para>
+            </returns>
+            <seealso cref="M:PhotoLibrary.Exif.ExifPropertyTagCollection.IndexOf(PhotoLibrary.Exif.ExifPropertyTag)"/>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagCollection.CopyTo(PhotoLibrary.Exif.ExifPropertyTag[],System.Int32)">
+            <summary>
+            Copies the <see cref="T:PhotoLibrary.Exif.ExifPropertyTagCollection"/> values to a one-dimensional <see cref="T:System.Array"/> instance at the 
+            specified index.
+            </summary>
+            <param name="array"><para>The one-dimensional <see cref="T:System.Array"/> that is the destination of the values copied from <see cref="T:PhotoLibrary.Exif.ExifPropertyTagCollection"/> .</para></param>
+            <param name="index">The index in <paramref name="array"/> where copying begins.</param>
+            <exception cref="T:System.ArgumentException"><para><paramref name="array"/> is multidimensional.</para> <para>-or-</para> <para>The number of elements in the <see cref="T:PhotoLibrary.Exif.ExifPropertyTagCollection"/> is greater than the available space between <paramref name="index"/> and the end of <paramref name="array"/>.</para></exception>
+            <exception cref="T:System.ArgumentNullException"><paramref name="array"/> is <see langword="null"/>. </exception>
+            <exception cref="T:System.ArgumentOutOfRangeException"><paramref name="index"/> is less than <paramref name="array"/>'s lowbound. </exception>
+            <seealso cref="T:System.Array"/>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagCollection.IndexOf(PhotoLibrary.Exif.ExifPropertyTag)">
+            <summary>
+             Returns the index of a <see cref="T:PhotoLibrary.Exif.ExifPropertyTag"/> in 
+             the <see cref="T:PhotoLibrary.Exif.ExifPropertyTagCollection"/>.
+            </summary>
+            <param name="value">The <see cref="T:PhotoLibrary.Exif.ExifPropertyTag"/> to locate.</param>
+            <returns>
+            <para>The index of the <see cref="T:PhotoLibrary.Exif.ExifPropertyTag"/> of <paramref name="value"/> in the 
+            <see cref="T:PhotoLibrary.Exif.ExifPropertyTagCollection"/>, if found; otherwise, -1.</para>
+            </returns>
+            <seealso cref="M:PhotoLibrary.Exif.ExifPropertyTagCollection.Contains(PhotoLibrary.Exif.ExifPropertyTag)"/>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagCollection.Insert(System.Int32,PhotoLibrary.Exif.ExifPropertyTag)">
+            <summary>
+            Inserts a <see cref="T:PhotoLibrary.Exif.ExifPropertyTag"/> into the <see cref="T:PhotoLibrary.Exif.ExifPropertyTagCollection"/> at the specified index.
+            </summary>
+            <param name="index">The zero-based index where <paramref name="value"/> should be inserted.</param>
+            <param name="value">The <see cref="T:PhotoLibrary.Exif.ExifPropertyTag"/> to insert.</param>
+            <seealso cref="M:PhotoLibrary.Exif.ExifPropertyTagCollection.Add(PhotoLibrary.Exif.ExifPropertyTag)"/>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagCollection.GetEnumerator">
+            <summary>
+            Returns an enumerator that can iterate through 
+             the <see cref="T:PhotoLibrary.Exif.ExifPropertyTagCollection"/>.
+            </summary>
+            <seealso cref="T:System.Collections.IEnumerator"/>
+            <returns>An object that implements System.Collections.IEnumerator.</returns>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagCollection.Remove(PhotoLibrary.Exif.ExifPropertyTag)">
+            <summary>
+            Removes a specific <see cref="T:PhotoLibrary.Exif.ExifPropertyTag"/> from the 
+            <see cref="T:PhotoLibrary.Exif.ExifPropertyTagCollection"/>.
+            </summary>
+            <param name="value">The <see cref="T:PhotoLibrary.Exif.ExifPropertyTag"/> to remove from the <see cref="T:PhotoLibrary.Exif.ExifPropertyTagCollection"/> .</param>
+            <exception cref="T:System.ArgumentException"><paramref name="value"/> is not found in the Collection. </exception>
+        </member>
+        <member name="P:PhotoLibrary.Exif.ExifPropertyTagCollection.IsReadOnly">
+            <summary>
+            Gets a value indicating whether the ExifPropertyTagCollection is read-only.
+            </summary>
+        </member>
+        <member name="P:PhotoLibrary.Exif.ExifPropertyTagCollection.IsLoaded">
+            <summary>
+            Returns true if the ExifPropertyTagData.xml file is loaded.
+            </summary>
+            <remarks>The <see cref="M:PhotoLibrary.Exif.ExifPropertyTagCollection.LoadExifPropertyTags(System.String)"/> method loads the ExifPropertyTags into the static <see cref="P:PhotoLibrary.Exif.ExifPropertyTagCollection.ExifPropertyTagData"/> collection</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Exif.ExifPropertyTagCollection.ExifPropertyTagData">
+            <summary>
+            Gets the collection of ExifPropertyTags in the ExifPropertyTagData file.
+            </summary>
+        </member>
+        <member name="P:PhotoLibrary.Exif.ExifPropertyTagCollection.Item(System.Int32)">
+            <summary>
+            Represents the entry at the specified index of the <see cref="T:PhotoLibrary.Exif.ExifPropertyTag"/>.
+            </summary>
+            <param name="index">The zero-based index of the entry to locate in the collection.</param>
+            <value>
+            The entry at the specified index of the collection.
+            </value>
+            <exception cref="T:System.ArgumentOutOfRangeException"><paramref name="index"/> is outside the valid range of indexes for the collection.</exception>
+        </member>
+        <member name="P:PhotoLibrary.Exif.ExifPropertyTagCollection.Item(PhotoLibrary.Exif.ExifPropertyName)">
+            <summary>
+            Represents the entry at the specified index of the <see cref="T:PhotoLibrary.Exif.ExifPropertyTag"/>.
+            </summary>
+            <param name="exifPropertyName">The <see cref="T:PhotoLibrary.Exif.ExifPropertyName"/> of the entry to locate in the collection.</param>
+            <value>The entry of the specified <see cref="T:PhotoLibrary.Exif.ExifPropertyName"/>.</value>
+            <remarks>Returns null if the ExifPropertyTag doesn't exist</remarks>
+        </member>
+        <member name="T:PhotoLibrary.Exif.ExifPropertyTagCollection.ExifPropertyTagEnumerator">
+            <summary>
+            Type-specific enumeration class, used by <see cref="M:PhotoLibrary.Exif.ExifPropertyTagCollection.GetEnumerator"/>.
+            </summary>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagCollection.ExifPropertyTagEnumerator.#ctor(PhotoLibrary.Exif.ExifPropertyTagCollection)">
+            <summary>
+            Constructof for ExifPropertyTagEnumerator.
+            </summary>
+            <param name="mappings">The ExifPropertyTagCollection</param>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagCollection.ExifPropertyTagEnumerator.Reset">
+            <summary>
+            Sets the enumerator to its initial position, which is before the first element in the collection.
+            </summary>
+            <exception cref="T:System.InvalidOperationException">: The collection was modified after the enumerator was created.</exception>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagCollection.ExifPropertyTagEnumerator.MoveNext">
+            <summary>
+            Advances the enumerator to the next element of the collection.  
+            </summary>
+            <returns>
+            true if the enumerator was successfully advanced to the next element; false if the enumerator has passed the end of the collection.
+            </returns>
+            <exception cref="T:System.InvalidOperationException">: The collection was modified after the enumerator was created.</exception>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagCollection.ExifPropertyTagEnumerator.System#Collections#IEnumerator#MoveNext">
+            <summary>
+            Advances the enumerator to the next element of the collection.  
+            </summary>
+            <returns>
+            true if the enumerator was successfully advanced to the next element; false if the enumerator has passed the end of the collection.
+            </returns>
+            <exception cref="T:System.InvalidOperationException">: The collection was modified after the enumerator was created.</exception>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagCollection.ExifPropertyTagEnumerator.System#Collections#IEnumerator#Reset">
+            <summary>
+            Sets the enumerator to its initial position, which is before the first element in the collection.
+            </summary>
+            <exception cref="T:System.InvalidOperationException">: The collection was modified after the enumerator was created.</exception>
+        </member>
+        <member name="P:PhotoLibrary.Exif.ExifPropertyTagCollection.ExifPropertyTagEnumerator.Current">
+            <summary>
+            Gets the current element in the collection.
+            </summary>
+        </member>
+        <member name="P:PhotoLibrary.Exif.ExifPropertyTagCollection.ExifPropertyTagEnumerator.System#Collections#IEnumerator#Current">
+            <summary>
+            Gets the current element in the collection.
+            </summary>
+        </member>
+        <member name="T:PhotoLibrary.Exif.ExifPropertyTagDescription">
+            <summary>
+            Provides a dynamic Description attribute of the Property from the ExifPropertyTag.
+            </summary>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagDescription.#ctor(System.String)">
+            <summary>
+            Constructor for ExifPropertyTagDescription.
+            </summary>
+            <param name="exifPropertyNameString">The <see cref="T:PhotoLibrary.Exif.ExifPropertyName"/> name as a string</param>
+        </member>
+        <member name="T:PhotoLibrary.Exif.ExifPropertyTagFormat">
+            <summary>
+            Provides formatting methods for property tag values.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ExifPropertyTagFormat.DOUBLETYPE_FORMAT">
+            <summary>
+            Defines the DOUBLE format used when formatting Rational and 
+            SRational Property Tag types.</summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ExifPropertyTagFormat.BYTEJUMP_SHORT">
+            <summary>
+            Index byte jump for a PropertyItem's byte array of Shorts.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ExifPropertyTagFormat.BYTEJUMP_LONG">
+            <summary>
+            Index byte jump for a PropertyItem's byte array of Longs.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ExifPropertyTagFormat.BYTEJUMP_RATIONAL">
+            <summary>
+            Index byte jump for a PropertyItem's byte array of Rationals.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ExifPropertyTagFormat.BYTEJUMP_SLONG">
+            <summary>
+            Index byte jump for a PropertyItem's byte array of SLongs.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ExifPropertyTagFormat.BYTEJUMP_SRATIONAL">
+            <summary>
+            Index byte jump for a PropertyItem's byte array of SRationals.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ExifPropertyTagFormat.PropertyTagTypeByte">
+            <summary>BYTE</summary>
+            <remarks>An 8-bit unsigned integer.</remarks>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ExifPropertyTagFormat.PropertyTagTypeASCII">
+            <summary>ASCII</summary>
+            <remarks>An 8-bit byte containing one 7-bit ASCII code. 
+                     The final byte is terminated with NULL.</remarks>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ExifPropertyTagFormat.PropertyTagTypeShort">
+            <summary>SHORT</summary>
+            <remarks>A 16-bit (2-byte) unsigned integer</remarks>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ExifPropertyTagFormat.PropertyTagTypeLong">
+            <summary>LONG</summary>
+            <remarks>A 32-bit (4-byte) unsigned integer</remarks>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ExifPropertyTagFormat.PropertyTagTypeRational">
+            <summary>RATIONAL</summary>
+            <remarks>Two LONGs. 
+                     The first LONG is the numerator.
+                     The second LONG is the denominator.</remarks>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ExifPropertyTagFormat.PropertyTagTypeUndefined">
+            <summary>UNDEFINED</summary>
+            <remarks>An 8-bit byte that can take any value 
+                     depending on the field definition</remarks>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ExifPropertyTagFormat.PropertyTagTypeSLong">
+            <summary>SLONG</summary>
+            <remarks>A 32-bit (4-byte) signed integer (2's complement notation)</remarks>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ExifPropertyTagFormat.PropertyTagTypeSRational">
+            <summary>SRATIONAL</summary>
+            <remarks>Two SLONGs.
+                     The first SLONG is the numerator.
+                     The second SLONG is the denominator.</remarks>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagFormat.ToFormattedValue(System.Drawing.Imaging.PropertyItem,PhotoLibrary.Exif.ExifPropertyTag)">
+            <summary>
+            Converts a PropertyItem's byte data to a formatted string.</summary>
+            <remarks>The format is based upon the data's tag type as well 
+            as further information included in the item's ExifPropertyTag.</remarks>
+            <param name="propItem">A specific PropertyItem.</param>
+            <param name="tagMetadata">A specific ExifPropertyTag instance.</param>
+            <returns>A string representation of the data.</returns>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagFormat.ToPropertyItemValue(System.Object)">
+            <summary>
+            Converts an <see cref="T:PhotoLibrary.Exif.ExifPropertyItem"/> object from it's native type to a byte array.
+            </summary>
+            <param name="exifPropertyItemValue">The <see cref="T:PhotoLibrary.Exif.ExifPropertyItem"/> to convert.</param>
+            <returns>A byte representation of the data.</returns>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagFormat.FormatTagByte(System.Drawing.Imaging.PropertyItem,PhotoLibrary.Exif.FormatInstr)">
+            <summary>
+            Format a Byte tag.
+            </summary>
+            <param name="propItem">The <see cref="T:System.Drawing.Imaging.PropertyItem"/> to format.</param>
+            <param name="formatInstr">The <see cref="T:PhotoLibrary.Exif.FormatInstr"/> to use for formatting.</param>
+            <returns>A formatted Byte string.</returns>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagFormat.FormatTagAscii(System.Drawing.Imaging.PropertyItem)">
+            <summary>
+            Format an ASCII tag.
+            </summary>
+            <param name="propItem">The <see cref="T:System.Drawing.Imaging.PropertyItem"/> to format.</param>
+            <returns>A formatted ASCII string.</returns>
+            <remarks>The null termination is removed when the string is formatted.</remarks>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagFormat.FormatTagShort(System.Drawing.Imaging.PropertyItem)">
+            <summary>
+            Format a Short tag (unsigned).
+            </summary>
+            <param name="propItem">The <see cref="T:System.Drawing.Imaging.PropertyItem"/> to format.</param>
+            <returns>A formatted unsigned Short (<see cref="T:System.UInt16"/>) string</returns>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagFormat.FormatTagLong(System.Drawing.Imaging.PropertyItem)">
+            <summary>
+            Format a Long tag (unsigned).
+            </summary>
+            <param name="propItem">The <see cref="T:System.Drawing.Imaging.PropertyItem"/> to format.</param>
+            <returns>A formatted unsigned Long (<see cref="T:System.UInt32"/> string.</returns>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagFormat.FormatTagRational(System.Drawing.Imaging.PropertyItem,PhotoLibrary.Exif.FormatInstr)">
+            <summary>
+            Format a Rational tag (unsigned).
+            </summary>
+            <param name="propItem">The <see cref="T:System.Drawing.Imaging.PropertyItem"/> to format.</param>
+            <param name="formatInstr">The <see cref="T:PhotoLibrary.Exif.FormatInstr"/> to use for formatting.</param>
+            <returns>A formatted Rational string.</returns>
+            <remarks>By defailt a string will be formatted as decimal unless the <see cref="T:PhotoLibrary.Exif.FormatInstr"/> is <see cref="F:PhotoLibrary.Exif.FormatInstr.FRACTION"/></remarks>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagFormat.FormatTagUndefined(System.Drawing.Imaging.PropertyItem,PhotoLibrary.Exif.FormatInstr)">
+            <summary>
+            Format a Undefined tag.
+            </summary>
+            <param name="propItem">The <see cref="T:System.Drawing.Imaging.PropertyItem"/> to format.</param>
+            <param name="formatInstr">The <see cref="T:PhotoLibrary.Exif.FormatInstr"/> to use for formatting.</param>
+            <returns>A formatted Rational string.</returns>
+            <remarks>Valid formatting instructions are:
+            <list type="bullet">
+            <term><see cref="F:PhotoLibrary.Exif.FormatInstr.ALLCHAR"/></term>
+            <term><see cref="F:PhotoLibrary.Exif.FormatInstr.UNICODE"/></term>
+            <term><see cref="F:PhotoLibrary.Exif.FormatInstr.USERCOMMENT"/></term>
+            </list>
+            </remarks>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagFormat.FormatTagSLong(System.Drawing.Imaging.PropertyItem)">
+            <summary>
+            Format a SLong tag (signed).
+            </summary>
+            <param name="propItem">The <see cref="T:System.Drawing.Imaging.PropertyItem"/> to format.</param>
+            <returns>A formatted signed Long (<see cref="T:System.Int32"/> string.</returns>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagFormat.FormatTagSRational(System.Drawing.Imaging.PropertyItem,PhotoLibrary.Exif.FormatInstr)">
+            <summary>
+            Format a SRational tag (signed).
+            </summary>
+            <param name="propItem">The <see cref="T:System.Drawing.Imaging.PropertyItem"/> to format.</param>
+            <param name="formatInstr">The <see cref="T:PhotoLibrary.Exif.FormatInstr"/> to use for formatting.</param>
+            <returns>A formatted signed Rational string.</returns>
+            <remarks>By defailt a string will be formatted as decimal unless the <see cref="T:PhotoLibrary.Exif.FormatInstr"/> is <see cref="F:PhotoLibrary.Exif.FormatInstr.FRACTION"/></remarks>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagFormat.ToRationalString(System.Int32,System.Int32)">
+            <summary>
+            Converts the signed numerator and denominator values
+            to its equivalent string representation.
+            A fraction (x/y) is returned when applicable.</summary>
+            <param name="numer">The numeratior.</param>
+            <param name="denom">The denominator.</param>
+            <returns>A formatted Rational string.</returns>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagFormat.ReduceRational(System.Int32@,System.Int32@)">
+            <summary>
+            Reduces the rational number by dividing both the numerator
+            and the denominator by their greatest common divisor.
+            </summary>
+            <param name="numer">The numeratior.</param>
+            <param name="denom">The denominator.</param>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagFormat.GCD(System.Int32,System.Int32)">
+            <summary>
+            Computes and returns the greatest common divisor of the two
+            positive parameters. Uses Euclid's algorithm.
+            </summary>
+            <param name="num1">First number.</param>
+            <param name="num2">Second number.</param>
+            <returns>The greated common denominator as a string.</returns>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagFormat.ToRationalString(System.UInt32,System.UInt32)">
+            <summary>
+            Converts the unsigned numerator and denominator values
+            to its equivalent string representation.
+            A fraction is used when applicable.
+            </summary>
+            <param name="numer">The numeratior.</param>
+            <param name="denom">The denominator.</param>
+            <returns>A formatted Rational string.</returns>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagFormat.ReduceRational(System.UInt32@,System.UInt32@)">
+            <summary>
+            Reduces the rational number by dividing both the numerator
+            and the denominator by their greatest common divisor.
+            </summary>
+            <param name="numer">The numeratior.</param>
+            <param name="denom">The denominator.</param>
+        </member>
+        <member name="M:PhotoLibrary.Exif.ExifPropertyTagFormat.GCD(System.UInt32,System.UInt32)">
+            <summary>
+            Computes and returns the greatest common divisor of the two
+            positive parameters. Uses Euclid's algorithm.
+            </summary>
+            <param name="num1">First number.</param>
+            <param name="num2">Second number.</param>
+            <returns>The greated common denominator as a string.</returns>
+        </member>
+        <member name="T:PhotoLibrary.Exif.ExifPropertyTagType">
+            <summary>
+            Exif Property Tag Types 
+            </summary>
+            <remarks>Based on EXIF 2.2</remarks>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ExifPropertyTagType.PropertyTagTypeByte">
+            <summary>BYTE</summary>
+            <remarks>An 8-bit unsigned integer.</remarks>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ExifPropertyTagType.PropertyTagTypeASCII">
+            <summary>ASCII</summary>
+            <remarks>An 8-bit byte containing one 7-bit ASCII code. 
+            The final byte is terminated with NULL.</remarks>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ExifPropertyTagType.PropertyTagTypeShort">
+            <summary>SHORT</summary>
+            <remarks>A 16-bit (2-byte) unsigned integer</remarks>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ExifPropertyTagType.PropertyTagTypeLong">
+            <summary>LONG</summary>
+            <remarks>A 32-bit (4-byte) unsigned integer</remarks>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ExifPropertyTagType.PropertyTagTypeRational">
+            <summary>RATIONAL</summary>
+            <remarks>Two LONGs. The first LONG is the numerator.
+            The second LONG is the denominator.</remarks>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ExifPropertyTagType.PropertyTagTypeUndefined">
+            <summary>UNDEFINED</summary>
+            <remarks>An 8-bit byte that can take any value 
+            depending on the field definition</remarks>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ExifPropertyTagType.PropertyTagTypeSLong">
+            <summary>SLONG</summary>
+            <remarks>A 32-bit (4-byte) signed integer (2's complement notation)</remarks>
+        </member>
+        <member name="F:PhotoLibrary.Exif.ExifPropertyTagType.PropertyTagTypeSRational">
+            <summary>SRATIONAL</summary>
+            <remarks>Two SLONGs.
+            The first SLONG is the numerator.
+            The second SLONG is the denominator.</remarks>
+        </member>
+        <member name="T:PhotoLibrary.Exif.ThumbnailPropertyName">
+            <summary>
+            Tags related to the System.Image.Bitmap.PropertyName class.
+            </summary>
+            <remarks>Based on EXIF 2.1</remarks>
+        </member>
+        <member name="T:PhotoLibrary.Util.Convert">
+            <summary>
+            Convert will convert type values to EXIF type values
+            </summary>
+        </member>
+        <member name="M:PhotoLibrary.Util.Convert.#cctor">
+            <summary>
+            Convert class.
+            </summary>
+        </member>
+        <member name="M:PhotoLibrary.Util.Convert.ToDateTime(System.String)">
+            <summary>
+            Converts an EXIF DateTime string to a System.DateTime object.
+            </summary>
+            <example>Convert.ToDateTime("2003:08:23 16:33:11)"</example>
+            <param name="exifDateTime">The Exif DateTime string.</param>
+            <returns>A System.DateTime object.</returns>
+            <remarks>exifDateTime may be null termindated</remarks>
+        </member>
+        <member name="M:PhotoLibrary.Util.Convert.ToExifDateTime(System.DateTime)">
+            <summary>
+            Converts a System.DateTime object to an Exif DateTime formatted string.
+            </summary>
+            <param name="dt">The DateTime instance to convert.</param>
+            <returns>A string.</returns>
+        </member>
+        <member name="M:PhotoLibrary.Util.Convert.ToThumbnail(System.String)">
+            <summary>
+            Converts an Exif Base64 encoded string to a System.Drawing.Bitmap type.
+            </summary>
+            <param name="base64string">The Base64 encoded string.</param>
+            <returns>A Bitmap.</returns>
+        </member>
+        <member name="M:PhotoLibrary.Util.Convert.ToBase64(System.Drawing.Image)">
+            <summary>
+            Converts an <see cref="T:System.Drawing.Image"/> to a Base64 encoded string.
+            </summary>
+            <param name="image">The <see cref="T:System.Drawing.Image"/> to encode.</param>
+            <returns>The Base64 encoded string.</returns>
+        </member>
+        <member name="M:PhotoLibrary.Util.Convert.DecimalToSexagesimal(System.Decimal)">
+            <summary>
+            convert decimal degrees to sexagesimal format
+            </summary>
+            <param name="inputdata"></param>
+            <returns></returns>
+            <remarks>http://www.opennetcf.org/SourceBrowse/view.aspx?f=C:/sites/OpenNETCF.org/wwwroot/Source/OpenNETCF/IO/Serial/GPS/Misc.cs</remarks>
+        </member>
+        <member name="T:PhotoLibrary.Util.FastImageHotfix">
+            <summary>
+            FastImage wraps <see cref="M:System.Drawing.Image.FromStream(System.IO.Stream)"/> and loads an <see cref="T:System.Drawing.Image"/> almost 
+            100 times faster by not performing Image Validation.
+            </summary>
+            <remarks>
+            <para>
+            If the user does not have hotfix 831419 installed an <see cref="T:System.Drawing.Image"/> will load normally. 
+            Since the hotfix requires <see cref="F:System.Security.Permissions.SecurityPermissionFlag.UnmanagedCode"/> it will fall back to the 
+            slower method if <see cref="F:System.Security.Permissions.SecurityAction.Assert"/> fails.</para>
+            <para>
+            See http://support.microsoft.com/default.aspx?scid=kb;en-us;831419
+            </para>
+            </remarks>
+        </member>
+        <member name="M:PhotoLibrary.Util.FastImageHotfix.FromStream(System.IO.FileStream)">
+            <summary>
+            Creates an <see cref="T:System.Drawing.Image"/> object from the specified data stream, using embedded 
+            color management information in that stream. Image Validation is not performed if
+            hotfix 831419 is installed.
+            </summary>
+            <param name="fs">A <see cref="T:System.IO.Stream"/> object that contains the data for this <see cref="T:System.Drawing.Image"/> object.</param>
+            <returns>The <see cref="T:System.Drawing.Image"/> object this method creates.</returns>
+            <exception cref="T:System.Security.SecurityException"> is returned if you do not have 
+            <see cref="F:System.Security.Permissions.SecurityPermissionFlag.UnmanagedCode"/> permission.</exception>
+        </member>
+        <member name="T:PhotoLibrary.Util.ImageFast">
+            <summary>
+            ImageFast tried two techniques to load images about 100 times faster
+            <see cref="M:System.Drawing.Image.FromFile(System.String)"/> or <see cref="M:System.Drawing.Image.FromStream(System.IO.Stream)"/>.
+            </summary>
+            <remarks>
+            <para>ImageFast first tries
+            to use a new method in a .NET framework hotfix. If that fails it attempts to 
+            use GDI+ and P/Invoke to do something similar. If that fails it falls back
+            to the standard <see cref="M:System.Drawing.Image.FromStream(System.IO.Stream)"/>.
+            You should dispose of this resource when finished as it will keep a filestream
+            open.
+            </para>
+            <para>
+            You must have <see cref="F:System.Security.Permissions.SecurityPermissionFlag.UnmanagedCode"/> permissions for 
+            ImageFast to load images faster.
+            </para>
+            </remarks>
+        </member>
+        <member name="M:PhotoLibrary.Util.ImageFast.#ctor(System.String)">
+            <summary>
+            Default contructor.
+            </summary>
+            <param name="filename">The path to the <see cref="T:System.Drawing.Image"/> to load.</param>
+        </member>
+        <member name="M:PhotoLibrary.Util.ImageFast.Dispose">
+            <summary>
+            Releases the <see cref="T:System.IO.FileStream"/> used by the <see cref="T:PhotoLibrary.Util.ImageFast"/>.
+            </summary>
+        </member>
+        <member name="P:PhotoLibrary.Util.ImageFast.Photo">
+            <summary>
+            The <see cref="T:System.Drawing.Image"/> that's loaded by the <see cref="T:PhotoLibrary.Util.ImageFast"/> instance.
+            </summary>
+        </member>
+        <member name="T:PhotoLibrary.ShadowImageType">
+            <summary>
+            Possible values for the direction of the drop shadow.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.ShadowImageType.TopLeft">
+            <summary>
+            Drop shadow for TopLeft of Drawing.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.ShadowImageType.Top">
+            <summary>
+            Drop shadow for Top of Drawing.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.ShadowImageType.TopRight">
+            <summary>
+            Drop shadow for TopRight of Drawing.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.ShadowImageType.Right">
+            <summary>
+            Drop shadow for Right of Drawing.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.ShadowImageType.BottomRight">
+            <summary>
+            Drop shadow for BottomRight of Drawing.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.ShadowImageType.Bottom">
+            <summary>
+            Drop shadow for Bottom of Drawing.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.ShadowImageType.BottomLeft">
+            <summary>
+            Drop shadow for BottomLeft of Drawing.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.ShadowImageType.Left">
+            <summary>
+            Drop shadow for Left of Drawing.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.ShadowImageType.Blank">
+            <summary>
+            Blank.
+            </summary>
+        </member>
+        <member name="T:PhotoLibrary.Drawing">
+            <summary>
+            Static drawing functions for <see cref="T:PhotoLibrary.Photo"/>
+            </summary>
+        </member>
+        <member name="M:PhotoLibrary.Drawing.GetImageWithBorder(System.Drawing.Image,System.Int32,System.Drawing.Color,System.Int32,System.Drawing.Color)">
+            <summary>
+            Gets an <see cref="T:System.Drawing.Image"/> with a border.
+            </summary>
+            <param name="image">The image to draw the border.</param>
+            <param name="borderLength">The length, in pixels, of the border.</param>
+            <param name="borderColor">The <see cref="T:System.Drawing.Color"/> of the border.</param>
+            <param name="paddingLength">The length, in pixels, of the padding.</param>
+            <param name="paddingColor">The <see cref="T:System.Drawing.Color"/> of the padding.</param>
+            <returns>An <see cref="T:System.Drawing.Image"/> with a border.</returns>
+        </member>
+        <member name="M:PhotoLibrary.Drawing.GetImageWithDropShadow(System.Drawing.Image,System.Int32,System.Drawing.Color,System.Drawing.Color)">
+            <summary>
+            Gets an <see cref="T:System.Drawing.Image"/> with a drop shadow.
+            </summary>
+            <param name="image">The image to draw the drop shadow.</param>
+            <param name="dropshadowLength">The length, in pixels, of the drow shadow.</param>
+            <param name="drowshadowColor">The <see cref="T:System.Drawing.Color"/> of the drop shadow.</param>
+            <param name="backgroundColor">The <see cref="T:System.Drawing.Color"/> of the background for the drop shadow.</param>
+            <returns>An <see cref="T:System.Drawing.Image"/> with a border.</returns>
+        </member>
+        <member name="T:PhotoLibrary.Photo">
+            <summary>
+            Encapsulates all the EXIF information in a <see cref="T:System.Drawing.Bitmap"/>.
+            </summary>
+            <remarks>
+            The EXIF data is compiled from the <b>EXIF 2.2 Japan Electronic Industry Development 
+            Association (JEIDA)</b> standard and <b>MSDN Property Item Descriptions</b> page at 
+            http://msdn.microsoft.com/library/default.asp?url=/library/en-us/gdicpp/GDI+/GDI+Reference/Constants/ImagePropertyTagConstants/PropertyItemDescriptions.asp.
+            </remarks>
+        </member>
+        <member name="M:PhotoLibrary.Photo.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:PhotoLibrary.Photo"/> class.
+            </summary>
+        </member>
+        <member name="M:PhotoLibrary.Photo.#ctor(PhotoLibrary.Photo)">
+            <summary>
+            Initializes a new instance of the <see cref="T:PhotoLibrary.Photo"/> class from the specified 
+            existing <see cref="T:PhotoLibrary.Photo"/>.
+            </summary>
+            <param name="original">The <see cref="T:PhotoLibrary.Photo"/> object from which to create 
+            the new <see cref="T:PhotoLibrary.Photo"/>.</param>
+        </member>
+        <member name="M:PhotoLibrary.Photo.#ctor(System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:PhotoLibrary.Photo"/> class from the specified file.
+            </summary>
+            <param name="filename">The name of the <see cref="T:PhotoLibrary.Photo"/> file.</param>
+        </member>
+        <member name="M:PhotoLibrary.Photo.ToString">
+            <summary>
+            Returns an XML document of the EXIF tags that are not null.
+            </summary>
+            <returns>A XML <see cref="T:System.String"/>.</returns>
+        </member>
+        <member name="M:PhotoLibrary.Photo.GetFullPath">
+            <summary>
+            Gets the absolute path for the <see cref="T:PhotoLibrary.Photo"/>.
+            </summary>
+            <returns>A <see cref="T:System.String"/> containing the fully qualified location of path, 
+            such as "C:\MyPhoto.jpg".</returns>
+        </member>
+        <member name="M:PhotoLibrary.Photo.GetFileName">
+            <summary>
+            Gets the file name and extension of the <see cref="T:PhotoLibrary.Photo"/>.
+            </summary>
+            <returns>
+            A <see cref="T:System.String"/> containing the fully qualified location of path, 
+            such as "C:\MyPhoto.jpg".
+            </returns>
+        </member>
+        <member name="M:PhotoLibrary.Photo.GetFileNameWithoutExtension">
+            <summary>
+            Gets the file name of the <see cref="T:PhotoLibrary.Photo"/>.
+            </summary>
+            <returns>
+            A <see cref="T:System.String"/> consisting of the characters after the last directory 
+            character in path.
+            </returns>
+        </member>
+        <member name="M:PhotoLibrary.Photo.GetExtension">
+            <summary>
+            Gets the extension of the <see cref="T:PhotoLibrary.Photo"/>.
+            </summary>
+            <returns>
+            A <see cref="T:System.String"/>, including the period (.). For example, 
+            for a file c:\NewPhoto.jpg, this property returns ".jpg".
+            </returns>
+        </member>
+        <member name="M:PhotoLibrary.Photo.Initialize">
+            <summary>
+            Initializes the <see cref="T:PhotoLibrary.Photo"/> class for increased performance.
+            </summary>
+            <remarks>
+            The first time the <see cref="T:PhotoLibrary.Photo"/> class is instantiazed it needs to load
+            all the EXIF Property Tag Meta Data. Calling this method is optional.</remarks>
+        </member>
+        <member name="M:PhotoLibrary.Photo.GetThumbnail(System.Drawing.Image)">
+            <summary>
+            Gets a 160 pixel Thumbnail of an <see cref="T:System.Drawing.Image"/>.
+            </summary>
+            <param name="image">The <see cref="T:System.Drawing.Image"/> to generate a Thumbnail.</param>
+            <returns>A 160 pixel Thumbnail.</returns>
+        </member>
+        <member name="M:PhotoLibrary.Photo.GetThumbnail(System.Drawing.Image,System.Int32)">
+            <summary>
+            Gets a Thumbnail of an <see cref="T:System.Drawing.Image"/>.
+            </summary>
+            <param name="image">The <see cref="T:System.Drawing.Image"/> to generate a Thumbnail.</param>
+            <param name="outputLength">The desired output length in pixels.</param>
+            <returns>A Thumbnail.</returns>
+        </member>
+        <member name="M:PhotoLibrary.Photo.ScaleByPercent(System.Drawing.Image,System.Int32)">
+            <summary>
+            Scales an <see cref="T:System.Drawing.Image"/> by a specified percentage. 
+            Both the width and height will be scaled uniformly.
+            </summary>
+            <param name="imgPhoto">The image to scale.</param>
+            <param name="Percent">The percent to scale the image.</param>
+            <returns>An <see cref="T:System.Drawing.Image"/> that is scaled.</returns>
+        </member>
+        <member name="M:PhotoLibrary.Photo.ScaleProportionally(System.Drawing.Image,System.Int32)">
+            <summary>
+            Scales an <see cref="T:System.Drawing.Image"/> propotionally.
+            </summary>
+            <param name="imgPhoto">The <see cref="T:System.Drawing.Image"/> to scale.</param>
+            <param name="maxLength">The max length to scale the image to.</param>
+            <returns>An <see cref="T:System.Drawing.Image"/> that is scaled.</returns>
+            <remarks>If the <see cref="T:System.Drawing.Image"/> orientation is portrait then the height will be
+            the max length and if the orientation if landscape then the width will be the max length.</remarks>
+        </member>
+        <member name="M:PhotoLibrary.Photo.ScaleToFixedSize(System.Drawing.Image,System.Int32,System.Int32,System.Int32,System.Drawing.Color)">
+            <summary>
+            Scales an <see cref="T:System.Drawing.Image"/> propotionally by width and height and adds padding to fill a square.
+            </summary>
+            <param name="imgPhoto">The <see cref="T:System.Drawing.Image"/> to scale.</param>
+            <param name="width">The desired width.</param>
+            <param name="height">The desired height.</param>
+            <param name="offset">The desired offset.</param>
+            <returns>A square <see cref="T:System.Drawing.Image"/> that is scaled.</returns>
+        </member>
+        <member name="M:PhotoLibrary.Photo.Crop(System.Drawing.Image,System.Int32,System.Int32,PhotoLibrary.Photo.AnchorPosition)">
+            <summary>
+            Crops an <see cref="T:System.Drawing.Image"/>.
+            </summary>
+            <param name="imgPhoto">The <see cref="T:System.Drawing.Image"/> to scale.</param>
+            <param name="width">The desired width.</param>
+            <param name="height">The desired height.</param>
+            <param name="Anchor">Where to start the crop.</param>
+            <returns>A scaled and cropped <see cref="T:System.Drawing.Image"/>.</returns>
+        </member>
+        <member name="M:PhotoLibrary.Photo.GetFramedPhoto(System.Int32,System.Int32,System.Int32,System.Int32,System.Drawing.Color,System.Drawing.Color,System.Drawing.Color,System.Drawing.Color)">
+            <summary>
+            Gets a <see cref="T:System.Drawing.Image"/> of the <see cref="T:PhotoLibrary.Photo"/> that is framed with a border
+            and padding along with a drop shadow.
+            </summary>
+            <param name="outputLength">The desired output length, in pixes, of the final framed photo.</param>
+            <param name="borderLength">The desired border length, in pixels.</param>
+            <param name="paddingLength">The desired padding length, in pixels.</param>
+            <param name="dropShadowLength">The desired dropshadow length in pixels.</param>
+            <param name="borderColor">The desired border Color.</param>
+            <param name="paddingColor">The desired padding Color.</param>
+            <param name="dropshadowColor">The desired dropshadow Color.</param>
+            <param name="backgroundColor">The desired backround Color of the dropshadow.</param>
+            <returns>A square <see cref="T:System.Drawing.Image"/> that is framed by an optional border, padding and drop shadow.</returns>
+            <remarks>
+            <para>The <see cref="T:PhotoLibrary.Photo"/> is returned as a square <see cref="T:System.Drawing.Image"/>.
+            This allows the object to be used in an <see cref="T:System.Windows.Forms.ImageList"/>
+            regardless of the orientation (portrait or landscape).</para>
+            <para>The original aspect ratio of the <see cref="T:PhotoLibrary.Photo"/> is maintained.</para></remarks>
+        </member>
+        <member name="M:PhotoLibrary.Photo.GetSingleLineExifSummary">
+            <summary>
+            Gets a <see cref="T:System.String"/> containing a single line EXIF summary about the <see cref="T:PhotoLibrary.Photo"/>.
+            </summary>
+            <returns>A formatted <see cref="T:System.String"/> such as in the example.</returns>
+            <example>
+            <code>
+            1/60s f/2.8 at 7.40625mm
+            </code>
+            </example>
+        </member>
+        <member name="M:PhotoLibrary.Photo.GetFullExifSummary">
+            <summary>
+            Gets a <see cref="T:System.String"/> containing full EXIF summary about the <see cref="T:PhotoLibrary.Photo"/>.
+            </summary>
+            <returns>A formatted <see cref="T:System.String"/> such as in the example.</returns>
+            <example>
+            <code>
+            Date Picture Taken: 11/1/2003 6:52:11 PM
+            Make: Canon
+            Model: Canon PowerShot S400
+            Dimensions: 2272 x 1704
+            Aperture: f/2.8
+            Exposure Time: 1/60 sec
+            Focal Length: 7.40625 mm
+            Metering Mode: Pattern
+            White Balance: Auto
+            Focus Distance: 7.40625
+            Flash: Flash fired, compulsory flash mode
+            </code>
+            </example>
+        </member>
+        <member name="M:PhotoLibrary.Photo.AutoRotate">
+            <summary>
+            Auto rotates an image based on the information in <see cref="P:PhotoLibrary.Photo.Orientation"/>.
+            </summary>
+            <remarks>Not all Digial Still Cameras record this property.</remarks>
+            <exception cref="T:System.ApplicationException">If <see cref="P:PhotoLibrary.Photo.Orientation"/> is null, this exception
+            will be thrown.</exception>
+        </member>
+        <member name="M:PhotoLibrary.Photo.Rotate(PhotoLibrary.Exif.RotateOptions)">
+            <summary>
+            Rotates a <see cref="T:PhotoLibrary.Photo"/> clockwise or counterclockwise
+            </summary>
+            <param name="rotateOptions">The direction to rotate the <see cref="T:PhotoLibrary.Photo"/>.</param>
+        </member>
+        <member name="M:PhotoLibrary.Photo.Rename(System.String)">
+            <summary>
+            Renames the <see cref="T:PhotoLibrary.Photo"/> using the supplied filename.
+            </summary>
+            <param name="destFileName">The new filename.</param>
+            <exception cref="T:System.NotSupportedException"> is thrown if the destFileName can't be created.</exception>
+        </member>
+        <!-- Badly formed XML comment ignored for member "M:PhotoLibrary.Photo.Rename(System.String,System.Boolean)" -->
+        <member name="M:PhotoLibrary.Photo.Save">
+            <summary>
+            Saves this <see cref="T:PhotoLibrary.Photo"/> object overwriting the original <see cref="T:PhotoLibrary.Photo"/>.
+            </summary>
+        </member>
+        <member name="M:PhotoLibrary.Photo.Save(System.String)">
+            <summary>
+            Saves this <see cref="T:PhotoLibrary.Photo"/> object to the specified file.
+            </summary>
+            <param name="fileName">The path to save the file to, which can specify a different filename.</param>
+        </member>
+        <member name="M:PhotoLibrary.Photo.InternalInitializePhoto(System.String)">
+            <summary>
+            Used by the contructors to initialize a new photo
+            </summary>
+            <param name="filename">The filename of the Photo to Initialize</param>
+        </member>
+        <member name="M:PhotoLibrary.Photo.LoadExifProperties">
+            <summary>
+            Loads the ExifPropertyItems for the Image.
+            </summary>
+        </member>
+        <member name="M:PhotoLibrary.Photo.SetExifPropertyItem(PhotoLibrary.Exif.ExifPropertyName,System.Object)">
+            <summary>
+            Sets the specified property item from this <see cref="T:PhotoLibrary.Exif.ExifPropertyItem"/> object.
+            </summary>
+            <param name="exifPropertyName">The <see cref="T:PhotoLibrary.Exif.ExifPropertyName"/> of the property item to get.</param>
+            <param name="value">The value to set the <see cref="T:System.Drawing.Imaging.PropertyItem"/> to</param>
+        </member>
+        <member name="M:PhotoLibrary.Photo.GetExifPropertyItem(PhotoLibrary.Exif.ExifPropertyName)">
+            <summary>
+            Gets the specified property item from this <see cref="T:PhotoLibrary.Exif.ExifPropertyItem"/> object.
+            </summary>
+            <param name="exifPropertyName">The <see cref="T:PhotoLibrary.Exif.ExifPropertyName"/> of the property item to get.</param>
+            <returns>The object containing the <see cref="P:PhotoLibrary.Exif.ExifPropertyItem.Value"/></returns>
+            <remarks>Since the value is returned as an object, it must be cast to it's native Type.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.ExifPropertyItemCollection">
+            <summary>
+            Gets the <see cref="P:PhotoLibrary.Photo.ExifPropertyItemCollection"/> for the Photo. You can get 
+            any <see cref="T:PhotoLibrary.Exif.ExifPropertyItem"/> using either the ID or 
+            using <see cref="T:PhotoLibrary.Exif.ExifPropertyName"/>.
+            </summary>
+            <remarks>Items in this collection are read-only.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.ImageWidth">
+            <summary>
+            Gets the number of columns of image data, equal to the number of pixels per row. 
+            </summary>
+            <remarks>In JPEG compressed data a JPEG marker is used instead of this tag.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.ImageLength">
+            <summary>
+            Gets the number of rows of image data.
+            </summary>
+            <remarks>In JPEG compressed data a JPEG marker is used instead of this tag.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.BitsPerSample">
+            <summary>
+            Gets the number of bits per image component. 
+            </summary>
+            <remarks>In this standard each component of the image is 8 bits, so the value for this 
+            tag is 8. See also <seealso cref="P:PhotoLibrary.Photo.SamplesPerPixel"/>. 
+            In JPEG compressed data a JPEG marker is used instead of this tag.
+            </remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.Compression">
+            <summary>
+            Gets the compression scheme used for the image data.
+            </summary>
+            <remarks>
+            When a primary image is JPEG compressed, this designation is not necessary and is 
+            omitted. When thumbnails use JPEG compression, this tag value is set to 6.
+            </remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.PhotometricInterpretation">
+            <summary>
+            Gets the pixel composition.
+            </summary>
+            <remarks>In JPEG compressed data a JPEG marker is used instead of this tag.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.Orientation">
+            <summary>
+            Gets or sets the orientation of the image as <see cref="T:PhotoLibrary.Exif.OrientationDirectionOptions"/>.
+            </summary>
+            <remarks>This property only exists on Digital Still Cameras that support Orientation.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.SamplesPerPixel">
+            <summary>
+            Gets the number of components per pixel.
+            </summary>
+            <remarks>Since this standard applies to RGB and YCbCr images, 
+            the value set for this tag is 3. In JPEG compressed data a JPEG marker 
+            is used instead of this tag.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.PlanarConfiguration">
+            <summary>
+            Gets value indicating whether pixel components are recorded in chunky or planar format. 
+            </summary>
+            <remarks>
+            In JPEG compressed files a JPEG marker is used instead of this tag. 
+            If this field does not exist, the TIFF default of 1 (chunky) is assumed.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.YCbCrSubSampling">
+            <summary>
+            Gets the sampling ratio of chrominance components in relation to the luminance component. 
+            </summary>
+            <remarks>In JPEG compressed data a JPEG marker is used instead of this tag.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.YCbCrPositioning">
+            <summary>
+            Gets the position of chrominance components in relation to the luminance component. 
+            </summary>
+            <remarks>
+            This field is designated only for JPEG compressed data or uncompressed YCbCr data. 
+            The TIFF default is 1 (centered); but when Y:Cb:Cr = 4:2:2 it is recommended in 
+            this standard that 2 (co-sited) be used to record data, in order to improve the 
+            image quality when viewed on TV systems. When this field does not exist, the 
+            reader shall assume the TIFF default. In the case of Y:Cb:Cr = 4:2:0, 
+            the TIFF default (centered) is recommended. If the reader does not have the 
+            capability of supporting both kinds of YCbCrPositioning, it shall follow the TIFF 
+            default regardless of the value in this field. It is preferable that readers be 
+            able to support both centered and co-sited positioning.
+            </remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.XResolution">
+            <summary>
+            Gets the number of pixels per <see cref="P:PhotoLibrary.Photo.ResolutionUnit"/> in the <see cref="P:PhotoLibrary.Photo.ImageWidth"/> 
+            direction.
+            </summary>
+            <remarks>When the image resolution is unknown, 72 [dpi] is designated.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.YResolution">
+            <summary>
+            Gets the number of pixels per <see cref="P:PhotoLibrary.Photo.ResolutionUnit"/> in the <see cref="P:PhotoLibrary.Photo.ImageLength"/> 
+            direction. The same value as <see cref="P:PhotoLibrary.Photo.XResolution"/> is designated.
+            </summary>
+        </member>
+        <member name="P:PhotoLibrary.Photo.ResolutionUnit">
+            <summary>
+            Gets the unit for measuring <see cref="P:PhotoLibrary.Photo.XResolution"/> and <see cref="P:PhotoLibrary.Photo.YResolution"/>.
+            </summary>
+            <remarks>The same unit is used for both <see cref="P:PhotoLibrary.Photo.XResolution"/> and <see cref="P:PhotoLibrary.Photo.YResolution"/>. 
+            If the image resolution in unknown, 2 (inches) is designated.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.StripOffsets">
+            <summary>
+            Gets the byte offset of that strip for each strip.
+            </summary>
+            <remarks>It is recommended that this be 
+            selected so the number of strip bytes does not exceed 64 Kbytes. 
+            With JPEG compressed data this designation is not needed and is omitted. 
+            See also <seealso cref="P:PhotoLibrary.Photo.RowsPerStrip"/> and <seealso cref="P:PhotoLibrary.Photo.StripByteCounts"/>.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.RowsPerStrip">
+            <summary>
+            Gets the number of rows per strip.
+            </summary>
+            <remarks>This is the number of rows in the image of one 
+            strip when an image is divided into strips. With JPEG compressed 
+            data this designation is not needed and is omitted. 
+            See also <seealso cref="P:PhotoLibrary.Photo.RowsPerStrip"/> and <seealso cref="P:PhotoLibrary.Photo.StripByteCounts"/>.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.StripByteCounts">
+            <summary>
+            Gets the total number of bytes in each strip.
+            </summary>
+            <remarks>With JPEG compressed data this designation is not needed and is omitted.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.JPEGInterchangeFormat">
+            <summary>
+            Gets the offset to the start byte (SOI) of JPEG compressed thumbnail data. 
+            </summary>
+            <remarks>This is not used for primary image JPEG data.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.JPEGInterchangeFormatLength">
+            <summary>
+            Gets the number of bytes of JPEG compressed thumbnail data.
+            </summary>
+            <remarks>This is not used for primary 
+            image JPEG data. JPEG thumbnails are not divided but are recorded as a continuous 
+            JPEG bitstream from SOI to EOI. APPn and COM markers should not be recorded. 
+            Compressed thumbnails shall be recorded in no more than 64 Kbytes, 
+            including all other data to be recorded in APP1.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.TransferFunction">
+            <summary>
+            Gets a transfer function for the image, described in tabular style. 
+            </summary>
+            <remarks>Normally this tag is not necessary, since color space is specified 
+            in the color space information tag (ColorSpace).</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.WhitePoint">
+            <summary>
+            The chromaticity of the white point of the image.
+            </summary>
+            <remarks>Normally this tag is not necessary, 
+            since color space is specified in the <see cref="P:PhotoLibrary.Photo.ColorSpace"/> property.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.PrimaryChromaticities">
+            <summary>
+            Gets the chromaticity of the three primary colors of the image.
+            </summary>
+            <remarks>Normally this tag is not necessary, since color space is 
+            specified in the <see cref="P:PhotoLibrary.Photo.ColorSpace"/> information property.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.YCbCrCoefficients">
+            <summary>
+            Gets the matrix coefficients for transformation from RGB to YCbCr image data.
+            </summary>
+        </member>
+        <member name="P:PhotoLibrary.Photo.ReferenceBlackWhite">
+            <summary>
+            Gets the reference black point value and reference white point value. 
+            </summary>
+            <remarks>
+            <para>No defaults are given in TIFF, but the values below are given as defaults here. 
+            The color space is declared in a color space information tag, 
+            with the default being the value that gives the optimal image characteristics 
+            Interoperability these conditions.</para>
+            <para>
+            When <see cref="P:PhotoLibrary.Photo.PhotometricInterpretation"/> is RGB: [0, 255, 0, 255, 0, 255]
+            When <see cref="P:PhotoLibrary.Photo.PhotometricInterpretation"/> is YCbCr: [0, 255, 0, 128, 0, 128]</para>
+            </remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.DateTime">
+            <summary>
+            Gets or sets the date and time of image creation. In this standard it is the date and time the file was changed.
+            </summary>
+            <remarks>The EXIF format is "YYYY:MM:DD HH:MM:SS" with time shown in 24-hour format, 
+            and the date and time separated by one blank character. When the date and 
+            time are unknown, all the character spaces except colons (":") may be filled with 
+            blank characters, or else the Interoperability field may be filled with blank 
+            characters. When the field is left blank, it is treated as unknown.
+            <seealso cref="P:PhotoLibrary.Photo.DateTimeDigitized"/>
+            <seealso cref="P:PhotoLibrary.Photo.DateTimeOriginal"/></remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.ImageDescription">
+            <summary>
+            Gets or sets a character string giving the title of the image.
+            </summary>
+            <example>1988 company picnic.</example>
+            <remarks>Two-byte character codes cannot be used. When a 2-byte code is necessary, 
+            the Exif Private tag <see cref="P:PhotoLibrary.Photo.UserComment"/> is to be used.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.Make">
+            <summary>
+            Gets the manufacturer of the recording equipment.
+            </summary>
+            <remarks>
+            <para>This is the manufacturer of the DSC, 
+            scanner, video digitizer or other equipment that generated the image.</para>
+            <para>When the field is left blank, it is treated as unknown.</para></remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.Model">
+            <summary>
+            Gets the model name or model number of the equipment.
+            </summary>
+            <remarks>
+            <para>This is the model name of number of the DSC, scanner, video digitizer 
+            or other equipment that generated the image.</para>
+            <para>When the field is left blank, it is treated as unknown.</para></remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.Software">
+            <summary>
+            Gets the name and version of the software or firmware of the 
+            camera or image input device used to generate the image.
+            </summary>
+            <remarks>When the field is left blank, it is treated as unknown. The detailed 
+            format is not specified.</remarks>
+            <example>Exif Software Version 1.00a</example>
+        </member>
+        <member name="P:PhotoLibrary.Photo.Artist">
+            <summary>
+            Gets or sets the name of the camera owner, photographer or image creator. 
+            The detailed format is not specified.
+            </summary>
+            <remarks>When the field is left blank, it is treated as unknown.</remarks>
+            <example>Camera owner, John Smith; Photographer, Michael Brown; Image creator, Ken James</example>
+        </member>
+        <member name="P:PhotoLibrary.Photo.Copyright">
+            <summary>
+            Gets or sets the copyright information.
+            </summary>
+            <remarks>
+            <para>The property is used to indicate both the 
+            photographer and editor copyrights. It is the copyright notice of the person or 
+            organization claiming rights to the image.</para>
+            <para>The Interoperability copyrights statement including date and rights should 
+            be written in this field. "Copyright, John Smith, 19xx. All rights reserved."</para>
+            When the field is left blank, it is treated as unknown.
+            </remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.ExifVersion">
+            <summary>
+            Gets the version of the EXIF standard supported.
+            </summary>
+            <remarks>Conformance to this standard is indicated by recording "0220" as 4-byte ASCII. 
+            Nonexistence of this property is taken to mean nonconformance to the EXIF standard.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.FlashPixVersion">
+            <summary>
+            Gets the Flashpix format version supported by a FPXR file. 
+            </summary>
+            <remarks>If the FPXR function supports Flashpix format Ver. 1.0, 
+            this is indicated similarly to ExifVersion by recording "0100".
+            </remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.ColorSpace">
+            <summary>
+            Gets the color space information.
+            </summary>
+            <remarks>Normally sRGB (=1) is used to define the color space based on the 
+            PC monitor conditions and environment. If a color space other than sRGB is used, 
+            Uncalibrated is set. Image data recorded as Uncalibrated can be treated as sRGB 
+            when it is converted to Flashpix.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.PixelXDimension">
+            <summary>
+            Gets the valid width of the compressed image. 
+            </summary>
+            <remarks>This property should not exist in an uncompressed file.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.PixelYDimension">
+            <summary>
+            Gets the valid height of the compressed image.
+            </summary>
+            <remarks>This tag should not exist in an uncompressed file. Since data padding is unnecessary in the vertical direction, the number of lines recorded in this valid image height tag will in fact be the same as that recorded in the SOF.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.ComponentsConfiguration">
+            <summary>
+            Gets the color channels of each component.
+            </summary>
+            <remarks>
+            Data is arranged in order from the 1st component to the 4th. 
+            For uncompressed data the data arrangement is given in the 
+            <see cref="P:PhotoLibrary.Photo.PhotometricInterpretation"/> property. However, 
+            since <see cref="P:PhotoLibrary.Photo.PhotometricInterpretation"/> can only express the order of 
+            Y,Cb and Cr, this tag is provided for cases when compressed data uses 
+            components other than Y, Cb, and Cr and to enable support of other sequences.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.CompressedBitsPerPixel">
+            <summary>
+            Gets the compression mode used for a compressed image indicated in unit bits per pixel.
+            </summary>
+        </member>
+        <member name="P:PhotoLibrary.Photo.MakerNote">
+            <summary>
+            Gets a property for manufacturers of Exif writers to record any desired information. 
+            </summary>
+            <remarks>
+            The contents are up to the manufacturer, but this property should not be used for any 
+            other than its intended purpose.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.UserComment">
+            <summary>
+            Gets or sets keywords or comments on the image besides those 
+            in <see cref="P:PhotoLibrary.Photo.ImageDescription"/>, and without the character code limitations 
+            of the <see cref="P:PhotoLibrary.Photo.ImageDescription"/> property.
+            </summary>
+        </member>
+        <member name="P:PhotoLibrary.Photo.RelatedSoundFile">
+            <summary>
+            Gets the name of an audio file related to the image data. 
+            </summary>
+            <remarks>
+            <para>
+            The only relational information recorded here is the Exif audio file name and extension 
+            (an ASCII string consisting of 8 characters + '.' + 3 characters). 
+            The path is not recorded.</para>
+            <para>
+            When using this tag, audio files shall be recorded in conformance to the 
+            Exif audio format. Writers are also allowed to store the data such as Audio within 
+            APP2 as Flashpix extension stream data. Audio files shall be recorded in conformance 
+            to the Exif audio format.</para></remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.DateTimeOriginal">
+            <summary>
+            Gets or sets the date and time when the original image data was generated. 
+            For a DSC the date and time the picture was taken are recorded.
+            </summary>
+        </member>
+        <member name="P:PhotoLibrary.Photo.DateTimeDigitized">
+            <summary>
+            Gets or sets the date and time when the image was stored as digital data.
+            </summary>
+            <remarks>
+            If, for example, an image was captured by DSC and at the same time the file was 
+            recorded, then the <see cref="P:PhotoLibrary.Photo.DateTimeOriginal"/> and 
+            <see cref="P:PhotoLibrary.Photo.DateTimeDigitized"/> will have the same contents.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.SubsecTime">
+            <summary>
+            Gets the fractions of seconds for <see cref="P:PhotoLibrary.Photo.DateTime"/>.
+            </summary>
+        </member>
+        <member name="P:PhotoLibrary.Photo.SubsecTimeOriginal">
+            <summary>
+            Gets the fractions of seconds for <see cref="P:PhotoLibrary.Photo.DateTimeOriginal"/>.
+            </summary>
+        </member>
+        <member name="P:PhotoLibrary.Photo.SubsecTimeDigitized">
+            <summary>
+            Gets the fractions of seconds for <see cref="P:PhotoLibrary.Photo.DateTimeDigitized"/>.
+            </summary>
+        </member>
+        <member name="P:PhotoLibrary.Photo.ExposureTime">
+            <summary>
+            Gets the exposure time, given in seconds.
+            </summary>
+        </member>
+        <member name="P:PhotoLibrary.Photo.FNumber">
+            <summary>
+            Gets the F number.
+            </summary>
+        </member>
+        <member name="P:PhotoLibrary.Photo.ExposureProgram">
+            <summary>
+            Gets the class of the program used by the camera to set exposure when the 
+            picture is taken.
+            </summary>
+        </member>
+        <member name="P:PhotoLibrary.Photo.SpectralSensitivity">
+            <summary>
+            Gets the spectral sensitivity of each channel of the camera used. 
+            </summary>
+            <remarks>The tag value is an ASCII string compatible with the standard 
+            developed by the ASTM Technical committee.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.ISOSpeedRatings">
+            <summary>
+            Gets the ISO Speed and ISO Latitude of the camera or input device 
+            as specified in ISO 12232.
+            </summary>
+        </member>
+        <member name="P:PhotoLibrary.Photo.OECF">
+            <summary>
+            Gets the Opto-Electric Conversion Function (OECF) specified in ISO 14524. 
+            </summary>
+            <remarks>
+            OECF is the relationship between the camera optical input and the image values.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.ShutterSpeedValue">
+            <summary>
+            Gets the shutter speed. 
+            </summary>
+            <remarks>
+            The unit is the APEX (Additive System of Photographic Exposure) setting.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.ApertureValue">
+            <summary>
+            Gets the lens aperture.
+            </summary>
+            <remarks>The unit is the APEX value.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.BrightnessValue">
+            <summary>
+            Gets the value of brightness.
+            </summary>
+            <remarks>
+            <para>The unit is the APEX value. Ordinarily it is given in the range of -99.99 to 99.99.</para>
+            <para>If the numerator of the recorded value is -1, Unknown shall be indicated.</para>
+            </remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.ExposureBiasValue">
+            <summary>
+            Gets the exposure bias.
+            </summary>
+            <remarks>
+            The unit is the APEX value. Ordinarily it is given in the range of –99.99 to 99.99.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.MaxApertureValue">
+            <summary>
+            Gets the smallest F number of the lens.
+            </summary>
+            <remarks>The unit is the APEX value. Ordinarily it is given in the range of 00.00 tO 99.99, but it is not limited to this range.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.SubjectDistance">
+            <summary>
+            Gets the distance to the subject, given in meters.
+            </summary>
+            <remarks>Note that if the numerator of the recorded value is -1, Infinity shall be indicated; and if the numerator is 0, Distance unknown shall be indicated.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.MeteringMode">
+            <summary>
+            Gets the metering mode.
+            </summary>
+        </member>
+        <member name="P:PhotoLibrary.Photo.LightSource">
+            <summary>
+            Gets the kind of light source.
+            </summary>
+        </member>
+        <member name="P:PhotoLibrary.Photo.Flash">
+            <summary>
+            Gets the status of flash when the image was shot.
+            </summary>
+        </member>
+        <member name="P:PhotoLibrary.Photo.SubjectArea">
+            <summary>
+            Gets the location and area of the main subject in the overall scene.
+            </summary>
+        </member>
+        <member name="P:PhotoLibrary.Photo.FocalLength">
+            <summary>
+            Gets the actual focal length of the lens, in mm.
+            </summary>
+            <remarks>Conversion is not made to the focal length of a 35 mm film camera.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.FlashEnergy">
+            <summary>
+            Gets the strobe energy at the time the image is captured, 
+            as measured in Beam Candle Power Seconds (BCPS).
+            </summary>
+        </member>
+        <member name="P:PhotoLibrary.Photo.SpatialFrequencyResponse">
+            <summary>
+            Gets the camera or input device spatial frequency table and SFR values in 
+            the direction of image width, image height, and diagonal direction, 
+            as specified in ISO 12233.
+            </summary>
+        </member>
+        <member name="P:PhotoLibrary.Photo.FocalPlaneXResolution">
+            <summary>
+            Gets the number of pixels in the image width (X) direction 
+            per <see cref="P:PhotoLibrary.Photo.FocalPlaneResolutionUnit"/> on the camera focal plane.
+            </summary>
+        </member>
+        <member name="P:PhotoLibrary.Photo.FocalPlaneYResolution">
+            <summary>
+            Gets the number of pixels in the image height (Y) direction 
+            per <see cref="P:PhotoLibrary.Photo.FocalPlaneResolutionUnit"/> on the camera focal plane.
+            </summary>
+            <remarks>The unit is specified 
+            in <see cref="T:PhotoLibrary.Exif.ResolutionUnitOptions"/>.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.FocalPlaneResolutionUnit">
+            <summary>
+            Gets the number of pixels in the image height (y) direction 
+            per unit on the camera focal plane.
+            </summary>
+            <remarks>The unit is specified 
+            in <see cref="T:PhotoLibrary.Exif.ResolutionUnitOptions"/>.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.SubjectLocation">
+            <summary>
+            Gets the location of the main subject in the scene. 
+            </summary>
+            <remarks>
+            <para>
+            The value of this property represents the pixel at the center of the main 
+            subject relative to the left edge, prior to rotation processing as per the 
+            Rotation tag. The first value indicates the X column number and second 
+            indicates the Y row number.</para>
+            <para>
+            When a camera records the main subject location, it is recommended that 
+            the <see cref="P:PhotoLibrary.Photo.SubjectArea"/> be used instead of this property.
+            </para>
+            </remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.ExposureIndex">
+            <summary>
+            Gets the exposure index selected on the camera or input device at the 
+            time the image is captured.
+            </summary>
+        </member>
+        <member name="P:PhotoLibrary.Photo.SensingMethod">
+            <summary>
+            Gets the image sensor type on the camera or input device.
+            </summary>
+        </member>
+        <member name="P:PhotoLibrary.Photo.FileSource">
+            <summary>
+            Gets the image source.
+            </summary>
+            <remarks>If a DSC recorded the image, this tag value of this tag always be set to 
+            FileSource.DSC, indicating that the image was recorded on a DSC.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.SceneType">
+            <summary>
+            Gets the type of scene.
+            </summary>
+            <remarks>If a DSC recorded the image, this tag value shall always be set to 
+            <see cref="F:PhotoLibrary.Exif.SceneTypeOptions.DirectlyPhotographedImage"/>, indicating that 
+            the image was directly photographed.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.CFAPattern">
+            <summary>
+            Gets the color filter array (CFA) geometric pattern of the image sensor 
+            when a one-chip color area sensor is used.
+            </summary>
+            <remarks>It does not apply to all sensing methods.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.CustomRendered">
+            <summary>
+            Gets the renderer used  for special processing on image data, such as rendering geared 
+            to output. 
+            </summary>
+            <remarks>
+            When special processing is performed, the reader is expected to disable or minimize 
+            any further processing.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.ExposureMode">
+            <summary>
+            Gets the exposure mode set when the image was shot.
+            </summary>
+            <remarks>
+            In auto-bracketing mode, the camera shoots a series of frames of the same scene 
+            at different exposure settings.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.WhiteBalance">
+            <summary>
+            Gets the white balance mode set when the image was shot.
+            </summary>
+        </member>
+        <member name="P:PhotoLibrary.Photo.DigitalZoomRatio">
+            <summary>
+            Gets the digital zoom ratio when the image was shot. 
+            </summary>
+            <remarks>
+            If the numerator of the recorded value is 0, this indicates that digital 
+            zoom was not used.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.FocalLengthIn35mmFilm">
+            <summary>
+            Gets the equivalent focal length assuming a 35mm film camera, in mm. 
+            </summary>
+            <remarks>
+            A value of 0 means the focal length is unknown. 
+            Note that this tag differs from <see cref="P:PhotoLibrary.Photo.FocalLength"/>.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.SceneCaptureType">
+            <summary>
+            Gets the type of scene that was shot. 
+            </summary>
+            <remarks>
+            It can also be used to record the mode in which the image was shot. 
+            Note that this differs from <see cref="P:PhotoLibrary.Photo.SceneType"/>.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.GainControl">
+            <summary>
+            Gets the degree of overall image gain adjustment.
+            </summary>
+        </member>
+        <member name="P:PhotoLibrary.Photo.Contrast">
+            <summary>
+            Gets the direction of contrast processing applied by the camera 
+            when the image was shot.
+            </summary>
+        </member>
+        <member name="P:PhotoLibrary.Photo.Saturation">
+            <summary>
+            Gets the direction of saturation processing applied by the camera 
+            when the image was shot.
+            </summary>
+        </member>
+        <member name="P:PhotoLibrary.Photo.Sharpness">
+            <summary>
+            Gets the direction of sharpness processing applied by the camera 
+            when the image was shot.
+            </summary>
+        </member>
+        <member name="P:PhotoLibrary.Photo.DeviceSettingDescription">
+            <summary>
+            Gets the information on the picture-taking conditions of a particular camera model. 
+            The tag is used only to indicate the picture-taking conditions in the reader.
+            </summary>
+        </member>
+        <member name="P:PhotoLibrary.Photo.SubjectDistanceRange">
+            <summary>
+            Gets the distance to the subject.
+            </summary>
+        </member>
+        <member name="P:PhotoLibrary.Photo.ImageUniqueID">
+            <summary>
+            Gets a unique identifier assigned to each image.
+            </summary>
+            <remarks>
+            It is recorded as an ASCII string equivalent to hexadecimal notation and 
+            128-bit fixed length.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.InteroperabilityIndex">
+            <summary>
+            Gets the identification of the Interoperability rule.
+            </summary>
+            <remarks>If this property exists, it is removed when the Photo is saved.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.InteroperabilityVersion">
+            <summary>
+            Gets the interoperability version.
+            </summary>
+            <example>"0100" means version 1.00.</example>
+            <remarks>If this property exists, it is removed when the Photo is saved.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.RelatedImageWidth">
+            <summary>
+            Gets the image width.
+            </summary>
+            <remarks>This property represents the image width when it was digitized.
+            If the image is rotated it will not changed.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.RelatedImageLength">
+            <summary>
+            Gets the image length.
+            </summary>
+            <remarks>This property represents the image width when it was digitized.
+            If the image is rotated it will not changed.</remarks>
+        </member>
+        <member name="P:PhotoLibrary.Photo.Thumbnail">
+            <summary>
+            Gets or sets thumbnail stored in the photo.
+            </summary>
+        </member>
+        <member name="P:PhotoLibrary.Photo.Width">
+            <summary>
+            Gets the <see cref="P:System.Drawing.Image.Width"/> of the <see cref="T:PhotoLibrary.Photo"/>.
+            </summary>
+        </member>
+        <member name="P:PhotoLibrary.Photo.Height">
+            <summary>
+            Gets the <see cref="P:System.Drawing.Image.Height"/> of the <see cref="T:PhotoLibrary.Photo"/>.
+            </summary>
+        </member>
+        <member name="T:PhotoLibrary.Photo.AnchorPosition">
+            <summary>
+            Determines where cropping starts when using <see cref="M:PhotoLibrary.Photo.Crop(System.Drawing.Image,System.Int32,System.Int32,PhotoLibrary.Photo.AnchorPosition)"/>.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Photo.AnchorPosition.Top">
+            <summary>
+            Crop starting at Top of <see cref="T:System.Drawing.Image"/>.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Photo.AnchorPosition.Center">
+            <summary>
+            Crop starting at Center of <see cref="T:System.Drawing.Image"/>.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Photo.AnchorPosition.Bottom">
+            <summary>
+            Crop starting at Bottom of <see cref="T:System.Drawing.Image"/>.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Photo.AnchorPosition.Left">
+            <summary>
+            Crop starting at Left of <see cref="T:System.Drawing.Image"/>.
+            </summary>
+        </member>
+        <member name="F:PhotoLibrary.Photo.AnchorPosition.Right">
+            <summary>
+            Crop starting at Right of <see cref="T:System.Drawing.Image"/>.
+            </summary>
+        </member>
+    </members>
+</doc>

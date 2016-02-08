@@ -14,7 +14,7 @@ Describe "Get-TfInfo" {
             Get-TfInfo $sut
         }
         catch {
-            Debug
+            #Debug
             If($_.exception.Message -contains "Team Foundation services are not available from server") {
                 Write-Warning "Inconclusive: TFS Server unavailable."   
             }
@@ -27,7 +27,7 @@ Describe "Get-TfInfo" {
         catch {
             $exception=$_.exception
         }
-        Debug;
+        #Debug;
         If($exception.Message -contains "Team Foundation services are not available from server") {
             Write-Warning "Inconclusive: TFS Server unavailable."   
         } else {
