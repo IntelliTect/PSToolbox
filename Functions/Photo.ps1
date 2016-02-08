@@ -130,6 +130,10 @@ function GetFileNameWithCameraTag(
             {
                 $targetFileName = $targetFileName.Replace("IMG_", "EOST4i_")
             }
+            elseif($photo.Model -eq "Canon EOS 70D")
+            {
+                $targetFileName = $targetFileName.Replace("IMG_", "EOS70D_")
+            }
             elseif($photo.Model -eq "Canon PowerShot A2400 IS")
             {
                 $targetFileName = $targetFileName.Replace("IMG_", "A2400_")
@@ -146,6 +150,10 @@ function GetFileNameWithCameraTag(
             {
                 $targetFileName = "NIKOND60_" + $photo.GetFileName()
             }	
+            elseif($photo.Model -eq "NIKON D3300")
+            {
+                $targetFileName = $targetFileName.Replace("DSC_", "NIKOND3300_")
+            }
             elseif($photo.Model -eq "T-Mobile G2")
             {
                 $targetFileName = $targetFileName.Replace("IMG_", "G2_")
@@ -225,6 +233,8 @@ BEGIN {
 
 PROCESS {    
         Write-Progress -Id 42 -Activity "Copy-Photo";
+        [int]$totalFileCount = $files.Count
+        [int]$filesProcessedCount = 0
         foreach($file in $files) {
             if($file.Extension -in ".JPG",".JPEG") 
 	        {
@@ -266,13 +276,12 @@ PROCESS {
             }
             
             if( (-not (Test-Path $targetFullName)) -or $PSCmdlet.ShouldContinue("Overwrite $targetFullName`?", "Confirm") ) {
-
-                    Write-Progress -Id 42 -Activity "Copy-Photo" -Status "$Status $file to $targetFullName"
+                    Write-Progress -Id 42 -Activity "Copy-Photo" -Status "$Status $file to $targetFullName" -PercentComplete ($filesProcessedCount++/$totalFileCount)
                     #ToDo yes-to-all currently doesn't work.
                     &  $copyCommand $file.FullName $targetFullName -ErrorAction SilentlyContinue -ErrorVariable commandError -force:$true
             
                     if($commandError) {
-                        Write-Error "$copyCommand $file.FullName $targetFullName"; 
+                        Write-Error "$copyCommand $file.FullName $targetFullName`: $($commandError[0].Exception)"; 
                         $commandError = $null;
                     }
             }            
