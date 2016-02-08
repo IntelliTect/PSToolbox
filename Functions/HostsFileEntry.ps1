@@ -26,8 +26,12 @@ Add-Type -Language CSharp -TypeDefinition @"
 
 #ToDo: Verify and Publish: Mandatory on [string] parameter checks for null or empty string.
 
-Function New-HostsFileEntry(
-    [Parameter(ValueFromPipeline=$true)][string] $line) {
+Function New-HostsFileEntry {
+    [CmdletBinding()]
+    param(
+        [Parameter(ValueFromPipeline=$true)][string] $line,
+        [switch] $IncludedCommentedOutEntries
+    ) 
     if(![string]::IsNullOrWhiteSpace($line)) {
         $IPAddress,$DnsName = $line.Split();
         if(![string]::IsNullOrWhiteSpace($DnsName) ) {
@@ -42,17 +46,20 @@ Function New-HostsFileEntry(
                 "^(?=.{1,255}$)[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?)*\.?$") ) { 
             $isValid = $true;
         }
+        if($isValid -AND (!$IsCommentedOut -OR $IncludedCommentedOutEntries)) {
+            return New-Object IntelliTect.Net.HostsFileEntry($IPAddress,$DnsName,$Comment,$IsCommentedOut)
+        }
     }
-    $result = $null;
-    if($isValid -AND (!$_.IsCommentedOut -OR $IncludedCommentedOutEntries)) {
-        $result = New-Object IntelliTect.Net.HostsFileEntry($IPAddress,$DnsName,$Comment,$IsCommentedOut)
-    }
-    return $result; 
 }
 
-Function Get-HostsFileEntry([string] $Entry, [bool] $IncludedCommentedOutEntries=$false) {
+Function Get-HostsFileEntry {
+    [CmdletBinding()]
+    param(
+        [string] $Entry, 
+        [switch] $IncludedCommentedOutEntries
+    )
     Get-Content (Get-HostsFilePath) | ?{ $_ -like "*$Entry*" } | %{
-        New-HostsFileEntry $_
+        New-HostsFileEntry $_ -IncludedCommentedOutEntries:$IncludedCommentedOutEntries
     } | ?{ $_ -ne $null }
 }
 
@@ -72,7 +79,7 @@ param
     [IntelliTect.Net.HostsFileEntry]$currentHostEntries = Get-HostsFileEntry $DnsName
 
     If(!$currentHostEntries) {
-        if($pscmdlet.ShouldProcess("Append $DnsName with IP Address $IPAddress to HOSTS file ('$hostFilePath')") ) {
+        if($pscmdlet.ShouldProcess("Append $DnsName with IP Address $IPAddress to HOSTS file ($(Get-HostsFilePath))") ) {
             Add-Content -Path (Get-HostsFilePath) -Value "$IPAddress`t`t$DnsName"
             if($PassThru) {
                 Write-Output (Get-HostsFileEntry $DnsName)
