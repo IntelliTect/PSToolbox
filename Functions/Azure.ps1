@@ -1,29 +1,47 @@
-
-Function Install-AzureConfiguaration {
+  Function Setup-AzureConfiguaration {
     [CmdletBinding(ConfirmImpact="High")]
     param(
-            $azureCredentials = (Get-Credential -Message "Enter your azure credentials here.")
+           [pscredential]$azureCredentials = (Get-Credential -Message "Enter your azure credentials here.")
         )
 
-        if(!$PSCmdlet.ShouldProcess("Install-AzureConfiguaration","Untested script... confirm to execute", "3")) {
+       if(!$PSCmdlet.ShouldProcess("Install-AzureConfig",“Confirm to execute", "3")) {
             return
-        }
+       }
 
-        Choco Install WindowsAzurePowershell
+         
+        # Requires PSGet
+        Install-Module AzureRM        
+        Install-AzureRM
+        Install-Module Azure
+        Import-Module AzureRM
+        Install-AzureRM
 
-        Add-AzureAccount -Credential $azureCredentials
+        Write-Warning "Prompts for Azure Credentials"
+        Add-AzureAccount
         
+        Write-Warning "Prompts to download PublishSettings file"
         Get-AzurePublishSettingsFile
+        Get-ChildItem "$env:USERPROFILE\Downloads\" "*.publishsettings" | 
+            %{ Import-AzurePublishSettingsFile $_.FullName }
 }
 
 Function Initialize-Azure {
-    if(!(Get-Module Azure -ListAvailable)) {
-        Write-Warning "The Azure module is not installed.  To install run 'Choco Install WindowsAzurePowershell'"
-        return
-    }
+    [CmdletBinding()]
+    Param(
+        [string]$subscriptionName
+    )
 
-    Import-Module Azure 
-    Set-AzureSubscription -SubscriptionName "Azure Pass" 
+
+    "Azure","AzureRM" | %{ 
+        $module = Get-Module $_ -ListAvailable
+        if(!$module) {
+            Write-Warning "The Azure module is not installed.  To install run 'Choco Install WindowsAzurePowershell'"
+            return
+        }
+        Write-Output $module
+    } | Import-Module
+
+    Set-AzureSubscription -SubscriptionName $subscriptionName
 }
 
 
@@ -194,3 +212,207 @@ Function Get-AzureStarted {
     Add-AzureAccount
 }
 
+Funcation Deploy-ServiceFabbricApps {
+    [CmdletBinding()]
+    Param(
+        [string[]]$projects
+    )
+
+}
+Connect-ServiceFabricCluster vestafabric.westus.cloudapp.azure.com:19000;
+
+$projects = $("Services.PropertyListing", "Services.ContactManagement", "Services.NeighborhoodDna", "App.Mobile", "App.Web");
+
+foreach ($project in $projects) {
+	cd "..\Dev\Vesta\$project.ServiceFabric\";
+
+	.\Scripts\Deploy-FabricApplication.ps1 `
+		-ApplicationPackagePath .\pkg\Release `
+		-PublishProfileFile .\PublishProfiles\Cloud.xml `
+		-DeployOnly:$false `
+		-UnregisterUnusedApplicationVersionsAfterUpgrade $false `
+		-ForceUpgrade $false `
+		-OverwriteBehavior 'Always' `
+		-ErrorAction Stop `
+		-UseExistingClusterConnection:$true;
+
+	cd ..\..\..\Tools;
+}
+
+
+Function Write-AzureVMSnapshop {
+# Set variable values
+$resourceGroupName = "WindTalkerVMs"
+$location = "West US"
+$vmName = "WindTalker1"
+$vmSize = "Standard_D1_V2"
+$vnetName = "WindTalkerVMs"
+$nicName = "windtalker155"
+$dnsName = "windtalker1"
+$diskName = "WindTalker12016124135052"
+$storageAccount = "windtalkervms"
+$storageAccountKey = "BJsrdNm+q10r0WK0E95SF+whF0zXzGKoa4nGT7UfkvoBFJ7qxSxnATUvkgp1VL+LdEAMifhmlhYDxyXjOq68eQ=="
+$subscriptionName = "Visual Studio Enterprise with MSDN"
+$publicIpName = "WindTalker1"
+
+$diskBlob = "$diskName.vhd"
+$backupDiskBlob = "$diskName-backup.vhd"
+$vhdUri = "https://$storageAccount.blob.core.windows.net/vhds/$diskBlob"
+$subnetIndex = 0
+
+# login to Azure
+Add-AzureRmAccount
+Set-AzureRMContext -SubscriptionName $subscriptionName
+
+# create backup disk if it doesn't exist
+# Stop-AzureRmVM -ResourceGroupName $resourceGroupName -Name $vmName -Force -Verbose
+
+$ctx = New-AzureStorageContext -StorageAccountName $storageAccount -StorageAccountKey $storageAccountKey
+$blobCount = Get-AzureStorageBlob -Container vhds -Context $ctx | where { $_.Name -eq $backupDiskBlob } | Measure | % { $_.Count }
+
+if ($blobCount -eq 0)
+{
+  $copy = Start-AzureStorageBlobCopy -SrcBlob $diskBlob -SrcContainer "vhds" -DestBlob $backupDiskBlob -DestContainer "vhds" -Context $ctx -Verbose
+  $status = $copy | Get-AzureStorageBlobCopyState 
+  $status 
+
+  While($status.Status -eq "Pending"){
+    $status = $copy | Get-AzureStorageBlobCopyState 
+    Start-Sleep 10
+    $status
+  }
+}
+
+# delete VM
+Remove-AzureRmVM -ResourceGroupName $resourceGroupName -Name $vmName -Force -Verbose
+Remove-AzureStorageBlob -Blob $diskBlob -Container "vhds" -Context $ctx -Verbose
+Remove-AzureRmNetworkInterface -Name $nicName -ResourceGroupName $resourceGroupName -Force -Verbose
+Remove-AzureRmPublicIpAddress -Name $publicIpName -ResourceGroupName $resourceGroupName -Force -Verbose
+
+# copy backup disk
+$copy = Start-AzureStorageBlobCopy -SrcBlob $backupDiskBlob -SrcContainer "vhds" -DestBlob $diskBlob -DestContainer "vhds" -Context $ctx -Verbose
+$status = $copy | Get-AzureStorageBlobCopyState 
+$status 
+
+While($status.Status -eq "Pending"){
+  $status = $copy | Get-AzureStorageBlobCopyState 
+  Start-Sleep 10
+  $status
+}
+
+# recreate VM
+$vnet = Get-AzureRmVirtualNetwork -Name $vnetName -ResourceGroupName $resourceGroupName
+
+$pip = New-AzureRmPublicIpAddress -Name $publicIpName -ResourceGroupName $resourceGroupName -DomainNameLabel $dnsName -Location $location -AllocationMethod Dynamic -Verbose
+$nic = New-AzureRmNetworkInterface -Name $nicName -ResourceGroupName $resourceGroupName -Location $location -SubnetId $vnet.Subnets[$subnetIndex].Id -PublicIpAddressId $pip.Id -Verbose
+$vm = New-AzureRmVMConfig -VMName $vmName -VMSize $vmSize
+$vm = Add-AzureRmVMNetworkInterface -VM $vm -Id $nic.Id
+$vm = Set-AzureRmVMOSDisk -VM $vm -Name $diskName -VhdUri $vhdUri -CreateOption attach -Windows
+
+New-AzureRmVM -ResourceGroupName $resourceGroupName -Location $location -VM $vm -Verbose
+
+}
+
+
+Function Copy-AzureVMBlob {
+# https://azure.microsoft.com/en-us/blog/migrate-azure-virtual-machines-between-storage-accounts/
+function Copy-AzureVMBlob{
+    param(
+            [Parameter(Mandatory=$true)]
+            [string] $destinationStorageAccountName,
+            [Parameter(Mandatory=$true)]
+            [string] $destinationKey,
+            [Parameter(Mandatory=$true)]
+            [string] $destinationContainerName,
+            [string] $blobName = "windvmtim1-os-2016-02-22-7339A30E.vhd"
+        )
+
+    $servicename = "windvm08"
+    $vmname = "windvm08"
+    Get-AzureVM -ServiceName $servicename -Name $vmname | Stop-AzureVM
+
+    # Source Storage Account Information #
+    $sourceStorageAccountName = "windtalkerstorage"
+    $sourceKey = "ZYtqb0Gazjd3steBjNvTF0oM1T/iYYwJ0UaK7RpQa0QsX2xNGTHcKwqFhfFj9jiIYIhZw/8ETV5FNpg5Djl+Sw=="
+    $sourceContext = New-AzureStorageContext –StorageAccountName $sourceStorageAccountName -StorageAccountKey $sourceKey  
+    $sourceContainer = "vhds"
+
+    # Destination Storage Account Information #
+    
+    $destinationContext = New-AzureStorageContext –StorageAccountName $destinationStorageAccountName -StorageAccountKey $destinationKey  
+
+    # Create the destination container #    
+    New-AzureStorageContainer -Name $destinationContainerName -Context $destinationContext 
+
+    # Copy the blob # 
+    $blobCopy = Start-AzureStorageBlobCopy -DestContainer $destinationContainerName `
+                            -DestContext $destinationContext `
+                            -SrcBlob $blobName `
+                            -Context $sourceContext `
+                            -SrcContainer $sourceContainer
+}
+
+function Create-DiskFromVhd{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string] $diskName = "myMigratedTestVM",
+        [string] $os = "Windows",
+        [Parameter(Mandatory=$true)]
+        [string] $mediaLocation
+        
+    )
+    Add-AzureDisk -DiskName $diskName `
+            -OS $os `
+            -MediaLocation $mediaLocation `
+            -Verbose
+}
+
+Function Restore-AzureVMSnapshot {
+param([string]$SourceConnectionString = "Data Source=tcp:ordinotest.database.windows.net,1433; Initial Catalog=OrdinoTest; User ID=OrdinoTest@OrdinoTest;Password=1qaz@WSX;Trusted_Connection=False;Encrypt=True;Connection Timeout=30; MultipleActiveResultSets=False;", 
+      [string]$DestConnectionString = "Data Source=(Localdb)\ProjectsV12;Initial Catalog=OrdinoDev;Integrated Security=True;Connection Timeout=300;MultipleActiveResultSets=False", 
+      [string]$SourceDatabaseName = "OrdinoTest",
+      [string]$DestDatabaseName = "OrdinoDev",
+      [string]$SourceOutputFile = "C:\Temp\Hagadon\backup.bacpac", 
+      [string]$SqlInstallationFolder = "C:\Program Files (x86)\Microsoft SQL Server")
+      
+# Load DAC assembly.
+$DacAssembly = "$SqlInstallationFolder\120\DAC\bin\Microsoft.SqlServer.Dac.dll"
+Write-Host "Loading Dac Assembly: $DacAssembly"
+Add-Type -Path $DacAssembly
+Write-Host "Dac Assembly loaded."
+
+# Initialize Dac service.
+$now = $(Get-Date).ToString("HH:mm:ss")
+$Services = new-object Microsoft.SqlServer.Dac.DacServices $SourceConnectionString
+if ($Services -eq $null)
+{
+    exit
+}
+
+# Start the actual export.
+Write-Host "Starting backup at $SourceDatabaseName at $now"
+$Watch = New-Object System.Diagnostics.StopWatch
+$Watch.Start()
+$Services.ExportBacpac($SourceOutputFile, $SourceDatabaseName)
+$Watch.Stop()
+Write-Host "Backup completed in" $Watch.Elapsed.ToString()
+
+# Initialize Dac service.
+$now = $(Get-Date).ToString("HH:mm:ss")
+$Services = new-object Microsoft.SqlServer.Dac.DacServices $DestConnectionString
+if ($Services -eq $null)
+{
+    exit
+}
+
+# Start the actual restore.
+Write-Host "Starting restore to $DestDatabaseName at $now"
+$Watch = New-Object System.Diagnostics.StopWatch
+$Watch.Start()
+$Package =  [Microsoft.SqlServer.Dac.BacPackage]::Load($SourceOutputFile)
+$Services.ImportBacpac($Package, $DestDatabaseName)
+$Package.Dispose()
+$Watch.Stop()
+Write-Host "Restore completed in" $Watch.Elapsed.ToString()
+}
+}

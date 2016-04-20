@@ -45,6 +45,27 @@ if(Test-Path Function:Edit-File) {
 
 <#
 .SYNOPSIS
+Removes a directory including one with a path exceeding 260 characters.
+.EXAMPLE
+PS C:\> Remove-Item $env:Temp\SampleDirectory
+Deletes the $env:Temp\SampleDirectory directory.
+#>
+Function Remove-Directory {
+    param(
+        [ValidateScript({Test-Path $_ -PathType ‘Container’})] 
+        $directory
+    )
+
+    $tempDir = [System.IO.Path]::GetTempPath()
+    New-Item $tempDir -ItemType Directory
+
+    robocopy $tempDir $directory /MIR;
+    Remove-Item $directory -Recurse -Force
+}
+
+
+<#
+.SYNOPSIS
 Open the file specified, creating a new file if it doesn't exist.
 .EXAMPLE
 PS C:\> Edit-File $env:Temp\temp.txt
