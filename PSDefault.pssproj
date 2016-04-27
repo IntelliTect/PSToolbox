@@ -85,7 +85,6 @@
     <Compile Include="Install.Tests.ps1" />
     <Compile Include="Main.ps1" />
     <Compile Include="Main.Tests.ps1" />
-    <Compile Include="New-ScriptFile.ps1" />
     <Compile Include="PSIdeation.psm1" />
     <Compile Include="Setup.ps1" />
   </ItemGroup>
