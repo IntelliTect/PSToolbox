@@ -1,6 +1,6 @@
 Set-StrictMode -Version "Latest"
 
-Import-Module –Name $PSScriptRoot\..\Modules\CredentialManager -Verbose
+Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.CredentialManager -Verbose
 
 $targetName='tempCredentialManagerCredential.Test'
 

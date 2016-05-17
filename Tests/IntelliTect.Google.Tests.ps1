@@ -1,12 +1,12 @@
 
 
-Import-Module –Name $PSScriptRoot\..\Modules\Google -Verbose
-Import-Module –Name $PSScriptRoot\..\Modules\CredentialManager -Verbose
+Import-Module –Name $PSScriptRoot\..\Modules\IntelliTect.Google -Verbose
+Import-Module –Name $PSScriptRoot\..\Modules\IntelliTect.CredentialManager -Verbose
 
 
 
 Function Get-TestCredential {
-    $credentialName = "Credential.Google.Tests"
+    $credentialName = "IntelliTect.Google.Tests"
 
     [PSCredential]$credential=Get-CredentialManagerCredential $credentialName -ErrorAction SilentlyContinue
     if($credential -eq $null) {
