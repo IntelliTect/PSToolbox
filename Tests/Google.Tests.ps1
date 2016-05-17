@@ -1,6 +1,8 @@
-$here = $PSScriptRoot
-$sut = $PSCommandPath.Replace('.Tests', '')
-. $sut
+
+
+Import-Module –Name $PSScriptRoot\..\Modules\Google -Verbose
+Import-Module –Name $PSScriptRoot\..\Modules\CredentialManager -Verbose
+
 
 
 Function Get-TestCredential {
@@ -37,6 +39,9 @@ Describe "Get-GoogleLocationHistoryKmlFile" {
         $request = Get-GoogleLocationHistoryKmlFile $session 2016-05-01 'test.kml'
         
         'test.kml' | Should Contain "http://www.opengis.net/kml/"
+
+        # cleanup
+        rm test.kml
     }
 }
 
