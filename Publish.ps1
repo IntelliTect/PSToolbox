@@ -1,6 +1,7 @@
 ﻿[CmdletBinding(SupportsShouldProcess=$True)]
 param (
-    [string]$Filter = ""
+    [string]$Filter = "",
+    [bool]$IgnoreNoExportedCommands = $false
 )
 
 $moduleFolders = ls .\Modules\IntelliTect.* -Directory -Filter $filter
@@ -14,13 +15,13 @@ foreach ($item in $moduleFolders){
     $manifest = Test-ModuleManifest -Path "$($item.FullName)\$moduleName.psd1"
 
     if (!$manifest.Description){
-        $moduleStatus = "Missing required description. $(moduleStatus)"
+        $moduleStatus = "Missing required description. $($moduleStatus)"
     }
     if (!$manifest.Author){
-        $moduleStatus = "Missing required author(s). $(moduleStatus)"
+        $moduleStatus = "Missing required author(s). $($moduleStatus)"
     }
-    if ($manifest.ExportedCommands.Count -eq 0){
-        $moduleStatus = "No exported commands. $(moduleStatus)"
+    if ($manifest.ExportedCommands.Count -eq 0 -and -not $IgnoreNoExportedCommands){
+        $moduleStatus = "No exported commands. $($moduleStatus)"
     }
 
     # This cmdlet doesn't report errors properly.
@@ -28,15 +29,15 @@ foreach ($item in $moduleFolders){
     $moduleInfo = Find-Module $moduleName -ErrorAction SilentlyContinue -RequiredVersion $manifest.Version
 
     if ($moduleInfo -ne $null) {
-        $moduleStatus = "Current version is already published. $(moduleStatus)"
+        $moduleStatus = "Current version is already published. $($moduleStatus)"
     }
 
     if ($moduleStatus -eq "") {
-        $moduleStatus = "Ready to publish."
+        Write-Host "$($moduleName): Ready to publish." -ForegroundColor Green
         $modulesToPublish += $item
+    } else {
+        Write-Host "$($moduleName): $moduleStatus" -ForegroundColor Red
     }
-    
-    Write-Host "$($moduleName): $moduleStatus" -ForegroundColor Green
 }
 
 if ($PSCmdlet.ShouldProcess($modulesToPublish)) {
