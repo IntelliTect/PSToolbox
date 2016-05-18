@@ -1,43 +1,48 @@
-﻿
-$moduleFolders = ls .\Modules\IntelliTect.* -Directory
+﻿[CmdletBinding(SupportsShouldProcess=$True)]
+param (
+    [string]$Filter = "",
+    [bool]$IgnoreNoExportedCommands = $false
+)
 
-Write-Host "Testing the manifest files for any defects..."
+$moduleFolders = ls .\Modules\IntelliTect.* -Directory -Filter $filter
+$modulesToPublish = @()
+
+Write-Host "Searching for manifests ready to publish"
 foreach ($item in $moduleFolders){
     $moduleName = $item.Name
+    $moduleStatus = ""
 
     $manifest = Test-ModuleManifest -Path "$($item.FullName)\$moduleName.psd1"
-    $manifest
+
+    if (!$manifest.Description){
+        $moduleStatus = "Missing required description. $($moduleStatus)"
+    }
+    if (!$manifest.Author){
+        $moduleStatus = "Missing required author(s). $($moduleStatus)"
+    }
+    if ($manifest.ExportedCommands.Count -eq 0 -and -not $IgnoreNoExportedCommands){
+        $moduleStatus = "No exported commands. $($moduleStatus)"
+    }
 
     # This cmdlet doesn't report errors properly.
     # We can't use -ErrorVariable, and can't use try/catch. So, we use a slient continue and check the result for null instead.
-    $moduleInfo = Find-Module $moduleName -ErrorAction SilentlyContinue
+    $moduleInfo = Find-Module $moduleName -ErrorAction SilentlyContinue -RequiredVersion $manifest.Version
 
-    if ($moduleInfo -eq $null) {
-        Write-Host "No previous version found - this must be a new module. Congratulations!"
-        Write-Host
-    }
-    elseif ($moduleInfo.Version -ge $manifest.Version){
-        throw "A newer or identical version of $moduleName already exists on PSGallery. LocalVersion: $($manifest.Version), RemoteVersion: $($moduleInfo.Version)"
-    }
-    
-    if (!$manifest.Description){
-        throw "The module $($item.name) is missing a Description in its manifest. PowerShell Gallery requires this to be present."
-    }
-    if (!$manifest.Author){
-        throw "The module $($item.name) is missing Author(s) from its manifest. PowerShell Gallery requires this to be present."
-    }
-    if ($manifest.ExportedCommands.Count -eq 0){
-        throw "The module $($item.name) does not have any exported commands. Please remove the module, or export some commands from it."
+    if ($moduleInfo -ne $null) {
+        $moduleStatus = "Current version is already published. $($moduleStatus)"
     }
 
+    if ($moduleStatus -eq "") {
+        Write-Host "$($moduleName): Ready to publish." -ForegroundColor Green
+        $modulesToPublish += $item
+    } else {
+        Write-Host "$($moduleName): $moduleStatus" -ForegroundColor Red
+    }
 }
 
-
-Write-Host "We aren't ready for publishing yet. Ending now before we actually perform the publish. Remove this part of the script once we're ready." -ForegroundColor Green
-return;
-
-$apiKey = Read-Host "Enter your PS Gallery API Key"
-foreach ($item in $moduleFolders){
-    
-    Publish-Module -Path $item.FullName -NuGetApiKey $apiKey
+if ($PSCmdlet.ShouldProcess($modulesToPublish)) {
+    $apiKey = Read-Host "Enter your PS Gallery API Key"
+    foreach ($item in $modulesToPublish) {    
+        Publish-Module -Path $item.FullName -NuGetApiKey $apiKey
+    }
 }
