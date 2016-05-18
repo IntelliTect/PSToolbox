@@ -1,25 +1,4 @@
-﻿function Confirm-AzureRmSession {
-    <#
-        .SYNOPSIS
-        Confirm Azure RM session exists.
-        .DESCRIPTION
-        Confirms an Azure RM session exists by checking for Get-AzureRmContext.  Prompts the user to sign in if it doesn't.
-        .EXAMPLE
-        Confirm-AzureRmSession
-    #>
-
-    $Error.Clear();
-    $currentErrorAction = $ErrorActionPreference
-    $ErrorActionPreference = "SilentlyContinue"
-    $context = Get-AzureRmContext
-    if ($context -eq $null) {
-        Login-AzureRmAccount | Out-Null
-    }
-    $Error.Clear()
-    $ErrorActionPreference = $currentErrorAction
-}
-
-function New-AzureRmVirtualMachine {
+﻿function New-AzureRmVirtualMachine {
     <#
         .SYNOPSIS
         Creates a new Azure RM virtual machine
@@ -51,7 +30,6 @@ function New-AzureRmVirtualMachine {
         Name of network security group.  Will be created, along with an Allow_RDP rule, if it doesn't exist.  DEFAULT: $ResourceGroupName
         .PARAMETER AdminCredentials
         PSCredential with username/password of admin account for new VM.  DEFAULT: vmadmin / P@ssword1!
-
     #>
     [CmdletBinding()]    
 	param (
@@ -196,4 +174,146 @@ function New-AzureRmVirtualMachine {
         Success = $true
         Message = "VM created successfully"
     }
+}
+
+function Enable-RemotePowerShellOnAzureRmVm {
+    # Much of the following script came from this blog post by Marcus Robinson
+    # http://www.techdiction.com/2016/02/12/powershell-function-to-enable-winrm-over-https-on-an-azure-resource-manager-vm/
+
+    <#
+        .SYNOPSIS
+        Remotely configures an Azure RM virtual machine to enable Powershell remoting.
+        .DESCRIPTION
+        Generates a script locally, then uploads it to blob storage, where it is then installed as a custom script extension and run on the VM.  
+            Opens the appropriate port in the network security group rules.
+        .EXAMPLE
+        Enable-RemotePowerShellOnAzureRmVm -ResourceGroupName myvirtualmachines -VMName myvm
+        .PARAMETER VMName
+        Name of the virtual machine.  REQUIRED
+        .PARAMETER ResourceGroupName
+        Name of the resource group.  REQUIRED
+        .PARAMETER DnsName
+        Name of the computer that will be connecting.  Used in name of certificate and in WinRM listener.  DEFAULT: $env:ComputerName
+        .PARAMETER SourceAddressPrefix
+        Prefix of source IP addresses in network security group rule.  DEFAULT: *
+
+    #>
+    [CmdletBinding()]
+    Param (
+        [parameter(Mandatory=$true)]
+        [String] $VMName,
+          
+        [parameter(Mandatory=$true)]
+        [String] $ResourceGroupName,      
+
+        [parameter()]
+        [String] $DNSName = $env:COMPUTERNAME,
+          
+        [parameter()]
+        [String] $SourceAddressPrefix = "*"
+    ) 
+    
+    $scriptName = "ConfigureWinRM_HTTPS.ps1"
+    $extensionName = "EnableWinRM_HTTPS"
+    $blobContainer = "scripts"
+    $securityRuleName = "WinRM_HTTPS"
+    
+    # define a temporary file in the users TEMP directory
+    Write-Information -MessageData "Creating script locally that we'll upload to the storage account" -InformationAction Continue
+    $file = $env:TEMP + "\" + $scriptName
+      
+    #Create the file containing the PowerShell
+    {
+        # POWERSHELL TO EXECUTE ON REMOTE SERVER BEGINS HERE
+        param($DNSName)
+        
+        # Force all network locations that are Public to Private
+        Get-NetConnectionProfile | ? { $_.NetworkCategory -eq "Public" } | % { Set-NetConnectionProfile -InterfaceIndex $_.InterfaceIndex -NetworkCategory Private }
+          
+        # Ensure PS remoting is enabled, although this is enabled by default for Azure VMs
+        Enable-PSRemoting -Force
+        
+        # Create rule in Windows Firewall, if it's not already there
+        if ((Get-NetFirewallRule | ? { $_.Name -eq "WinRM HTTPS" }).Count -eq 0)
+        {
+            New-NetFirewallRule -Name "WinRM HTTPS" -DisplayName "WinRM HTTPS" -Enabled True -Profile Any -Direction Inbound -Action Allow -LocalPort 5986 -Protocol TCP
+        }
+          
+        # Create Self Signed certificate and store thumbprint, if it doesn't already exist
+        $thumbprint = (Get-ChildItem -Path Cert:\LocalMachine\My | ? { $_.Subject -eq "CN=$DNSName" } | Select -First 1).Thumbprint
+        if ($thumbprint -eq $null)
+        {
+            $thumbprint = (New-SelfSignedCertificate -DnsName $DNSName -CertStoreLocation Cert:\LocalMachine\My).Thumbprint
+        }
+          
+        # Run WinRM configuration on command line. DNS name set to computer hostname, you may wish to use a FQDN
+        $cmd = "winrm create winrm/config/Listener?Address=*+Transport=HTTPS @{Hostname=""$DNSName""; CertificateThumbprint=""$thumbprint""}"
+        cmd.exe /C $cmd
+          
+        # POWERSHELL TO EXECUTE ON REMOTE SERVER ENDS HERE
+    }  | out-file -width 1000 $file -force
+    
+      
+    # Get the VM we need to configure
+    Write-Information -MessageData "Getting information needed to find and update the blob storage with the new script" -InformationAction Continue
+    $vm = Get-AzureRmVM -ResourceGroupName $ResourceGroupName -Name $VMName
+    
+    # Get storage account name
+    $storageaccountname = $vm.StorageProfile.OsDisk.Vhd.Uri.Split('.')[0].Replace('https://','')
+      
+    # get storage account key
+    $key = (Get-AzureRmStorageAccountKey -Name $storageaccountname -ResourceGroupName $ResourceGroupName).Key1
+      
+    # create storage context
+    $storagecontext = New-AzureStorageContext -StorageAccountName $storageaccountname -StorageAccountKey $key
+      
+    # create a container called scripts
+    if ((Get-AzureStorageContainer -Context $storagecontext | ? { $_.Name -eq $blobContainer}).Count -eq 0)
+    {
+        $ignore1 = New-AzureStorageContainer -Name $blobContainer -Context $storagecontext
+    }
+      
+    #upload the file
+    $ignore1 = Set-AzureStorageBlobContent -Container $blobContainer -File $file -Blob $scriptName -Context $storagecontext -force
+    
+    # Create custom script extension from uploaded file
+    Write-Information -MessageData "Create and run a script extension from our uploaded script" -InformationAction Continue
+    $ignore1 = Set-AzureRmVMCustomScriptExtension -ResourceGroupName $ResourceGroupName -VMName $VMName -Name $extensionName -Location $vm.Location -StorageAccountName $storageaccountname -StorageAccountKey $key -FileName $scriptName -ContainerName $blobContainer -RunFile $scriptName -Argument $DNSName
+      
+    # Get the name of the first NIC in the VM
+    Write-Information -MessageData "Create a new security rule that will allow us to connect remotely" -InformationAction Continue
+    $nic = Get-AzureRmNetworkInterface -ResourceGroupName $ResourceGroupName -Name (Get-AzureRmResource -ResourceId $vm.NetworkInterfaceIDs[0]).ResourceName
+    
+    # Get the network security group attached to the NIC
+    $nsg = Get-AzureRmNetworkSecurityGroup  -ResourceGroupName $ResourceGroupName  -Name (Get-AzureRmResource -ResourceId $nic.NetworkSecurityGroup.Id).Name 
+        
+    # Add the new NSG rule, and update the NSG
+    $nsg | Add-AzureRmNetworkSecurityRuleConfig -Name $securityRuleName -Priority 1100 -Protocol TCP -Access Allow -SourceAddressPrefix $SourceAddressPrefix -SourcePortRange * -DestinationAddressPrefix * -DestinationPortRange 5986 -Direction Inbound   | Set-AzureRmNetworkSecurityGroup
+    
+    # get the NIC public IP
+    $ip = Get-AzureRmPublicIpAddress -ResourceGroupName $ResourceGroupName -Name (Get-AzureRmResource -ResourceId $nic.IpConfigurations[0].PublicIpAddress.Id).ResourceName 
+    
+    Write-Host "To connect to the VM using the IP address while bypassing certificate checks use the following command:" -ForegroundColor Green
+    Write-Host "Enter-PSSession -ComputerName " $ip.IpAddress  " -Credential <admin_username> -UseSSL -SessionOption (New-PsSessionOption -SkipCACheck -SkipCNCheck)" -ForegroundColor Green
+}
+
+function Confirm-AzureRmSession {
+    <#
+        .SYNOPSIS
+        Confirm Azure RM session exists.
+        .DESCRIPTION
+        Confirms an Azure RM session exists by checking for Get-AzureRmContext.  Prompts the user to sign in if it doesn't.
+        .EXAMPLE
+        Confirm-AzureRmSession
+    #>
+
+    $Error.Clear();
+    $currentErrorAction = $ErrorActionPreference
+    $ErrorActionPreference = "SilentlyContinue"
+    $context = Get-AzureRmContext
+    if ($context -eq $null) {
+        Login-AzureRmAccount | Out-Null
+    }
+    $Error.Clear()
+    $ErrorActionPreference = $currentErrorAction
 }
