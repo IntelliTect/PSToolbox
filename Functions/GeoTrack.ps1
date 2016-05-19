@@ -100,3 +100,33 @@ Function Convert-GeoTrack {
         Invoke-Expression $command
     }
 }
+
+#pb=!1m8!1m3!1iYYYY!2iMM!3iDD!2m3!1iYYYY!2iMM!3iDD
+Function Get-GoogleLocationHistoryKmlFileUri {
+    [CmdletBinding()] param(
+        [DateTime] $DateTime
+    )
+    #Subtract 1 from the month because the months are Zero based.
+    #Note that KML files are located in PST.
+    #authuser=1 indicates which user in the Goolge User Dropdown (0 based)
+    return "https://www.google.com/maps/timeline/kml?authuser=1&pb=!1m8!1m3!1i$($DateTime.Year)!2i$($DateTime.Month-1)!3i$($DateTime.Day)!2m3!1i$($DateTime.Year)!2i$($DateTime.Month-1)!3i$($DateTime.Day)"
+                                                               #pb=!1m8!1m3!1iYYYY             !2iMM                !3iDD                !2m3!1iYYYY             !2iMM                !3iDD
+}
+
+
+Function Get-GoogleLocationHistoryKmlFile {
+    [CmdletBinding()] param(
+        [DateTime] $DateTime,
+        [FileInfo] $outFile
+    )
+    Write-Error "Authentication not functioning yet."
+    $uri = Get-GoogleLocationHistoryKmlFileUri $DateTime
+    Invoke-WebRequest -Uri $uri -OutFile $outFile
+}
+
+<#
+$locationHistoryUrl = "https://www.google.com/maps/timeline/kml?authuser=0&pb=!1m8!1m3!1i2016!2i3!3i9!2m3!1i2016!2i3!3i9"
+$webRequestResult1 = invoke-webrequest -uri "https://accounts.google.com/ServiceLogin" -SessionVariable sessionData1
+$webRequestResult2 = Invoke-WebRequest -Uri "https://accounts.google.com/AccountLoginInfo" -Method Post -Body $webRequestResult1.Forms[0].Fields -SessionVariable sessionData2
+$webRequestResult3 = Invoke-WebRequest -Uri $locationHistoryUrl -Method Get  -Body $webRequestResult1.Forms[0].Fields -SessionVariable sessionData2 -UseBasicParsing -OutFile out.txt
+#>

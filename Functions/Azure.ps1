@@ -1,3 +1,13 @@
+Function script:ShouldProcess {
+    [CmdletBinding(SupportsShouldProcess=$True)]
+    param(
+	    [string] $verboseDescription,
+	    [string] $verboseWarning,
+	    [string] $caption
+    )
+
+    
+    return $PSCmdlet.ShouldProcess($verboseDescription, $verboseWarning, $caption)
 function Ensure-AzureSession {
     $Error.Clear();
     $currentErrorAction = $ErrorActionPreference
@@ -11,31 +21,53 @@ function Ensure-AzureSession {
     $Error.Clear()
     $ErrorActionPreference = $currentErrorAction
 }
-
+  
 Function Setup-AzureConfiguaration {
-    [CmdletBinding(ConfirmImpact="High")]
-    param (
-		[pscredential]$azureCredentials = (Get-Credential -Message "Enter your azure credentials here.")
-    )
+    # Removed ConfirmImpact="High" as you can't seem to have -force and -confirm and force is more typical with Azure PowerShell
+    [CmdletBinding(ConfirmImpact="High", SupportsShouldProcess=$True)] 
+    param(
+           [pscredential]$azureCredentials = (Get-Credential -Message "Enter your azure credentials here."),
+           [switch]$force 
+        )
 
-    if (!$PSCmdlet.ShouldProcess("Install-AzureConfig", "Confirm to execute", "3")) {
-        return
-    }
+       if(!$force -and (!(ShouldProcess "Install-Module AzureRM`nInstall-AzureRM`nImport-Module AzureRM`nInstall-Module Azure" `
+        “Installing Azure Modules" "Confirm to execution" )) ) {
+            return
+       }
 
-    # Requires PSGet
-    Install-Module AzureRM        
-    Install-AzureRM
-    Install-Module Azure
-    Import-Module AzureRM
-    Install-AzureRM
+         
+        $nugetPackageProvider = Get-PackageProvider Nuget
+        $psGalleryRepository = Get-PSRepository PSGallery
+        if($psGalleryRepository) {
+            $psRepositoryInstallationPolicy = (Get-PSRepository PSGallery).InstallationPolicy
+        }
+        try{
+            if(!(Get-PackageProvider Nuget)) {
+                # This is not uninstalled if installed since there is not Uninstall-PackageProvider or Remove-PackageProvider
+                Install-PackageProvider -Name NuGet -Force 
+            }
+            if((Get-PSRepository PSGallery).InstallationPolicy -ne "Trusted") {
+                Set-PSRepository -Name "PSGallery" -InstallationPolicy "Trusted"
+            }
 
-    Write-Warning "Prompts for Azure Credentials"
-    Add-AzureAccount
+            #Install-Module AzureRM -Force
+            #Install-AzureRM -Force
+            #Import-Module AzureRM -Force
+            Install-Module Azure -Force
+
+            Write-Warning "Prompts for Azure Credentials"
+            Write-Output Add-AzureAccount # -Credential $azureCredentials doesn't work for live IDs.
         
-    Write-Warning "Prompts to download PublishSettings file"
-    Get-AzurePublishSettingsFile
-    Get-ChildItem "$env:USERPROFILE\Downloads\" "*.publishsettings" | 
-        %{ Import-AzurePublishSettingsFile $_.FullName }
+            Write-Warning "Prompts to download PublishSettings file"
+            Write-Output Get-AzurePublishSettingsFile 
+            Get-ChildItem "$env:USERPROFILE\Downloads\" "*.publishsettings" | 
+                %{ Import-AzurePublishSettingsFile $_.FullName }
+                    }
+        finally {
+            if((Get-PSRepository PSGallery).InstallationPolicy -ne $psRepositoryInstallationPolicy) {
+                Set-PSRepository -Name "PSGallery" -InstallationPolicy $psRepositoryInstallationPolicy
+            }
+        }
 }
 
 Function Initialize-Azure {
@@ -470,6 +502,7 @@ Function Register-AzurePublishSettings {
 
 Function Get-AzureStarted {
     #see http://blogs.technet.com/b/heyscriptingguy/archive/2013/06/22/weekend-scripter-getting-started-with-windows-azure-and-powershell.aspx
+    Add-AzureRmAccount
     Add-AzureAccount
 }
 
