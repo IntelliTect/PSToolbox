@@ -101,25 +101,6 @@ Function Convert-GeoTrack {
     }
 }
 
-Function Get-GoogleSessionVariable {
-    [CmdletBinding()] param(
-        [string] $email,
-        [string] $password
-    )
-
-    $EnterEmailPage = Invoke-WebRequest https://accounts.google.com/ServiceLoginAuth -SessionVariable session
-    $EnterEmailPage.Forms[0].Fields["Email"] = $email
-
-    
-    $EnterPasswordPage = Invoke-WebRequest -Uri $EnterEmailPage.Forms[0].Action -Method POST -Body $EnterEmailPage.Forms[0].Fields -WebSession $session
-    $EnterPasswordPage.Forms[0].Fields["Passwd"] = $password
-    $EnterPasswordPage.Forms[0].Fields["Email"] = $email
-
-    $AuthCompletePage = Invoke-WebRequest -Uri $EnterPasswordPage.Forms[0].Action -Method POST -Body $EnterPasswordPage.Forms[0].Fields -WebSession $session
-
-    return $session
-}
-
 #pb=!1m8!1m3!1iYYYY!2iMM!3iDD!2m3!1iYYYY!2iMM!3iDD
 Function Get-GoogleLocationHistoryKmlFileUri {
     [CmdletBinding()] param(
@@ -135,13 +116,12 @@ Function Get-GoogleLocationHistoryKmlFileUri {
 
 Function Get-GoogleLocationHistoryKmlFile {
     [CmdletBinding()] param(
-        [Microsoft.PowerShell.Commands.WebRequestSession] $session,
         [DateTime] $DateTime,
-        [System.IO.FileInfo] $outFile
+        [FileInfo] $outFile
     )
-
+    Write-Error "Authentication not functioning yet."
     $uri = Get-GoogleLocationHistoryKmlFileUri $DateTime
-    Invoke-WebRequest -Uri $uri -OutFile $outFile -WebSession $session
+    Invoke-WebRequest -Uri $uri -OutFile $outFile
 }
 
 <#
