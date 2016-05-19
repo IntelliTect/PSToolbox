@@ -1,6 +1,6 @@
-Deploying to PowerShellGallery
+##Deploying to PowerShellGallery
 
-Steps to Deploy
+###Steps to Deploy
 - Sign in to powershellgallery.com using the IntelliTect account and get the API key.
 - Open a PowerShell window as administrator.
 - Navigate to the root folder of the PowerShellGallery project.
@@ -13,7 +13,7 @@ Steps to Deploy
 - When prompted, enter the API key
 
 
-Module Requirements
+###Module Requirements
 - Must have Description and Author properties in the manifest.
 - Must contain exported commands.
 - Current version must not exist on powershellgallery.com.
