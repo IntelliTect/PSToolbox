@@ -12,7 +12,7 @@ If(!(get-module PsGet -ListAvailable)) {
 }
 
 If(!($ENV:ChocolateyInstall)) {
-    if ($pscmdlet.ShouldProcess("Install Chocolatey (http:\\Chocolatey.org)")) {
+    if ($pscmdlet.ShouldProcess("Install Chocolatey (http://Chocolatey.org)")) {
         Invoke-Expression ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))
         $ENV:ChocolateyInstall="$ENV:Systemdrive\chocolatey\bin"
         $ENV:PATH="$ENV:PATH;$ENV:ChocolateyInstall"
@@ -31,14 +31,14 @@ If($PSVersionTable.PSVersion -lt "3.0") {
 If(get-module PsGet -ListAvailable) {
     #ToDo: Refactor into Install-ModuleFromChocolatey
     If(!(get-module Pscx -ListAvailable)) {
-        If ($pscmdlet.ShouldProcess("Install PSCX (http:\\pscx.codeplex.com)")) {
+        If ($pscmdlet.ShouldProcess("Install PSCX (http://pscx.codeplex.com)")) {
             Install-Module PSCX -verbose
         }
     }
 
     #Install Pester
     If(!(get-module Pester -ListAvailable)) {
-        If ($pscmdlet.ShouldProcess("Install PSCX (http:\\pscx.codeplex.com)")) {
+        If ($pscmdlet.ShouldProcess("Install Pester (https://github.com/pester/Pester)")) {
             Install-Module Pester -verbose
         }
     }
