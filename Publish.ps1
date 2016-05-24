@@ -4,6 +4,7 @@ param (
     [bool]$IgnoreNoExportedCommands = $false
 )
 
+$omniModule = "IntelliTect.All"
 $moduleFolders = ls .\Modules\IntelliTect.* -Directory -Filter $filter
 $modulesToPublish = @()
 
@@ -20,7 +21,7 @@ foreach ($item in $moduleFolders){
     if (!$manifest.Author){
         $moduleStatus = "Missing required author(s). $($moduleStatus)"
     }
-    if ($manifest.ExportedCommands.Count -eq 0 -and -not $IgnoreNoExportedCommands){
+    if ($manifest.ExportedCommands.Count -eq 0 -and $moduleName -ne $omniModule -and -not $IgnoreNoExportedCommands){
         $moduleStatus = "No exported commands. $($moduleStatus)"
     }
 
@@ -28,7 +29,10 @@ foreach ($item in $moduleFolders){
     # We can't use -ErrorVariable, and can't use try/catch. So, we use a slient continue and check the result for null instead.
     $moduleInfo = Find-Module $moduleName -ErrorAction SilentlyContinue -RequiredVersion $manifest.Version
 
+    
+    $color = [System.ConsoleColor]::Red
     if ($moduleInfo -ne $null) {
+        $color = [System.ConsoleColor]::Gray
         $moduleStatus = "Current version is already published. $($moduleStatus)"
     }
 
@@ -36,7 +40,7 @@ foreach ($item in $moduleFolders){
         Write-Host "$($moduleName): Ready to publish." -ForegroundColor Green
         $modulesToPublish += $item
     } else {
-        Write-Host "$($moduleName): $moduleStatus" -ForegroundColor Red
+        Write-Host "$($moduleName): $moduleStatus" -ForegroundColor $color
     }
 }
 
