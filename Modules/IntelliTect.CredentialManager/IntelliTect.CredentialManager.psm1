@@ -1,5 +1,4 @@
 Set-StrictMode -Version "Latest"
-$here = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 function Set-CredentialManagerCredential {
     <#
@@ -29,8 +28,6 @@ function Set-CredentialManagerCredential {
             [PSCredential]$credential = $null # Removed Get-Credential default value because otherwise you get prompted even when using the SplitCredentialValues parameter set.
         ,[Parameter(ParameterSetName="SplitCredentialValues", Mandatory=$true, Position=1)]
             [string]$userName
-        ,[Parameter(ParameterSetName="SplitCredentialValues", Position=2)]
-            $password=$null
     )
 
     switch ($PsCmdlet.ParameterSetName) 
@@ -42,11 +39,8 @@ function Set-CredentialManagerCredential {
             break;
         } 
         "SplitCredentialValues"  {
-            if($password -eq $null) {
-                $password = (Read-Host -AsSecureString -Prompt "Enter the password")
-            } elseif( $password -is [string]) { 
-                $password = ($password |convertto-securestring -Force -AsPlainText) 
-            }
+            $password = (Read-Host -AsSecureString -Prompt "Enter the password")
+
             $credential=new-object -typename System.Management.Automation.PSCredential $userName,$password; 
             break;
         } 
@@ -120,6 +114,10 @@ function Get-CredentialManagerCredential {
         .LINK
         Get-Credential
     #>
+
+    # We have to supress this warning because we are taking the 
+    # credential directly from native code - we have no choice but to use ConvertTo-SecureString
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingConvertToSecureStringWithPlainText", "")]
     [CmdletBinding()]
     param([Parameter(Mandatory=$true)][string]$TargetName)
 
@@ -249,11 +247,12 @@ function Get-CredentialManagerCredential {
         $cred = $critCred.GetCredential()
         $username = $cred.UserName
         $securePassword = $cred.CredentialBlob | ConvertTo-SecureString -AsPlainText -Force
+        $cred.CredentialBlob = ""
         $cred = $null
         return new-object System.Management.Automation.PSCredential $username, $securePassword
     } else {
         #TODO: Determine if it is better to Error or return $null?
-        Write-Error "No credentials where found in Windows Credential Manager for TargetName: $TargetName"
+        Write-Error "No credentials were found in Windows Credential Manager for TargetName: $TargetName"
     }
 
 }
