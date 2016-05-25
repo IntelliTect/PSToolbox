@@ -1,5 +1,5 @@
-# PowershellGallery
-Powershell scripts and modules hosted at https://www.powershellgallery.com/
+# IntelliTect.PSToolbox
+IntelliTect's PowerShell scripts and modules hosted at https://www.powershellgallery.com/
 
 
 ## Installation
