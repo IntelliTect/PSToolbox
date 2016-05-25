@@ -1,4 +1,4 @@
-﻿[CmdletBinding(SupportsShouldProcess=$True)]
+﻿[CmdletBinding(SupportsShouldProcess=$True, ConfirmImpact="High")]
 param (
     [string]$Filter = "",
     [bool]$IgnoreNoExportedCommands = $false
@@ -44,9 +44,29 @@ foreach ($item in $moduleFolders){
     }
 }
 
-if ($PSCmdlet.ShouldProcess($modulesToPublish)) {
-    $apiKey = Read-Host "Enter your PS Gallery API Key"
+if ($modulesToPublish.Count -gt 0){
+
+    if (Get-Module Intellitect.CredentialManager -ListAvailable) {
+        Import-Module IntelliTect.CredentialManager
+        $credential = Get-CredentialManagerCredential "psgallery" -ErrorAction SilentlyContinue
+        if (!$credential) {
+            Write-Host "No credentials were found for TargetName: psgallery"
+        }
+        else {
+            $apiKey = ([PSCredential]$credential).GetNetworkCredential().Password
+            Write-Host "Retrieved API key from credential manager."
+        }
+    } else {
+        Write-Host "Couldn't find Intellitect.CredentialManager for automatic API key retrieval"
+    }
+
+    if (!$apiKey) {
+        $apiKey = Read-Host "Enter your PS Gallery API Key"
+    }
+    
     foreach ($item in $modulesToPublish) {    
-        Publish-Module -Path $item.FullName -NuGetApiKey $apiKey
+        if ($PSCmdlet.ShouldProcess($item.Name)) {
+            Publish-Module -Path $item.FullName -NuGetApiKey $apiKey
+        }
     }
 }
