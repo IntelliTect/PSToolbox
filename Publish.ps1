@@ -1,7 +1,8 @@
 ﻿[CmdletBinding(SupportsShouldProcess=$True, ConfirmImpact="High")]
 param (
     [string]$Filter = "",
-    [bool]$IgnoreNoExportedCommands = $false
+    [bool]$IgnoreNoExportedCommands = $false,
+    [switch]$SaveAPIKey
 )
 
 $omniModule = "IntelliTect.PSToolbox"
@@ -60,22 +61,24 @@ foreach ($item in $moduleFolders){
 if ($modulesToPublish.Count -gt 0){
     $apiKey = $null
 
-    if (Get-Module Intellitect.CredentialManager -ListAvailable) {
-        Import-Module IntelliTect.CredentialManager
-        $credential = Get-CredentialManagerCredential "psgallery" -ErrorAction SilentlyContinue
+    Import-Module (Join-Path $PSScriptRoot /Modules/IntelliTect.CredentialManager)
+    $credential = Get-CredentialManagerCredential "pstoolbox" -ErrorAction SilentlyContinue
+    if (!$SaveAPIKey) {
         if (!$credential) {
-            Write-Host "No credentials were found for TargetName: psgallery"
-        }
-        else {
+            Write-Host "No credentials were found for TargetName: pstoolbox."
+            Write-Host "If you want to save the API key, re-run with the -SaveAPIKey flag"
+        } else {
             $apiKey = ([PSCredential]$credential).GetNetworkCredential().Password
             Write-Host "Retrieved API key from credential manager."
         }
-    } else {
-        Write-Host "Couldn't find Intellitect.CredentialManager for automatic API key retrieval. Install it, and add a credential with TargetName psgallery"
     }
     
     if (!$apiKey) {
         $apiKey = Read-Host "Enter your PS Gallery API Key"
+        if ($apiKey -and $SaveAPIKey) {
+            $cred = New-Object System.Management.Automation.PSCredential "intellitect", ($apiKey | ConvertTo-SecureString -AsPlainText -Force)
+            Set-CredentialManagerCredential -TargetName "pstoolbox" -Credential $cred
+        }
     }
     if (!$apiKey) {
         throw "No API key was given. Stopping"
