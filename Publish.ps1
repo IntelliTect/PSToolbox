@@ -5,7 +5,7 @@ param (
 )
 
 $omniModule = "IntelliTect.All"
-$moduleFolders = ls .\Modules\IntelliTect.* -Directory -Filter $filter
+$moduleFolders = $moduleFolders = Get-ChildItem $PSScriptRoot\Modules\IntelliTect.* -Directory -Filter $filter
 $modulesToPublish = @()
 
 Write-Host "Searching for manifests ready to publish"
