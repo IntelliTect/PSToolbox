@@ -57,7 +57,7 @@ Function Search-Google
 
 Function Get-GoogleSessionVariable {
     [CmdletBinding()] param(
-        [PSCredential] $credential
+        [PSCredential] $credential = (Get-Credential)
     )
 
     $EnterEmailPage = Invoke-WebRequest https://accounts.google.com/ServiceLoginAuth -SessionVariable session
