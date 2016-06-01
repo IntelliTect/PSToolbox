@@ -57,18 +57,49 @@ Function Search-Google
 
 Function Get-GoogleSession {
     [CmdletBinding()] param(
-        [PSCredential] $credential = (Get-Credential)
+        [PSCredential] $credential = $null,
+        [switch] $SaveCredential
     )
+
+    if (-not $credential) {
+        $credential = Get-CredentialManagerCredential "IntelliTect.Google.Saved" -ErrorAction SilentlyContinue
+        if (-not $credential) {
+            $credential = Get-Credential
+        }
+        else {
+            Write-Host "Using saved credential 'IntelliTect.Google.Saved'"
+        }
+        if (-not $credential) {
+            throw "No credentials provided"
+        }
+    }
+
+    if ($SaveCredential) {
+        Set-CredentialManagerCredential -TargetName "IntelliTect.Google.Saved" -credential $credential
+    }
+
+    Write-Warning "You may get a popup dialog asking you to allow cookies when using Get-GoogleSession."
+    Write-Warning "If it doesn't work, make sure that dialog isn't waiting for a response underneath a window somewhere."
 
     $EnterEmailPage = Invoke-WebRequest https://accounts.google.com/ServiceLoginAuth -SessionVariable session
     $EnterEmailPage.Forms[0].Fields["Email"] = $credential.UserName
 
-    
     $EnterPasswordPage = Invoke-WebRequest -Uri $EnterEmailPage.Forms[0].Action -Method POST -Body $EnterEmailPage.Forms[0].Fields -WebSession $session
+    if ($EnterPasswordPage.Content -match "Google doesn&#39;t recognize that email"){
+        throw "The provided username to Get-GoogleSession is not valid"
+    }
     $EnterPasswordPage.Forms[0].Fields["Passwd"] = $credential.GetNetworkCredential().Password
     $EnterPasswordPage.Forms[0].Fields["Email"] = $credential.UserName
 
+
     $AuthCompletePage = Invoke-WebRequest -Uri $EnterPasswordPage.Forms[0].Action -Method POST -Body $EnterPasswordPage.Forms[0].Fields -WebSession $session
+    if ($AuthCompletePage.Content -match "The email and password you entered don&#39;t match"){
+        throw "The provided password to Get-GoogleSession is not valid"
+    }
+    $sidCookie = ($session.Cookies.GetCookies("https://www.google.com") | where {$_.Name -eq "SID"}).Value
+    if (-not $sidCookie){
+        throw "Could not authenticate with Google. Please verify your credentials and try again"
+    }
 
     return $session
 }
