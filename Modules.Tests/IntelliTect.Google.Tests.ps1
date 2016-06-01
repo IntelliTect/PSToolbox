@@ -21,7 +21,7 @@ Describe "Get-GoogleSessionVariable" {
     It "Gets a WebRequestSession with Google session cookies" {
         $credential = Get-TestCredential
 
-        $session = Get-GoogleSessionVariable $credential
+        $session = Get-GoogleSession $credential
         $sidCookie = ($session.Cookies.GetCookies("https://www.google.com") | where {$_.Name -eq "SID"}).Value
 
         # Check that the SID cookie is at least 50 characters.
@@ -34,7 +34,7 @@ Describe "Get-GoogleLocationHistoryKmlFile" {
     It "Gets a kml file" {
         $credential = Get-TestCredential
 
-        $session = Get-GoogleSessionVariable $credential
+        $session = Get-GoogleSession $credential
 
         $request = Get-GoogleLocationHistoryKmlFile $session 2016-05-01 'test.kml'
         

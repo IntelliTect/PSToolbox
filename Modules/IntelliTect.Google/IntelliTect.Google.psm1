@@ -55,7 +55,7 @@ Function Search-Google
 
 
 
-Function Get-GoogleSessionVariable {
+Function Get-GoogleSession {
     [CmdletBinding()] param(
         [PSCredential] $credential = (Get-Credential)
     )
@@ -76,6 +76,7 @@ Function Get-GoogleSessionVariable {
 #pb=!1m8!1m3!1iYYYY!2iMM!3iDD!2m3!1iYYYY!2iMM!3iDD
 Function Get-GoogleLocationHistoryKmlFileUri {
     [CmdletBinding()] param(
+        [Parameter(Mandatory=$true)]
         [DateTime] $DateTime
     )
     #Subtract 1 from the month because the months are Zero based.
@@ -93,11 +94,25 @@ $webRequestResult3 = Invoke-WebRequest -Uri $locationHistoryUrl -Method Get  -Bo
 
 Function Get-GoogleLocationHistoryKmlFile {
     [CmdletBinding()] param(
-        [Microsoft.PowerShell.Commands.WebRequestSession] $session,
-        [DateTime] $DateTime,
-        [System.IO.FileInfo] $outFile
+        [Microsoft.PowerShell.Commands.WebRequestSession] $session = (Get-GoogleSession),
+        [DateTime] $DateTime = [DateTime]::Now,
+        [System.IO.FileInfo] $outFile = $null
     )
 
     $uri = Get-GoogleLocationHistoryKmlFileUri $DateTime
-    Invoke-WebRequest -Uri $uri -OutFile $outFile -WebSession $session
+
+    if (-not $outFile) {
+        $response = Invoke-WebRequest -Uri $uri -WebSession $session
+        $disposition = $response.Headers.'Content-Disposition'
+        $fileName = ([regex]'filename="(.*)"').Match($disposition).Groups[1].Value
+        if (-not $fileName){
+            $fileName = "LocationHistory-$($DateTime.ToString("s"))"
+            Write-Error "Couldn't determine file name for KML file. Using $fileName."
+        }
+        $response.Content | out-file $fileName
+    }
+    else {
+        Invoke-WebRequest -Uri $uri -OutFile $outFile -WebSession $session
+    }
+    
 }
