@@ -24,6 +24,7 @@
 - Update `FunctionsToExport`, `CmdletsToExport`, and any other relevant export fields to include the commands that your module provides.
 - Add a new `.ps1` file to `Modules.Tests` that contains the tests for your module.
   - These tests use [Pester](https://github.com/pester/Pester). Look at the other tests in this directory for examples.
+- Add your module to the `RequiredModules` list of the `IntelliTect.PSToolbox` module so that it will be included when someone wants to obtain all of the PSToolbox modules.
 
 ### Contributing to an existing module
 - Make all your changes to the code as desired. Then,
