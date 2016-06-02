@@ -1,5 +1,5 @@
 
-Function Invoke-DropboxApiRequest {
+Function script:Invoke-DropboxApiRequest {
     [CmdletBinding()] param(
         [string] $AuthToken,
         [string] $Endpoint,
