@@ -4,7 +4,9 @@ $here = $PSScriptRoot
 $sut = $PSCommandPath.Replace(".Tests", "")
 . $sut
 
-$Credential = Get-CredentialManagerCredential.ps1 "IntelliTect.VisualStudio.com"
+Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.CredentialManager
+
+$Credential = Get-CredentialManagerCredential "IntelliTect.VisualStudio.com"
 
 Describe "Get-TfsQuery" {
     It "Get List" {
