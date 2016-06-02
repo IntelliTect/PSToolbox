@@ -2,6 +2,7 @@
 ##Contributing to PSToolbox
 
 - First, make sure you have the required tools installed. If you have Windows 10, you already have them. Otherwise, see [here](https://www.powershellgallery.com/GettingStarted?section=Get%20Started) for instructions.
+- Next, clone this repository with the `--recursive` flag, or clone normally and then run `git submodule update --init --recursive` to initialize any submodules.
 
 ### General development procedures
 - To import your module while developing, run `Import-Module .\IntelliTect.MyModule.psd1`
