@@ -42,12 +42,12 @@
 - Open a PowerShell window as administrator.
 - Navigate to the root folder of the PowerShellGallery project.
 - Run `.\publish.ps1`
-  - Param: `Filter` - limit the modules that are evaluated for publishing
+  - Param: `-Filter` - limit the modules that are evaluated for publishing
     - Ex. `.\publish.ps1 -Filter ‘*Azure*’`
+  - Param: `-SaveAPIKey` - Save they API key after it is entered at the prompt.
   - Script will evaluate all sub-folders under Modules that have a name like ‘IntelliTect.*’
   - If the module passes all checks then it will be ready to publish.
-  - When prompted, enter the API key
-    - The script will look for a credential named `psgallery` in the Windows Credential manager. Add the API key as the password using IntelliTect.CredentialManager if desired.
+  - When prompted, enter the API key. If you wish to save it to avoid being prompted in the future, add the `-SaveAPIKey` flag.
 
 
 ###Module Requirements
