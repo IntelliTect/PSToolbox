@@ -29,7 +29,7 @@
         .PARAMETER NetworkSecurityGroup
         Name of network security group.  Will be created, along with an Allow_RDP rule, if it doesn't exist.  DEFAULT: $ResourceGroupName
         .PARAMETER AdminCredentials
-        PSCredential with username/password of admin account for new VM.  DEFAULT: vmadmin / P@ssword1!
+        PSCredential with username/password of admin account for new VM.
     #>
     [CmdletBinding()]    
 	param (
@@ -50,7 +50,7 @@
         [string]$VirtualNetworkName = "",
         [string]$VMSize = "Standard_DS1_v2",
         [string]$NetworkSecurityGroup = "",
-        [PSCredential]$AdminCredentials = (New-Object PSCredential("vmadmin", ("P@ssword1!" | ConvertTo-SecureString -AsPlainText -Force)))
+        [PSCredential]$AdminCredentials = (Get-Credential -UserName vmadmin -Message "Enter the username and password of the admin account for the new VM")
 	)
 
     $ErrorActionPreference = "Stop"
