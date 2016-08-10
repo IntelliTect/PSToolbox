@@ -1,4 +1,5 @@
 #TODO: Add escape (Cancel) from while (likely using CancellationTokenSource).
+#TODO: Document that return value is a PSEventJob
 Function Invoke-ActionWhenFileChanges {
     [CmdletBinding()]
     param(
