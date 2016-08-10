@@ -11,17 +11,8 @@ Function Invoke-ActionWhenFileChanges {
     $watcher.Path = Split-Path $path -Parent
     $watcher.Filter = Split-Path $path -Leaf
     $watcher.IncludeSubdirectories = !$ignoreSubdirectories
-    $watcher.EnableRaisingEvents = $false
-    $watcher.NotifyFilter = [System.IO.NotifyFilters]::LastWrite -bor [System.IO.NotifyFilters]::FileName
- 
-    while($true){
-	    $result = $watcher.WaitForChanged(
-            [System.IO.WatcherChangeTypes]::Changed -bor [System.IO.WatcherChangeTypes]::Renamed -bor [System.IO.WatcherChangeTypes]::Created, 1000);
-	    if($result.TimedOut){
-		    continue;
-	    }
-	    Write-host "Change in " + $result.Name
-	    Invoke-Command $script
-    }
+    $watcher.EnableRaisingEvents = $true
+
+    Register-ObjectEvent -InputObject $watcher -EventName "Changed" -Action $script
 }
 
