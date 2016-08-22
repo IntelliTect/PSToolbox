@@ -32,12 +32,11 @@
         PSCredential with username/password of admin account for new VM.
     #>
     [CmdletBinding()]    
-	param (
-        [Parameter(Mandatory)]
-        [string]$ResourceGroupName,
-        
+	param ( 
         [Parameter(Mandatory)]
         [string]$VMName,
+
+        [string]$ResourceGroupName=(Get-AzureRmResourceGroup | Out-GridView -Title "Select Azure Resource Group" -OutputMode Single),
       
 		[Parameter(Mandatory)]
 		[ValidateSet('2012-Datacenter', '2012-R2-Datacenter')]
@@ -299,7 +298,7 @@ function Enable-RemotePowerShellOnAzureRmVm {
 
 function Confirm-AzureRmSession {
     <#
-        .SYNOPSIS
+        .SYNOPSIS 
         Confirm Azure RM session exists.
         .DESCRIPTION
         Confirms an Azure RM session exists by checking for Get-AzureRmContext.  Prompts the user to sign in if it doesn't.
@@ -307,13 +306,10 @@ function Confirm-AzureRmSession {
         Confirm-AzureRmSession
     #>
 
-    $Error.Clear();
-    $currentErrorAction = $ErrorActionPreference
-    $ErrorActionPreference = "SilentlyContinue"
-    $context = Get-AzureRmContext
-    if ($context -eq $null) {
-        Login-AzureRmAccount | Out-Null
+    try {
+        Get-AzureRmContext -ErrorAction SilentlyContinue 
     }
-    $Error.Clear()
-    $ErrorActionPreference = $currentErrorAction
+    catch {
+            Login-AzureRmAccount | Out-Null
+    }
 }
