@@ -8,7 +8,7 @@
     )
 
     DynamicParam {
-        Confirm-AzureRmSession
+        $context = Confirm-AzureRmSession
 
         $params = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
         $params.Add("Location", (getLocationParameter 1))
@@ -650,7 +650,10 @@ function getLocationParameter($position) {
 }
 
 function getSubscriptionParameter($position) {
-    return createDynamicParameter "Subscription" $position $true $CachedSubscription
+    $subscriptions = $CachedSubscriptions | Sort-Object SubscriptionName | `
+                        Select-Object @{ Name = "Subscription"; Expression = { "$($_.SubscriptionName) [$($_.SubscriptionId)]" } } | `
+                        Select-Object -ExpandProperty Subscription
+    return createDynamicParameter "Subscription" $position $true $subscriptions
 }
 
 function createDynamicParameter([string]$attributeName, [int]$position, [bool]$mandatoryIfNoDefault, [string[]]$values) {
