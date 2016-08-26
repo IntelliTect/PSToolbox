@@ -525,15 +525,15 @@ function Set-AzureRmDefault {
         [string]$StorageAccountType = $null,
         [string]$VMSize = $null,
         [string]$OperatingSystem = $null,
-        [bool]$RemoveLocation = $false,
-        [bool]$RemoveResourceGroupName = $false,
-        [bool]$RemoveSubscriptionId = $false,
-        [bool]$RemoveVMImagePublisher = $false,
-        [bool]$RemoveVMImageOffer = $false,
-        [bool]$RemoveVMImageSku = $false,
-        [bool]$RemoveStorageAccountType = $false,
-        [bool]$RemoveVMSize = $false,
-        [bool]$RemoveOperatingSystem = $false
+        [switch]$RemoveLocation,
+        [switch]$RemoveResourceGroupName,
+        [switch]$RemoveSubscriptionId,
+        [switch]$RemoveVMImagePublisher,
+        [switch]$RemoveVMImageOffer,
+        [switch]$RemoveVMImageSku,
+        [switch]$RemoveStorageAccountType,
+        [switch]$RemoveVMSize,
+        [switch]$RemoveOperatingSystem
     )
 
     $cache = $CachedDefaults
@@ -647,15 +647,21 @@ function getCachedDefaultValue([string]$propertyName) {
 function getMenuSelection([int]$max, [string]$prompt = "Please enter your selection") {
     $validSelection = $false
     $itemSelected = $false
+
+    if ($OriginalMenuSelections.Count -ne $CurrentMenuSelections.Count) { $prompt += " (** to restore original menu items)" }
+    else { $prompt += " (enter a partial value to filter menu items)"}
+
     do {
         $selection = Read-Host $prompt
 
         if ($selection -in 1..$max) {
             $validSelection = $true
             $itemSelected = $true
+        } elseif ($selection -eq "**") {
+            $validSelection = $true   
         } elseif (($CurrentMenuSelections | Where-Object { $_.ToLower().Contains($selection.ToLower()) }).Count -gt 0) {
             $validSelection = $true
-        }
+        }    
     }
     while (!$validSelection)
     @{ ItemSelected = $itemSelected; Selection = $selection }
@@ -667,9 +673,12 @@ function menuMaker {
         [string]$title = $null,
         
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [string[]]$selections
+        [string[]]$selections,
+
+        [bool]$SubSelections = $false
     )
 
+    if (!$SubSelections) { $script:OriginalMenuSelections = $selections } 
     $script:CurrentMenuSelections = $selections
 
     $width = ($selections | Where-Object { $_.Length } | Sort-Object Length -Descending | Select-Object -First 1).Length
@@ -713,18 +722,26 @@ function getInputFromMenu([AzureRmVmInputs]$inputs, [string]$property, [string]$
                 else { $inputs.$property = $selections }
             } else {
                 $selectedItem = $null
+                $subSelections = $false
                 do {
-                    menuMaker -Title $prompt -Selections $selections 
+                    menuMaker -Title $prompt -Selections $selections -SubSelections $subSelections 
                     $selection = getMenuSelection $selections.Count
 
                     if ($selection.ItemSelected) {
                         $selectedItem = $selection.Selection
                     } else {
-                        $selections = $selections | Where-Object { $_.ToLower().Contains($selection.Selection.ToLower()) }
+                        if ($selection.Selection -eq "**") {
+                            $selections = $OriginalMenuSelections
+                            $subSelections = $false
+                        } else {
+                            $selections = $selections | Where-Object { $_.ToLower().Contains($selection.Selection.ToLower()) }
+                            $subSelections = $true
+                        }
                     }
                 } while (!$selectedItem)
 
-                $inputs.$property = $selections[$selectedItem - 1]
+                if ($selection -isnot [System.Array]) { $inputs.$property = $selections }
+                else { $inputs.$property = $selections[$selectedItem - 1] }
             }
         }
     }
@@ -737,6 +754,7 @@ $CachedDefaults = Get-AzureRmDefault
 $CachedLocations = Get-AzureRmLocation -WarningAction SilentlyContinue | Sort-Object DisplayName | Select-Object -ExpandProperty Location
 $CachedSubscriptions = Get-AzureRmSubscription -WarningAction SilentlyContinue
 $CurrentMenuSelections = $null
+$OriginalMenuSelections = $null
 
 
 Export-ModuleMember -Function New-AzureRmVirtualMachine
