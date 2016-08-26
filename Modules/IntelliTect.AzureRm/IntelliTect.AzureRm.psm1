@@ -37,15 +37,24 @@ function New-AzureRmVirtualMachine {
         Creates a new Azure RM virtual machine
         .DESCRIPTION
         Creates a new virtual machine, and other resources if needed - Resource Group, Storage Account,
-            Virtual Network, Public IP Address, Domain Name Label, Network Interface.                
+            Virtual Network, Public IP Address, Domain Name Label, Network Interface.
+        Defaults can be set for inputs by using Set-AzureRmDefault.
         .EXAMPLE
         New-AzureRmVirtualMachine -VMName myVmName
+        .EXAMPLE
+        New-AzureRmVirtualMachine -VMName myVmName -ResourceGroupName newResourceGroup -DomainNameLabel mydomain
         .PARAMETER VMName
         Name of the virtual machine.  REQUIRED
+        .PARAMETER Inputs
+        When scripting menu inputs can be provided.
+        $inputs = New-Object AzureRmVmInputs
+        $inputs.Location = westus
+        $inputs.SubscriptinId = <subscription id>
+        ...
         .PARAMETER ResourceGroupName
-        - Resource group to create resources in.  Will be created if it doesn't exist.
+        - Resource group to create resources in.  DEFAULT: none  
         - If creating a new resource group it must be specified in the parameter.  
-                If not specified you can only choose from existing resource groups.
+        - If not specified you can only choose from existing resource groups.
         - Can specify a default with Set-AzureRmDefault -ResourceGroupName <resourcegroupname>
         .PARAMETER VirtualNetworkName
         Name of virtual network.  Will be created if it doesn't exist.  DEFAULT: $ResourceGroupName
@@ -61,7 +70,7 @@ function New-AzureRmVirtualMachine {
             VMImageOffer
             VMImageSku
             StorageAccountType
-            $VMSize
+            VMSize
             OperatingSystem
     #>
     [CmdletBinding()]    
@@ -374,6 +383,11 @@ function Get-AzureRmSubscriptionMenu {
     <#
         .SYNOPSIS
         Displays a menu for selecting an Azure VM image sku.
+        .PARAMETER Inputs
+        When scripting menu choices can be provided.
+        $inputs = New-Object AzureRmVmInputs
+        $inputs.SubscriptionId = <subscription id>
+        ...        
     #>
     [CmdletBinding()]
     param (
@@ -395,6 +409,12 @@ function Get-AzureRmVmImageSkuMenu {
     <#
         .SYNOPSIS
         Displays a menu for selecting an Azure VM image sku.
+        .PARAMETER Inputs
+        When scripting menu choices can be provided.
+        $inputs = New-Object AzureRmVmInputs
+        $inputs.Location = westus
+        $inputs.VMImagePublisher = RedHat
+        ...        
     #>
     [CmdletBinding()]
     param (
@@ -416,6 +436,12 @@ function Get-AzureRmVmImageOfferMenu {
     <#
         .SYNOPSIS
         Displays a menu for selecting an Azure VM image offer.
+        .PARAMETER Inputs
+        When scripting menu choices can be provided.
+        $inputs = New-Object AzureRmVmInputs
+        $inputs.Location = westus
+        $inputs.VMImagePublisher = RedHat
+        ...        
     #>
     [CmdletBinding()]
     param (
@@ -436,6 +462,11 @@ function Get-AzureRmVMImagePublisherMenu {
     <#
         .SYNOPSIS
         Displays a menu for selecting an Azure VM image publisher.
+        .PARAMETER Inputs
+        When scripting menu choices can be provided.
+        $inputs = New-Object AzureRmVmInputs
+        $inputs.Location = westus
+        ...        
     #>
     [CmdletBinding()]
     param (
@@ -455,6 +486,11 @@ function Get-AzureRmLocationMenu {
     <#
         .SYNOPSIS
         Displays a menu for selecting an Azure location.
+        .PARAMETER Inputs
+        When scripting menu choices can be provided.
+        $inputs = New-Object AzureRmVmInputs
+        $inputs.Location = westus
+        ...        
     #>
     [CmdletBinding()]
     param (
@@ -512,6 +548,8 @@ function Set-AzureRmDefault {
         Saves defaults to a JSON file in the profile folder.
         .EXAMPLE
         Set-AzureRmDefault -Location westus
+        .EXAMPLE
+        Set-AzureRmDefault -RemoveLocation
     #>
     
     [CmdletBinding()]    
