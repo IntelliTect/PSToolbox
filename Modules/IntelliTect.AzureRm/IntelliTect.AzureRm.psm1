@@ -778,7 +778,7 @@ function getInputFromMenu([AzureRmVmInputs]$inputs, [string]$property, [string]$
                     }
                 } while (!$selectedItem)
 
-                if ($selection -isnot [System.Array]) { $inputs.$property = $selections }
+                if ($selections -isnot [System.Array]) { $inputs.$property = $selections }
                 else { $inputs.$property = $selections[$selectedItem - 1] }
             }
         }
@@ -799,6 +799,7 @@ Export-ModuleMember -Function New-AzureRmVirtualMachine
 Export-ModuleMember -Function Enable-RemotePowerShellOnAzureRmVm
 Export-ModuleMember -Function Get-AzureRmDefault
 Export-ModuleMember -Function Set-AzureRmDefault
+Export-ModuleMember -Function Get-AzureRmSubscriptionMenu
 Export-ModuleMember -Function Get-AzureRmLocationMenu
 Export-ModuleMember -Function Get-AzureRmVmImagePublisherMenu
 Export-ModuleMember -Function Get-AzureRmVmImageOfferMenu
