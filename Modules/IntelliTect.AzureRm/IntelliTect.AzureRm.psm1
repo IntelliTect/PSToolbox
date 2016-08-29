@@ -1,35 +1,39 @@
-﻿function Test-DynamicParameter {
-    <#
-        .SYNOPSIS
-        Demonstrates the use of dynamic parameters
-    #>
-    [CmdletBinding()]
-    param(
-    )
+﻿# function Test-DynamicParameter {
+#     <#
+#         .SYNOPSIS
+#         Demonstrates the use of dynamic parameters
+#     #>
+#     [CmdletBinding()]
+#     param(
+#     )
 
-    DynamicParam {
-        $context = Confirm-AzureRmSession
+#     DynamicParam {
+#         $context = Confirm-AzureRmSession
 
-        $params = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
-        $params.Add("Location", (getLocationParameter 1))
-        $params.Add("Subscription", (getSubscriptionParameter 2))
+#         $params = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+#         $params.Add("Location", (getLocationParameter 1))
+#         $params.Add("Subscription", (getSubscriptionParameter 2))
 
-        return $params
-    }
+#         return $params
+#     }
 
-    begin {
-        $VMName = ""
+#     begin {
+#         $VMName = ""
 
-        # Capture all of our dynamic parameters
-        $boundParameters = @{} + $PSBoundParameters
+#         # Capture all of our dynamic parameters
+#         $boundParameters = @{} + $PSBoundParameters
 
-        $Location = getDynamicParameterValue "Location" $boundParameters
-        $Subscription = getDynamicParameterValue "Subscription" $boundParameters
+#         $Location = getDynamicParameterValue "Location" $boundParameters
+#         $Subscription = getDynamicParameterValue "Subscription" $boundParameters
 
-        # Repeat back full command
-        "New-AzureRmVirtualMachine -VMName $($VMName) -Location $($Location) -Subscription $($Subscription)"
-    }
-}
+#         $sub = $Subscription -Replace "]"    
+#         $Subscription = $sub.Split("[")[1]
+
+
+#         # Repeat back full command
+#         "New-AzureRmVirtualMachine -VMName $($VMName) -Location $($Location) -Subscription $($Subscription)"
+#     }
+# }
 
 function New-AzureRmVirtualMachine {
     <#
@@ -674,9 +678,9 @@ function createDynamicParameter([string]$attributeName, [int]$position, [bool]$m
     return New-Object System.Management.Automation.RuntimeDefinedParameter($attributeName, [string], $attributes)  
 }
 
-function getDynamicParameterValue([string]$attributeName, [System.Object]$params) {
-    [string]$value = $params.$attributeName
-    if (!$value) { $value = getCachedDefaultValue $attributeName }
+function getDynamicParameterValue([string]$parameterName, [System.Object]$params) {
+    [string]$value = $params.$parameterName
+    if (!$value) { $value = getCachedDefaultValue $parameterName }
     $value
 }
 
@@ -808,4 +812,4 @@ Export-ModuleMember -Function Get-AzureRmVmImagePublisherMenu
 Export-ModuleMember -Function Get-AzureRmVmImageOfferMenu
 Export-ModuleMember -Function Get-AzureRmVmImageSkuMenu
 Export-ModuleMember -Function New-AzureRmVmInputs
-Export-ModuleMember -Function Test-DynamicParameter
+#Export-ModuleMember -Function Test-DynamicParameter
