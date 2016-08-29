@@ -314,20 +314,20 @@ function Enable-RemotePowerShellOnAzureRmVm {
         param($DNSName)
         
         # Force all network locations that are Public to Private
-        Get-NetConnectionProfile | ? { $_.NetworkCategory -eq "Public" } | % { Set-NetConnectionProfile -InterfaceIndex $_.InterfaceIndex -NetworkCategory Private }
+        Get-NetConnectionProfile | Where-Object { $_.NetworkCategory -eq "Public" } | ForEach-Object { Set-NetConnectionProfile -InterfaceIndex $_.InterfaceIndex -NetworkCategory Private }
           
         # Ensure PS remoting is enabled, although this is enabled by default for Azure VMs
         Enable-PSRemoting -Force
         
         # Create rule in Windows Firewall, if it's not already there
-        if ((Get-NetFirewallRule | ? { $_.Name -eq "WinRM HTTPS" }).Count -eq 0)
+        if ((Get-NetFirewallRule | Where-Object { $_.Name -eq "WinRM HTTPS" }).Count -eq 0)
         {
             New-NetFirewallRule -Name "WinRM HTTPS" -DisplayName "WinRM HTTPS" -Enabled True -Profile Any -Direction Inbound -Action Allow -LocalPort 5986 -Protocol TCP
         }
           
         # Create Self Signed certificate and store thumbprint, if it doesn't already exist
-        $thumbprint = (Get-ChildItem -Path Cert:\LocalMachine\My | ? { $_.Subject -eq "CN=$DNSName" } | Select -First 1).Thumbprint
-        if ($thumbprint -eq $null)
+        $thumbprint = (Get-ChildItem -Path Cert:\LocalMachine\My | Where-Object { $_.Subject -eq "CN=$DNSName" } | Select-Object -First 1).Thumbprint
+        if (!$thumbprint)
         {
             $thumbprint = (New-SelfSignedCertificate -DnsName $DNSName -CertStoreLocation Cert:\LocalMachine\My).Thumbprint
         }
@@ -354,7 +354,7 @@ function Enable-RemotePowerShellOnAzureRmVm {
     $storagecontext = New-AzureStorageContext -StorageAccountName $storageaccountname -StorageAccountKey $key
       
     # create a container called scripts
-    if ((Get-AzureStorageContainer -Context $storagecontext | ? { $_.Name -eq $blobContainer}).Count -eq 0)
+    if ((Get-AzureStorageContainer -Context $storagecontext | Where-Object { $_.Name -eq $blobContainer}).Count -eq 0)
     {
         $ignore1 = New-AzureStorageContainer -Name $blobContainer -Context $storagecontext
     }
@@ -520,7 +520,7 @@ function Confirm-AzureRmSession {
         $context = Get-AzureRmContext
     }
     catch {
-        Login-AzureRmAccount | Out-Null
+        Add-AzureRmAccount | Out-Null
         $context = Get-AzureRmContext
     }
 
