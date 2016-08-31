@@ -1,41 +1,4 @@
-﻿# function Test-DynamicParameter {
-#     <#
-#         .SYNOPSIS
-#         Demonstrates the use of dynamic parameters
-#     #>
-#     [CmdletBinding()]
-#     param(
-#     )
-
-#     DynamicParam {
-#         $context = Confirm-AzureRmSession
-
-#         $params = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
-#         $params.Add("Location", (getLocationParameter 1))
-#         $params.Add("Subscription", (getSubscriptionParameter 2))
-
-#         return $params
-#     }
-
-#     begin {
-#         $VMName = ""
-
-#         # Capture all of our dynamic parameters
-#         $boundParameters = @{} + $PSBoundParameters
-
-#         $Location = getDynamicParameterValue "Location" $boundParameters
-#         $Subscription = getDynamicParameterValue "Subscription" $boundParameters
-
-#         $sub = $Subscription -Replace "]"    
-#         $Subscription = $sub.Split("[")[1]
-
-
-#         # Repeat back full command
-#         "New-AzureRmVirtualMachine -VMName $($VMName) -Location $($Location) -Subscription $($Subscription)"
-#     }
-# }
-
-function New-AzureRmVirtualMachine {
+﻿function New-AzureRmVirtualMachine {
     <#
         .SYNOPSIS
         Creates a new Azure RM virtual machine
@@ -77,7 +40,7 @@ function New-AzureRmVirtualMachine {
             VMSize
             OperatingSystem
     #>
-    [CmdletBinding()]    
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "")]
     param (
         [Parameter(Mandatory = $true)]
         [string]$VmName,
@@ -88,11 +51,17 @@ function New-AzureRmVirtualMachine {
 
         [string]$VirtualNetworkName = $null,
 
-        [string]$DomainNameLabel = ""
+        [string]$DomainNameLabel = "",
+
+        # Implementing our own -whatif and -confirm
+        # Not all of the calls to Azure implement these switches, plus so much of
+        #   the script is dependent on return values from previous commands 
+        [switch]$WhatIf,
+        [switch]$Confirm
     )
     Set-StrictMode -Version Latest
 
-    $context = Confirm-AzureRmSession
+    $context = Assert-AzureRmSession
 
     # Process overrides from command line
     if ($ResourceGroupName) { $Inputs.ResourceGroupName = $ResourceGroupName }
@@ -102,6 +71,8 @@ function New-AzureRmVirtualMachine {
     # Choose a subscription ... and switch context to it if different than current
     Get-AzureRmSubscriptionMenu $Inputs | Out-Null
     if ($context.Subscription.SubscriptionId -ne $Inputs.SubscriptionId) {
+        if (!(Confirm-ScriptShouldContinue $Confirm "Continuing will change your current Azure context to the selected subscription.")) { return }
+
         Write-Information "Switching Azure context to selected subscription ..." -InformationAction Continue
         Set-AzureRmContext -SubscriptionId $Inputs.SubscriptionId | Out-Null
     }
@@ -148,20 +119,16 @@ function New-AzureRmVirtualMachine {
     $Inputs.AdminCredentials = (Get-Credential -UserName "vmadmin" -Message "Enter the username and password of the admin account for the new VM")
     
     # If a domain name label is supplied, then test that it isn't in use
-    if ($Inputs.DomainNameLabel -ne "")
-    {
-        $message = $null
-        $domainOk = Test-AzureRmDnsAvailability -DomainQualifiedName $Inputs.DomainNameLabel -Location $Inputs.Location -ErrorAction SilentlyContinue
-        if (!$?) {
-            $message = "Test-AzureRmDnsAvailability failed with DomainNameLabel = $($Inputs.DomainNameLabel)"
-        } elseif ( $domainOk -eq $false) {
-            $message = "DomainNameLabel ($Inputs.DomainNameLabel) failed when tested for uniqueness."
-        }
-        if ($message) {
-            Write-Information -MessageData $message -InformationAction Continue
-            $Inputs
-            return
-        }
+    Assert-DomainNameIsAvailable
+
+    if (!$WhatIf -and !(Confirm-ScriptShouldContinue $Confirm "Continuing will add resources to your current Azure subscription.")) { return }
+
+    if ($WhatIf) {
+        Write-Information "WhatIf: Virtual machine $($VmName) would be created in resource group $($Inputs.ResourceGroupName) in location $($Inputs.Location)" `
+            -InformationAction Continue
+        Write-Information "The following inputs were entered" -InformationAction Continue
+        $Inputs
+        return 
     }
 
     # Now start creating things and setting them up            
@@ -184,8 +151,7 @@ function New-AzureRmVirtualMachine {
     # If the virtual network doesn't exist, then create it
     $vnet = $null
     $checkVirtualNetwork = Get-AzureRmVirtualNetwork | Where-Object { $_.Name -eq $Inputs.VirtualNetworkName }
-    if (!$checkVirtualNetwork)
-    {
+    if (!$checkVirtualNetwork) {
         Write-Information -MessageData "Creating new virtual network" -InformationAction Continue
         $defaultSubnet = New-AzureRmVirtualNetworkSubnetConfig -Name "defaultSubnet" -AddressPrefix "10.0.2.0/24"
         $vnet = New-AzureRmVirtualNetwork -Name $Inputs.VirtualNetworkName -ResourceGroupName $Inputs.ResourceGroupName `
@@ -254,11 +220,10 @@ function New-AzureRmVirtualMachine {
 
     # And finally create the VM itself
     Write-Information -MessageData "Creating the VM ... this will take some time ..." -InformationAction Continue
+
     New-AzureRmVM -ResourceGroupName $Inputs.ResourceGroupName -Location $Inputs.Location -VM $vm
 
     Write-Information -MessageData "VM Created successfully" -InformationAction Continue
-
-    $Inputs
 }
 
 
@@ -398,10 +363,12 @@ function Get-AzureRmSubscriptionMenu {
         [AzureRmVmInputs]$inputs = (New-Object AzureRmVmInputs)
     )
 
-    $subscriptions = $CachedSubscriptions | Sort-Object SubscriptionName | `
+    Write-Information "Retrieving subscriptions ..." -InformationAction Continue    
+    $subscriptions = Get-AzureRmSubscription -WarningAction SilentlyContinue | `
+                        Sort-Object SubscriptionName | `
                         Select-Object @{ Name = "Subscription"; Expression = { "$($_.SubscriptionName) [$($_.SubscriptionId)]" } } | `
                         Select-Object -ExpandProperty Subscription
-    getInputFromMenu $inputs "SubscriptionId" "Select Subscription" {$subscriptions}
+    getInputFromMenu $inputs "SubscriptionId" "Select Subscription" { $subscriptions }
     
     $sub = $inputs.SubscriptionId -Replace "]"    
     $inputs.SubscriptionId = $sub.Split("[")[1]
@@ -501,27 +468,29 @@ function Get-AzureRmLocationMenu {
         [AzureRmVmInputs]$inputs = (New-Object AzureRmVmInputs)
     )
 
-    getInputFromMenu $inputs "Location" "Select Location" { $CachedLocations }
+    Write-Information "Retrieving locations ..." -InformationAction Continue
+    $locations = Get-AzureRmLocation -WarningAction SilentlyContinue | Sort-Object DisplayName | Select-Object -ExpandProperty Location 
+    getInputFromMenu $inputs "Location" "Select Location" { $locations }
 
     $inputs.Location
 }
 
-function Confirm-AzureRmSession {
+function Assert-AzureRmSession {
     <#
         .SYNOPSIS
-        Confirm Azure RM session exists.
+        Test if an Azure RM session exists, and throw an error if it doesn't.
         .DESCRIPTION
-        Confirms an Azure RM session exists by checking for Get-AzureRmContext.  Prompts the user to sign in if it doesn't.
+        Confirms an Azure RM session exists by checking for Get-AzureRmContext, and throws an error if $null is returned.
         .EXAMPLE
-        Confirm-AzureRmSession
+        Assert-AzureRmSession
     #>
 
     try {
         $context = Get-AzureRmContext
     }
     catch {
-        Add-AzureRmAccount | Out-Null
-        $context = Get-AzureRmContext
+        throw "Commands in this module require an Azure session.  Please use Add-AzureRmAccount before continuing"
+        
     }
 
     $context
@@ -648,43 +617,40 @@ class AzureRmVmInputs {
 function New-AzureRmVmInputs { return [AzureRmVmInputs]::new() }
 
 ## Private functions and variables
-function getLocationParameter($position) {
-    $param = createDynamicParameter "Location" $position $true $CachedLocations
-    return $param
+function Assert-DomainNameIsAvailable() {
+    if ($Inputs.DomainNameLabel -eq "") { return }
+
+    $message = $null
+    $domainOk = Test-AzureRmDnsAvailability -DomainQualifiedName $Inputs.DomainNameLabel -Location $Inputs.Location -ErrorAction SilentlyContinue
+
+    if (!$?) {
+        $message = "Test-AzureRmDnsAvailability failed with DomainNameLabel = $($Inputs.DomainNameLabel)"
+    } elseif ( $domainOk -eq $false) {
+        $message = "DomainNameLabel ($Inputs.DomainNameLabel) failed when tested for uniqueness."
+    }
+    if ($message) {
+        throw $message
+    }
+    return
 }
 
-function getSubscriptionParameter($position) {
-    $subscriptions = $CachedSubscriptions | Sort-Object SubscriptionName | `
-                        Select-Object @{ Name = "Subscription"; Expression = { "$($_.SubscriptionName) [$($_.SubscriptionId)]" } } | `
-                        Select-Object -ExpandProperty Subscription
-    return createDynamicParameter "Subscription" $position $true $subscriptions
-}
+function Confirm-ScriptShouldContinue([bool]$confirm, [string]$message) {
+    $confirmTitle = "Continue?"
+    $confirmOptions = [System.Management.Automation.Host.ChoiceDescription[]]( `
+                (New-Object System.Management.Automation.Host.ChoiceDescription "&Continue", `
+                    "Script will proceed which will result in changes to your Azure resources."), `
+                (New-Object System.Management.Automation.Host.ChoiceDescription "&Stop", `
+                    "Stop the script at this point."))
 
-function createDynamicParameter([string]$attributeName, [int]$position, [bool]$mandatoryIfNoDefault, [string[]]$values) {
-    $attributes = New-Object System.Collections.ObjectModel.Collection[System.Attribute]
+    if (!$confirm) { return $true }
 
-    [string]$default = $null
-    if ($CachedDefaults.PSObject.Properties -match $attributeName) { $default = $CachedDefaults.$attributeName }
-
-    $parameterAttr = New-Object System.Management.Automation.ParameterAttribute
-    $parameterAttr.ParameterSetName = "__AllParameterSets"
-    $parameterAttr.Position = $position
-    if (!$default -and $mandatoryIfNoDefault) { $parameterAttr.Mandatory = $true }
-    $attributes.Add($parameterAttr)
-    
-    $validateSetAttr = New-Object System.Management.Automation.ValidateSetAttribute($values)
-    $attributes.Add($validateSetAttr)
-
-    return New-Object System.Management.Automation.RuntimeDefinedParameter($attributeName, [string], $attributes)  
-}
-
-function getDynamicParameterValue([string]$parameterName, [System.Object]$params) {
-    [string]$value = $params.$parameterName
-    if (!$value) { $value = getCachedDefaultValue $parameterName }
-    $value
+    $confirmResult = $host.UI.PromptForChoice($confirmTitle, $message, $confirmOptions, 1)
+    return ($confirmResult -eq 0)
 }
 
 function getCachedDefaultValue([string]$propertyName) {
+    if (!$CachedDefaults) { $CachedDefaults = Get-AzureRmDefault }
+
     if ($CachedDefaults.PSObject.Properties -match $propertyName) { $CachedDefaults.$propertyName }
     else { $null }
 }
@@ -793,11 +759,8 @@ function getInputFromMenu([AzureRmVmInputs]$inputs, [string]$property, [string]$
 }
 
 ## Set up defaults
-Confirm-AzureRmSession
 $FilePath = (Split-Path -Path $profile) + "\IntelliTectUserSettings.json"
-$CachedDefaults = Get-AzureRmDefault
-$CachedLocations = Get-AzureRmLocation -WarningAction SilentlyContinue | Sort-Object DisplayName | Select-Object -ExpandProperty Location
-$CachedSubscriptions = Get-AzureRmSubscription -WarningAction SilentlyContinue
+$CachedDefaults = $null
 $CurrentMenuSelections = $null
 $OriginalMenuSelections = $null
 
@@ -812,4 +775,3 @@ Export-ModuleMember -Function Get-AzureRmVmImagePublisherMenu
 Export-ModuleMember -Function Get-AzureRmVmImageOfferMenu
 Export-ModuleMember -Function Get-AzureRmVmImageSkuMenu
 Export-ModuleMember -Function New-AzureRmVmInputs
-#Export-ModuleMember -Function Test-DynamicParameter
