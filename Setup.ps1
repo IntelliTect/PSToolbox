@@ -10,46 +10,23 @@ if (!([bool](([System.Security.Principal.WindowsIdentity]::GetCurrent()).groups 
     throw "Setup.ps1 requires administrative privelages."
 }
 
-Function Install-Chocolatey {
-    If(!($ENV:ChocolateyInstall)) {
-        if ($pscmdlet.ShouldProcess("Install Chocolatey (http://Chocolatey.org)")) {
-            Invoke-Expression ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))
-            $ENV:ChocolateyInstall="$ENV:Systemdrive\chocolatey\bin"
-            $ENV:PATH="$ENV:PATH;$ENV:ChocolateyInstall"
 
-            Set-Alias Nuget "$ENV:ChocolateyInstall\chocolateyInstall\NuGet.exe" -Scope Global
-        }
+#Install Pester
+If(!(get-module Pester -ListAvailable)) {
+    If ($pscmdlet.ShouldProcess("Install Pester (https://github.com/pester/Pester)")) {
+        Install-Module Pester -verbose
     }
 }
 
-#Install PowerShell
-If($PSVersionTable.PSVersion -lt "3.0") {
-    if ($pscmdlet.ShouldProcess("Install later version of PowerShell using Chocolatey")) {
-        Install-Chocolatey
-        CINST PowerShell
+$PSToolboxPath = Join-path $PSScriptRoot Modules
+if(!($env:PSModulePath -like "*$PSToolboxPath*")) {
+    [System.Environment]::SetEnvironmentVariable( "PSModulePath", "$PSToolboxPath;$env:PSModulePath", [EnvironmentVariableTarget]::User );
+    $PSToolboxPath="$PSToolboxPath;$env:PSModulePath"
+    if(!($env:PSModulePath -like "*$PSToolboxPath*")) {
+        throw "PSModulePath not set with $PSToolboxPath"  #NOTE: This does not test the change from [System.Environment]::SetEnvironmentVariable is permanent.
     }
 }
 
-if (!(Get-Module PowerShellGet -ListAvailable)) {
-    Write-Host "PowerShellGet is not installed. It can be installed via Chocolatey."
-    
-    If ($pscmdlet.ShouldProcess("Install PowerShellGet? (https://chocolatey.org/packages/powershell-packagemanagement)")) {
-        Install-Chocolatey
-        CINST powershell-packagemanagement
-    }
-}
-
-If(get-module PowerShellGet -ListAvailable) {
-    #Install Pester
-    If(!(get-module Pester -ListAvailable)) {
-        If ($pscmdlet.ShouldProcess("Install Pester (https://github.com/pester/Pester)")) {
-            Install-Module Pester -verbose
-        }
-    }
-}
-else {
-    Write-Error "PowerShellGet was not successfully installed"
-}
 
 
 If(Test-Path variable:\psise) {
