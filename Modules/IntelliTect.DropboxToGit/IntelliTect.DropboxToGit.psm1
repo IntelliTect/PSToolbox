@@ -55,7 +55,19 @@ Function Get-DropboxFileRevisions {
         "path" = $Path;
         "limit" = 100
     }
-    return Invoke-DropboxApiRequest -Endpoint "files/list_revisions" -Body $body -AuthToken $AuthToken
+
+    try {
+        $response = Invoke-DropboxApiRequest -Endpoint "files/list_revisions" -Body $body -AuthToken $AuthToken
+        return $response
+    }
+    catch {
+        if ($_.ErrorDetails.Message.Contains("path/not_file")) {
+            Write-Information "$Path appears to be a deleted folder."
+            return @{ entries = @(); }
+        } else {
+            throw 
+        }
+    }
 
 }
 
@@ -195,7 +207,7 @@ Function Invoke-ConvertDropboxToGit {
     foreach ($entry in $history.GetEnumerator() | Sort-Object -Property Key) {
         # Go out to Dropbox and download the revision of each file that corresponds to this date.
         foreach ($revisionEntry in $entry.Value) {
-            $outFile = Join-Path "." $revisionEntry.path_display
+            $outFile = Join-Path "." ($revisionEntry.path_display).Replace($Path, "")
             Invoke-DropboxApiDownload -Path "rev:$($revisionEntry.rev)" -OutFile $outFile -AuthToken $AuthToken
         }
         $date = (([DateTime]$entry.Key).ToString("yyyy-MM-dd HH:mm:ss"))
