@@ -229,7 +229,8 @@ Function Invoke-ConvertDropboxToGit {
         https://blogs.dropbox.com/developers/2014/05/generate-an-access-token-for-your-own-account/
 "@),
         [string] $Path = "",
-        [string[]] $PathExcludes = (new-object string[] 0)
+        [string[]] $PathExcludes = (new-object string[] 0),
+        [string] $outputDirectory
     )
 
     $history = @{}
@@ -245,57 +246,61 @@ Function Invoke-ConvertDropboxToGit {
 
     # Unfortunately, we have to change our working directory because git doesn't allow you to target commands to other directories.
     try {
-    $originalLocation = Get-Location
-    Set-Location "./$dirName"
-    git init 
+        $originalLocation = Get-Location
+        if([string]::IsNullOrEmpty($outputDirectory)) {
+            $outputDirectory = "./$dirName"
+        }
+        Set-Location $outputDirectory
+
+        git init 
 
     
-    $userInfos = @{}
-    # Loop over our dictionary of revisions in order of the key (which is the date of the revision)
-    foreach ($entry in $history.GetEnumerator() | Sort-Object -Property Key) {
-        # Go out to Dropbox and download the revision of each file that corresponds to this date.
-        foreach ($revisionEntry in $entry.Value) {
-            $outFile = Join-Path "." ($revisionEntry.path_display).Replace($Path, "")
-            Invoke-DropboxApiDownload -Path "rev:$($revisionEntry.rev)" -OutFile $outFile -AuthToken $AuthToken
-        }
-        $date = (([DateTime]$entry.Key).ToString("yyyy-MM-dd HH:mm:ss"))
-        
-        git add -A
-
-        $authorId = $entry.Value[0].sharing_info.modified_by
-        if ($authorId) {
-            if (!$userInfos.ContainsKey($authorId)) {
-                # If we haven't seen this userId yet, make a request to get their name and email for the commit metadata.
-                $userInfos[$authorId] = Invoke-DropboxApiRequest -Endpoint "users/get_account" -Body @{"account_id" = "$authorId"}  -AuthToken $AuthToken
+        $userInfos = @{}
+        # Loop over our dictionary of revisions in order of the key (which is the date of the revision)
+        foreach ($entry in $history.GetEnumerator() | Sort-Object -Property Key) {
+            # Go out to Dropbox and download the revision of each file that corresponds to this date.
+            foreach ($revisionEntry in $entry.Value) {
+                $outFile = Join-Path "." ($revisionEntry.path_display).Replace($Path, "")
+                Invoke-DropboxApiDownload -Path "rev:$($revisionEntry.rev)" -OutFile $outFile -AuthToken $AuthToken
             }
-            $userInfo = $userInfos[$authorId]
+            $date = (([DateTime]$entry.Key).ToString("yyyy-MM-dd HH:mm:ss"))
+        
+            git add -A
 
-            git commit -m "Revisions made $date" --date $date --author "$($userInfo.name.display_name) <$($userInfo.email)>"
-        }
-        else {
-            git commit -m "Revisions made $date" --date $date
+            $authorId = $entry.Value[0].sharing_info.modified_by
+            if ($authorId) {
+                if (!$userInfos.ContainsKey($authorId)) {
+                    # If we haven't seen this userId yet, make a request to get their name and email for the commit metadata.
+                    $userInfos[$authorId] = Invoke-DropboxApiRequest -Endpoint "users/get_account" -Body @{"account_id" = "$authorId"}  -AuthToken $AuthToken
+                }
+                $userInfo = $userInfos[$authorId]
+
+                git commit -m "Revisions made $date" --date $date --author "$($userInfo.name.display_name) <$($userInfo.email)>"
+            }
+            else {
+                git commit -m "Revisions made $date" --date $date
+            }
+
         }
 
-    }
-
-    # All file revisions commits have now been made.
-    # We will make on last pass through $head and delete every file that Dropbox reports as being deleted.
-    # We have to do this at the end because dropbox doesn't report deletion times - only a boolean on if a file is deleted or not.
-    # It's not ideal, but it's what we have to work with.
-    foreach ($entry in $head){
-        $outFile = Join-Path "." $entry.path_display
-        if ($entry.".tag" -eq "deleted"){
-            Remove-Item $outFile
+        # All file revisions commits have now been made.
+        # We will make on last pass through $head and delete every file that Dropbox reports as being deleted.
+        # We have to do this at the end because dropbox doesn't report deletion times - only a boolean on if a file is deleted or not.
+        # It's not ideal, but it's what we have to work with.
+        foreach ($entry in $head){
+            $outFile = Join-Path "." $entry.path_display
+            if ($entry.".tag" -eq "deleted"){
+                Remove-Item $outFile
+            }
         }
-    }
     
-    git add -A
-    git commit -m "All Dropbox Deletions - Dropbox does not report deletion times."
-    git tag dropbox-final
+        git add -A
+        git commit -m "All Dropbox Deletions - Dropbox does not report deletion times."
+        git tag dropbox-final
 
-    # Move our current directory back up to where we were before we started. We're done!
     }
     finally {
+        # Move our current directory back up to where we were before we started. We're done!
         Set-Location $originalLocation
     }
 }
