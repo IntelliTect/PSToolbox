@@ -1,5 +1,3 @@
-# TODO: Address warnings such as the use of aliaes like where, rm, cd, etc.
-
 Function script:Invoke-DropboxApiRequest {
     [CmdletBinding()] param(
         [string] $AuthToken,
@@ -158,7 +156,7 @@ Function Get-DropboxHistory {
             # We only care about files, not directories. "deleted" represents a deleted file.
             if ($fileEntry.".tag" -eq "file" -or $fileEntry.".tag" -eq "deleted"){
                 # Examine the file's path to see if it should be excluded.
-                $matchedExcludes = $PathExcludes | where {$fileEntry.path_lower -like $_}
+                $matchedExcludes = $PathExcludes | Where-Object {$fileEntry.path_lower -like $_}
                 if (!$matchedExcludes -or $matchedExcludes.Count -eq 0) {
                     # If the file passed the exclusion filter, grab the metadata about the revisions of the file.
                     [object[]]$revisions = Get-DropboxFileRevisions -Path $fileEntry.path_lower -AuthToken $AuthToken
@@ -246,7 +244,9 @@ Function Invoke-ConvertDropboxToGit {
     md -Name "$dirName"
 
     # Unfortunately, we have to change our working directory because git doesn't allow you to target commands to other directories.
-    cd "./$dirName"
+    try {
+    $originalLocation = Get-Location
+    Set-Location "./$dirName"
     git init 
 
     
@@ -285,7 +285,7 @@ Function Invoke-ConvertDropboxToGit {
     foreach ($entry in $head){
         $outFile = Join-Path "." $entry.path_display
         if ($entry.".tag" -eq "deleted"){
-            rm $outFile
+            Remove-Item $outFile
         }
     }
     
@@ -294,5 +294,8 @@ Function Invoke-ConvertDropboxToGit {
     git tag dropbox-final
 
     # Move our current directory back up to where we were before we started. We're done!
-    cd ..
+    }
+    finally {
+        Set-Location $originalLocation
+    }
 }
