@@ -1,3 +1,4 @@
+# TODO: Address warnings such as the use of aliaes like where, rm, cd, etc.
 
 Function script:Invoke-DropboxApiRequest {
     [CmdletBinding()] param(
@@ -21,7 +22,7 @@ Function script:Invoke-DropboxApiRequest {
 }
 
 
-Function Invoke-DropboxApiDownload {
+Function script:Invoke-DropboxApiDownload {
     [CmdletBinding()] param(
         [string] $AuthToken,
         [object] $Path,
@@ -45,7 +46,7 @@ Function Invoke-DropboxApiDownload {
 }
 
 
-Function Get-DropboxFileRevisions {
+Function script:Get-DropboxFileRevisions {
     [CmdletBinding()] param(
         [string] $AuthToken,
         [string] $Path = ""
@@ -72,7 +73,7 @@ Function Get-DropboxFileRevisions {
 }
 
 
-Function Get-DropboxDirectoryContents {
+Function script:Get-DropboxDirectoryContents {
     [CmdletBinding()] param(
         [string] $AuthToken,
         [string] $Path = "",
@@ -98,39 +99,34 @@ Function Get-DropboxDirectoryContents {
     return $content
 }
 
-
 <#
     .SYNOPSIS
-    Takes a Dropbox folder structure and converts it into a git repository.
+    Retrieves the dropbox folder history.
 
     .DESCRIPTION
-    The provided path and all subfolders and files will be analyzed, and a git repository will be created
-    that represents the historical information of the Dropbox revision history.
-
-    Paths can be excluded using a wildcard format.
+    Retrieves dropbox revision history and returns it as a hashtable.
 
     .PARAMETER AuthToken
     A Dropbox auth token that can be obtained by following the instructions at https://blogs.dropbox.com/developers/2014/05/generate-an-access-token-for-your-own-account/
 
     .PARAMETER Path
-    The path in your Dropbox account that you wish to convert to a git repository.
-    This is relative to your root folder, and should begin with a forward-slash (/).
-    If you wish to convert your entire Dropbox account to a git repository, leave this parameter empty - do not use a single slash.
+    The path in your Dropbox account. This is relative to your root folder, and should begin with a forward-slash (/).
+    If you wish to retrieve your entire Dropbox account, leave this parameter empty - do not use a single slash.
 
     .PARAMETER PathExcludes
     A list of wildcard patterns that will be compared against each file in Dropbox in the path.
     If the Dropbox path name matches any of these patterns, it will be ignored.
 
     .EXAMPLE
-    To only convert files within a directory named MyFiles while excluding any subfolders:
-    Invoke-ConvertDropboxToGit -AuthToken "<token>" -Path "/MyFiles" -PathExcludes "/MyFiles/*/*"
+    To only retrieve files within a directory named MyFiles while excluding any subfolders:
+    $history = Invoke-DropboxHistory -AuthToken "<token>" -Path "/MyFiles" -PathExcludes "/MyFiles/*/*"
 
 
     .LINK
     https://blogs.dropbox.com/developers/2014/05/generate-an-access-token-for-your-own-account/
 
 #>
-Function Invoke-ConvertDropboxToGit {
+Function Get-DropboxHistory {
     [CmdletBinding()] param(
         [string] $AuthToken = $(Read-Host -prompt @"
         Enter your Dropbox access token.  To get a token, follow the steps at
@@ -140,9 +136,11 @@ Function Invoke-ConvertDropboxToGit {
         [string[]] $PathExcludes = (new-object string[] 0)
     )
 
+    # TODO: Replace Write-Host with Write-Progress
+    # TODO: Provide more examples including ones that consume the history.
+
     $history = @{}
     $head = New-Object System.Collections.ArrayList
-    
     $cursor = $null
     $hasMore = $true
     $objectCount = 0
@@ -192,6 +190,55 @@ Function Invoke-ConvertDropboxToGit {
         return;
     }
 
+    return $history,$head    
+}
+
+
+<#
+    .SYNOPSIS
+    Takes a Dropbox folder structure and converts it into a git repository.
+
+    .DESCRIPTION
+    The provided path and all subfolders and files will be analyzed, and a git repository will be created
+    that represents the historical information of the Dropbox revision history.
+
+    Paths can be excluded using a wildcard format.
+
+    .PARAMETER AuthToken
+    A Dropbox auth token that can be obtained by following the instructions at https://blogs.dropbox.com/developers/2014/05/generate-an-access-token-for-your-own-account/
+
+    .PARAMETER Path
+    The path in your Dropbox account that you wish to convert to a git repository.
+    This is relative to your root folder, and should begin with a forward-slash (/).
+    If you wish to convert your entire Dropbox account to a git repository, leave this parameter empty - do not use a single slash.
+
+    .PARAMETER PathExcludes
+    A list of wildcard patterns that will be compared against each file in Dropbox in the path.
+    If the Dropbox path name matches any of these patterns, it will be ignored.
+
+    .EXAMPLE
+    To only convert files within a directory named MyFiles while excluding any subfolders:
+    Invoke-ConvertDropboxToGit -AuthToken "<token>" -Path "/MyFiles" -PathExcludes "/MyFiles/*/*"
+
+
+    .LINK
+    https://blogs.dropbox.com/developers/2014/05/generate-an-access-token-for-your-own-account/
+
+#>
+Function Invoke-ConvertDropboxToGit {
+    [CmdletBinding()] param(
+        [string] $AuthToken = $(Read-Host -prompt @"
+        Enter your Dropbox access token.  To get a token, follow the steps at
+        https://blogs.dropbox.com/developers/2014/05/generate-an-access-token-for-your-own-account/
+"@),
+        [string] $Path = "",
+        [string[]] $PathExcludes = (new-object string[] 0)
+    )
+
+    $history = @{}
+
+    $history,$head = Get-DropBoxHistory $AuthToken $Path $PathExcludes
+    
     # The name of the folder created is always static.
     # TODO: Allow an output to be passed as a parameter?
     $dirName = "DropboxHistoryBuild $((Get-Date -Format u).Replace(':', '-'))"
