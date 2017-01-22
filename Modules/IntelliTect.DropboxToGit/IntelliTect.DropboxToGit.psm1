@@ -166,8 +166,7 @@ Function Get-DropboxHistory {
 
                     # Store the file's metadata in $head, and then
                     # store data about each revision of the file into a dictionary keyed by the date of the file.
-                    # When we're done grabbing metadata, will will loop through this dictionary in order of its keys
-                    # to construct our git repo.
+                    # TODO: consider changing to only store deletes.
                     $null = $head.Add($fileEntry)
 
                     foreach ($oldEntry in $revisions.entries) {
@@ -237,6 +236,8 @@ Function Invoke-ConvertDropboxToGit {
 
     $history = @{}
 
+    # When we're done grabbing metadata, will will loop through this dictionary in order of its keys
+    # to construct our git repo.
     $history,$head = Get-DropBoxHistory $AuthToken $Path $PathExcludes
     
     # The name of the folder created is always static.
