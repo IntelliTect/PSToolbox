@@ -230,7 +230,7 @@ Function Invoke-ConvertDropboxToGit {
 "@),
         [string] $Path = "",
         [string[]] $PathExcludes = (new-object string[] 0),
-        [string] $outputDirectory
+        [ValidateScript({Test-Path $_ -PathType Container })][string] $OutputDirectory
     )
 
     $history = @{}
@@ -238,19 +238,21 @@ Function Invoke-ConvertDropboxToGit {
     # When we're done grabbing metadata, will will loop through this dictionary in order of its keys
     # to construct our git repo.
     $history,$head = Get-DropBoxHistory $AuthToken $Path $PathExcludes
-    
-    # The name of the folder created is always static.
-    # TODO: Allow an output to be passed as a parameter?
-    $dirName = "DropboxHistoryBuild $((Get-Date -Format u).Replace(':', '-'))"
-    md -Name "$dirName"
-
+     
     # Unfortunately, we have to change our working directory because git doesn't allow you to target commands to other directories.
     try {
         $originalLocation = Get-Location
-        if([string]::IsNullOrEmpty($outputDirectory)) {
-            $outputDirectory = "./$dirName"
+
+        if([string]::IsNullOrEmpty($OutputDirectory)) {
+            $OutputDirectory = $pwd
         }
-        Set-Location $outputDirectory
+        
+        # The name of the folder created is always static.
+        $dirName = Join-Path $OutputDirectory "DropboxHistoryBuild $((Get-Date -Format u).Replace(':', '-'))"
+
+        New-Item -ItemType Directory -Path $dirName
+
+        Set-Location $dirName
 
         git init 
 
