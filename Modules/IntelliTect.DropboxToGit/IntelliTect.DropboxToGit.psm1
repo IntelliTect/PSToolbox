@@ -290,7 +290,7 @@ Function Invoke-ConvertDropboxToGit {
         # We have to do this at the end because dropbox doesn't report deletion times - only a boolean on if a file is deleted or not.
         # It's not ideal, but it's what we have to work with.
         foreach ($entry in $head){
-            $outFile = Join-Path "." $entry.path_display
+            $outFile = Join-Path "." $entry.path_display.Replace($Path, "")
             if ($entry.".tag" -eq "deleted"){
                 Remove-Item $outFile
             }
