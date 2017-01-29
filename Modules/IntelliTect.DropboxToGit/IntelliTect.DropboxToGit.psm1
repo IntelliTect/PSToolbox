@@ -262,7 +262,7 @@ Function Invoke-ConvertDropboxToGit {
         # TO DO: Add [bool]$CaseSensitiveGit
     )
     
-try { $Activity = "Invoke-ConvertDropboxToGit";if($script:progressNextIndex -gt 0){$parentId=$script:progressIdStack[-1]};$Id = $script:progressNextIndex++;$script:progressIdStack.Add($id)
+try { $Activity = "Invoke-ConvertDropboxToGit";$parentId=[int]::MaxValue;if($script:progressNextIndex -gt 0){$parentId=$script:progressIdStack[-1]};$Id = $script:progressNextIndex++;$script:progressIdStack.Add($id)
 
     Write-Progress -Activity $Activity -Id $id -ParentId $parentId
     
