@@ -129,7 +129,7 @@ Function script:Get-DropboxDirectoryContents {
     https://blogs.dropbox.com/developers/2014/05/generate-an-access-token-for-your-own-account/
 
 #>
-Function Get-DropboxHistory {
+Function Get-DropboxContentHistory {
     [CmdletBinding()] param(
         [string] $AuthToken = $(Read-Host -prompt @"
         Enter your Dropbox access token.  To get a token, follow the steps at
@@ -161,7 +161,7 @@ try { $Activity = "Get-DropboxHistory";$parentId=[int]::MaxValue;if($script:prog
         # Dropbox's API returns up to 2000 file listings at once.
         # If there are more than that, a cursor is returned which can be passed to another call
         # in order to get more results. Loop until we've found all the file listings.
-        Write-Progress -Activity $Activity -Id $id -ParentId $parentId -Status "Get Dropbox File List..." -CurrentOperation "Got $totalEntryCount file listings so far"
+        Write-Progress -Activity $Activity -Id $id -ParentId $parentId -Status "Retrive Dropbox content..." -CurrentOperation "Retrieved $totalEntryCount Dropbox content items so far"
         $content = Get-DropboxDirectoryContents -Path $Path -Cursor $cursor -AuthToken $AuthToken
         $totalEntryCount = $totalEntryCount + $content.entries.Count
         $contents.Add($content)
@@ -176,7 +176,7 @@ try { $Activity = "Get-DropboxHistory";$parentId=[int]::MaxValue;if($script:prog
             # We only care about files, not directories. "deleted" represents a deleted file.
             if ($fileEntry.".tag" -eq "file" -or $fileEntry.".tag" -eq "deleted"){
                 # Examine the file's path to see if it should be excluded.
-                $matchedExcludes = $PathExcludes | Where-Object {$fileEntry.path_lower -like $_}
+                $matchedExcludes =  @($PathExcludes | Where-Object {$fileEntry.path_lower -like $_} )
 
                 if (!$matchedExcludes -or $matchedExcludes.Count -eq 0) {
                     Write-Progress -Activity $Activity -Id $id -ParentId $parentId -Status "Get file revisions" -CurrentOperation $fileEntry.path_Display -PercentComplete ($entryCount++/$totalEntryCount)
@@ -200,6 +200,7 @@ try { $Activity = "Get-DropboxHistory";$parentId=[int]::MaxValue;if($script:prog
                         Add-Member -InputObject $revision -TypeName "DropboxFileRevision" -Name "subpath_display" -MemberType NoteProperty -Value $subpathDisplay
                         $null = $history[$revision.client_modified].Add($revision)
                     }
+                    Add-Member -InputObject $fileEntry -TypeName "DropboxContentItem" -Name "Revisions" -MemberType NoteProperty -Value $revisions.entries
                     
                 }
             }
@@ -211,7 +212,7 @@ try { $Activity = "Get-DropboxHistory";$parentId=[int]::MaxValue;if($script:prog
         return;
     }
 
-    return $history,$head    
+    return $history,$head,$contents   
 } finally {$script:progressNextIndex--;$script:progressIdStack.Remove($script:progressIdStack[-1])}
 }
 
@@ -258,7 +259,8 @@ Function Invoke-ConvertDropboxToGit {
         [Parameter(ParameterSetName="DropBoxConfig")][string[]] $PathExcludes = (new-object string[] 0),
         [Parameter(ParameterSetName="DropBoxConfig")][ValidateScript({Test-Path $_ -PathType Container })][string] $OutputDirectory,
         [Parameter(ParameterSetName="DropBoxHistory")] $history,
-        [Parameter(ParameterSetName="DropBoxHistory")] $head
+        [Parameter(ParameterSetName="DropBoxHistory")] $head,
+        [Parameter(ParameterSetName="DropBoxHistory")] $content
         # TO DO: Add [bool]$CaseSensitiveGit
     )
     
@@ -270,7 +272,7 @@ try { $Activity = "Invoke-ConvertDropboxToGit";$parentId=[int]::MaxValue;if($scr
         Write-Progress -Activity $Activity -Id $id -ParentId $parentId -Status "Get-DropBoxHistory"
         # When we're done grabbing metadata, will will loop through this dictionary in order of its keys
         # to construct our git repo.
-        $history,$head = Get-DropBoxHistory $AuthToken $Path $PathExcludes -ParentId $id
+        $history,$head,$content = Get-DropboxContentHistory $AuthToken $Path $PathExcludes 
     }
      
     # Unfortunately, we have to change our working directory because git doesn't allow you to target commands to other directories.
