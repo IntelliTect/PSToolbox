@@ -1,3 +1,5 @@
+Set-StrictMode -version latest
+
 $script:progressIdStack = New-Object System.Collections.Generic.Stack[int]
 $script:progressNextId = 1
 
@@ -65,7 +67,7 @@ Function script:Get-DropboxFileRevisions {
     catch {
         if ($_.ErrorDetails.Message.Contains("path/not_file")) {
             Write-Information "$Path appears to be a deleted folder."
-            return @{ entries = @(); } 
+            return [PSCustomObject] @{ entries = @(); } 
         } else {
             throw 
         }
@@ -173,7 +175,7 @@ try { $Activity = "Get-DropboxHistory";$parentId=$script:progressIdStack.Push($i
                 $matchedExcludes = $PathExcludes | Where-Object {$fileEntry.path_lower -like $_}
                 if (!$matchedExcludes -or $matchedExcludes.Count -eq 0) {
                     # If the file passed the exclusion filter, grab the metadata about the revisions of the file.
-                    [object[]]$revisions = Get-DropboxFileRevisions -Path $fileEntry.path_lower -AuthToken $AuthToken
+                    $revisions = Get-DropboxFileRevisions -Path $fileEntry.path_lower -AuthToken $AuthToken
 
                     $subpathDisplay = ($fileEntry.path_display -replace "(?i)^$([Regex]::Escape("$Path/"))","/") 
                     Add-Member -InputObject $fileEntry -TypeName "DropboxContentItem" -Name "subpath_display" -MemberType NoteProperty -Value $subpathDisplay
