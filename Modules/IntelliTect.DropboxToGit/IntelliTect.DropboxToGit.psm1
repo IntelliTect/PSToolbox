@@ -1,7 +1,7 @@
 Set-StrictMode -version latest
 
-$script:progressIdStack = New-Object System.Collections.Generic.Stack[int]
-$script:progressNextId = 1
+$script:progressIdStack = New-Object System.Collections.ArrayList
+$script:progressNextIndex = 0
 
 Function script:Invoke-DropboxApiRequest {
     [CmdletBinding()] param(
@@ -138,7 +138,7 @@ Function Get-DropboxHistory {
         [string] $Path = "",
         [string[]] $PathExcludes = (new-object string[] 0)
     )
-try { $Activity = "Get-DropboxHistory";$parentId=$script:progressIdStack.Push($id);$Id = $script:progressNextId++;$script:progressIdStack.Push($id)
+try { $Activity = "Get-DropboxHistory";$parentId=[int]::MaxValue;if($script:progressNextIndex -gt 0){$parentId=$script:progressIdStack[-1]};$Id = $script:progressNextIndex++;$script:progressIdStack.Add($id)
 
     # TODO: Provide more examples including ones that consume the history.
     
@@ -153,27 +153,33 @@ try { $Activity = "Get-DropboxHistory";$parentId=$script:progressIdStack.Push($i
 
     $history = @{}
     $head = New-Object System.Collections.ArrayList
+    $contents = New-Object System.Collections.ArrayList
     $cursor = $null
     $hasMore = $true
-    $objectCount = 0
+    [int]$totalEntryCount = 0
     while ($hasMore -eq $true){
         # Dropbox's API returns up to 2000 file listings at once.
         # If there are more than that, a cursor is returned which can be passed to another call
         # in order to get more results. Loop until we've found all the file listings.
-        Write-Progress -Activity $Activity -Id $id -ParentId $parentId -Status "Get Dropbox File List..."
+        Write-Progress -Activity $Activity -Id $id -ParentId $parentId -Status "Get Dropbox File List..." -CurrentOperation "Got $totalEntryCount file listings so far"
         $content = Get-DropboxDirectoryContents -Path $Path -Cursor $cursor -AuthToken $AuthToken
+        $totalEntryCount = $totalEntryCount + $content.entries.Count
+        $contents.Add($content)
+        $cursor = $content.cursor
+        $hasMore = $content.has_more
+    }
 
-        $objectCount = $objectCount + $content.entries.Count
-        Write-Progress -Activity $Activity -Id $id -ParentId $parentId -Status "Get Dropbox File List..." -CurrentOperation "Got $objectCount file listings so far"
-
+    [int]$entryCount=0
+    foreach($content in $contents) {
         foreach ($fileEntry in $content.entries) {
-            Write-Progress -Activity $Activity -Id $id -ParentId $parentId -Status "Get file revisions" -CurrentOperation $fileEntry.path_Display
+
             # We only care about files, not directories. "deleted" represents a deleted file.
             if ($fileEntry.".tag" -eq "file" -or $fileEntry.".tag" -eq "deleted"){
-
                 # Examine the file's path to see if it should be excluded.
                 $matchedExcludes = $PathExcludes | Where-Object {$fileEntry.path_lower -like $_}
+
                 if (!$matchedExcludes -or $matchedExcludes.Count -eq 0) {
+                    Write-Progress -Activity $Activity -Id $id -ParentId $parentId -Status "Get file revisions" -CurrentOperation $fileEntry.path_Display -PercentComplete ($entryCount++/$totalEntryCount)
                     # If the file passed the exclusion filter, grab the metadata about the revisions of the file.
                     $revisions = Get-DropboxFileRevisions -Path $fileEntry.path_lower -AuthToken $AuthToken
 
@@ -198,19 +204,15 @@ try { $Activity = "Get-DropboxHistory";$parentId=$script:progressIdStack.Push($i
                 }
             }
         }
-
-
-        $cursor = $content.cursor
-        $hasMore = $content.has_more
     }
 
-    if ($objectCount -eq 0) {
+    if ($totalEntryCount -eq 0) {
         Write-Warning "No files were found. Exiting."
         return;
     }
 
     return $history,$head    
-} finally {$script:progressNextId--; $script:progressIdStack.Pop();}
+} finally {$script:progressNextIndex--;$script:progressIdStack.Remove($script:progressIdStack[-1])}
 }
 
 
@@ -260,7 +262,7 @@ Function Invoke-ConvertDropboxToGit {
         # TO DO: Add [bool]$CaseSensitiveGit
     )
     
-try { $Activity = "Invoke-ConvertDropboxToGit";$Id = $script:progressNextId++;$script:progressIdStack.Push($id)
+try { $Activity = "Invoke-ConvertDropboxToGit";if($script:progressNextIndex -gt 0){$parentId=$script:progressIdStack[-1]};$Id = $script:progressNextIndex++;$script:progressIdStack.Add($id)
 
     Write-Progress -Activity $Activity -Id $id -ParentId $parentId
     
@@ -351,9 +353,5 @@ try { $Activity = "Invoke-ConvertDropboxToGit";$Id = $script:progressNextId++;$s
         # Move our current directory back up to where we were before we started. We're done!
         Set-Location $originalLocation
     }
-}
-finally {
-    $script:progressNextId--
-    $script:progressIdStack.Pop()  
-}
+} finally {$script:progressNextIndex--;$script:progressIdStack.Remove($script:progressIdStack[-1])}
 }
