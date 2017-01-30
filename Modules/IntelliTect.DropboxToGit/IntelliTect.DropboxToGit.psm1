@@ -21,7 +21,7 @@ Function script:Invoke-DropboxApiRequest {
         return ConvertFrom-Json $response.Content
     }
 
-    return $response
+    return [PSCustomObject]$response
 }
 
 
@@ -62,7 +62,7 @@ Function script:Get-DropboxFileRevisions {
 
     try {
         $response = Invoke-DropboxApiRequest -Endpoint "files/list_revisions" -Body $body -AuthToken $AuthToken
-        return $response.entries
+        return @($response.entries)
     }
     catch {
         if ($_.ErrorDetails.Message.Contains("path/not_file")) {
@@ -209,7 +209,9 @@ try { $Activity = "$($PSCmdlet.MyInvocation.MyCommand.Name)";$parentId=[int]::Ma
                     Add-Member -InputObject $revision -TypeName "DropboxFileRevision" -Name "subpath_display" -MemberType NoteProperty -Value $subpathDisplay
                     $null = $history[$revision.client_modified].Add($revision)
                 }
-                Add-Member -InputObject $fileEntry -TypeName "DropboxContentItem" -Name "Revisions" -MemberType NoteProperty -Value $revisions
+                Add-Member -InputObject $fileEntry -TypeName "DropboxContentItem" -Name "Revisions" -MemberType NoteProperty -Value @($revisions)
+
+                Write-Output $fileEntry
                     
             }
         }
@@ -220,7 +222,7 @@ try { $Activity = "$($PSCmdlet.MyInvocation.MyCommand.Name)";$parentId=[int]::Ma
         return;
     }
 
-    return $history,$head,$contents   
+    #return $history,$head,$contents   
 } finally {$script:progressNextIndex--;$script:progressIdStack.Remove($script:progressIdStack[-1]);Write-Progress -Activity $Activity -Id $id -Completed}
 }
 
@@ -259,20 +261,20 @@ try { $Activity = "$($PSCmdlet.MyInvocation.MyCommand.Name)";$parentId=[int]::Ma
 Function Invoke-ConvertDropboxToGit {
     [CmdletBinding(DefaultParametersetName="DropBoxConfig")] 
     param(
-        [Parameter(Mandatory, ParameterSetName="DropBoxConfig")][string] $AuthToken = $(Read-Host -prompt @"
+        [Parameter(Mandatory)][string] $AuthToken = $(Read-Host -prompt @"
         Enter your Dropbox access token.  To get a token, follow the steps at
         https://blogs.dropbox.com/developers/2014/05/generate-an-access-token-for-your-own-account/
 "@),
         [Parameter(Mandatory, ParameterSetName="DropBoxConfig")][string] $Path = "",
         [Parameter(ParameterSetName="DropBoxConfig")][string[]] $PathExcludes = (new-object string[] 0),
-        [Parameter(ParameterSetName="DropBoxConfig")][ValidateScript({Test-Path $_ -PathType Container })][string] $OutputDirectory,
-        [Parameter(ParameterSetName="DropBoxHistory")] $history,
-        [Parameter(ParameterSetName="DropBoxHistory")] $head,
-        [Parameter(ParameterSetName="DropBoxHistory")] $content
+        [ValidateScript({Test-Path $_ -PathType Container })][string] $OutputDirectory,
+        #[Parameter(ParameterSetName="DropBoxHistory")] $history,
+        #[Parameter(ParameterSetName="DropBoxHistory")] $head,
+        [Parameter(ParameterSetName="DropBoxHistory")] $contents
         # TO DO: Add [bool]$CaseSensitiveGit
     )
     
-try { $Activity = "$PSCmdlet.MyInvocation.MyCommand.Name";$parentId=[int]::MaxValue;if($script:progressNextIndex -gt 0){$parentId=$script:progressIdStack[-1]};$Id = $script:progressNextIndex++;$script:progressIdStack.Add($id)>$null
+try { $Activity = "$($PSCmdlet.MyInvocation.MyCommand.Name)";$parentId=[int]::MaxValue;if($script:progressNextIndex -gt 0){$parentId=$script:progressIdStack[-1]};$Id = $script:progressNextIndex++;$script:progressIdStack.Add($id)>$null
 
     Write-Progress -Activity $Activity -Id $id -ParentId $parentId
     
@@ -280,7 +282,7 @@ try { $Activity = "$PSCmdlet.MyInvocation.MyCommand.Name";$parentId=[int]::MaxVa
         Write-Progress -Activity $Activity -Id $id -ParentId $parentId -Status "Get-DropBoxHistory"
         # When we're done grabbing metadata, will will loop through this dictionary in order of its keys
         # to construct our git repo.
-        $history,$head,$content = Get-DropboxContentHistory $AuthToken $Path $PathExcludes 
+        $contents = Get-DropboxContentHistory $AuthToken $Path $PathExcludes 
     }
      
     # Unfortunately, we have to change our working directory because git doesn't allow you to target commands to other directories.
@@ -295,7 +297,7 @@ try { $Activity = "$PSCmdlet.MyInvocation.MyCommand.Name";$parentId=[int]::MaxVa
         # The name of the folder created is always static.
         $dirName = Join-Path $OutputDirectory "DropboxHistoryBuild $((Get-Date -Format u).Replace(':', '-'))"
 
-        New-Item -ItemType Directory -Path $dirName
+        New-Item -ItemType Directory -Path $dirName  > $null
 
         Set-Location $dirName
 
@@ -305,28 +307,59 @@ try { $Activity = "$PSCmdlet.MyInvocation.MyCommand.Name";$parentId=[int]::MaxVa
             git config core.ignorecase $caseSensitiveGit
         }
     
+        [string]$currentDirectory = $null;
+        [string]$lastDirectory = $null;
+
         $userInfos = @{}
+
         # Loop over our dictionary of revisions in order of the key (which is the date of the revision)
-        foreach ($entry in $history.GetEnumerator() | Sort-Object -Property Key) {
+        foreach ($entry in ( $contents | Sort-Object -Property client_modified)  ) {
+            [Nullable[DateTime]]$datetime = $null
+            [string]$authorId = $null
+            [PSCustomObject]$userInfo = $null
+
             Write-Progress -Activity $Activity -Id $id -ParentId $parentId -Status "Download file from dropbox..." -CurrentOperation $entry.path_display
             # Go out to Dropbox and download the revision of each file that corresponds to this date.
-            foreach ($revisionEntry in $entry.Values) {
+
+            if($entry.Revisions.Count -eq 0) {
+                Write-Host "$($entry.path_display) has no revisions."
+            }
+
+            foreach ($revisionEntry in $entry.Revisions | Sort-Object -Property client_modified ) {
                 $outFile = Join-Path "." ($revisionEntry.subpath_display)
+
                 # TO DO: Test
                 #if ([bool](git config core.ignorecase)) {
                 #    if( (Test-Path $outFile) -and ($outFile -cne (Resolve-Path (Get-Item $outFile) -Relative)) ) {
                 #        git mv (Resolve-Path $outFile).Path $outFile -f
                 #    }
                 #}
-                Invoke-DropboxApiDownload -Path "rev:$($revisionEntry.rev)" -OutFile $outFile -AuthToken $AuthToken
+                try {
+                    Invoke-DropboxApiDownload -Path "rev:$($revisionEntry.rev)" -OutFile $outFile -AuthToken $AuthToken
+                }
+                catch [System.IO.IOException] {
+                    Write-Warning "Unable to download $outfile.  Retrying...."
+                    Write-Progress -Activity $Activity -Id $id -ParentId $parentId -Status "Download file from dropbox..." -CurrentOperation "Unable to download $outfile.  Retrying...."
+                    Start-Sleep -Seconds 5
+                    Invoke-DropboxApiDownload -Path "rev:$($revisionEntry.rev)" -OutFile $outFile -AuthToken $AuthToken
+                } 
+                
+                $date = (([DateTime]$revisionEntry.client_modified).ToString("yyyy-MM-dd HH:mm:ss"))
+                $authorId = $revisionEntry[0].sharing_info.modified_by
             }
-            $date = (([DateTime]$entry.Key).ToString("yyyy-MM-dd HH:mm:ss"))
-        
+            if ($entry.".tag" -ne "deleted") {
+                $date = (([DateTime]$entry.client_modified).ToString("yyyy-MM-dd HH:mm:ss"))
+                $authorId = $entry[0].sharing_info.modified_by
+            }
+            else {
+                if($date -eq $null) { throw "The date for $($entry.subpath_display) is `$null" }
+                if($authorId -eq $null) { throw "The authorId for $($entry.subpath_display) is `$null" }
+            }
+
 
             git add -A
             Write-Progress -Activity $Activity -Id $id -ParentId $parentId -Status "Git Add" -CurrentOperation "$(git status)"
 
-            $authorId = $entry.Value[0].sharing_info.modified_by
             if ($authorId) {
                 if (!$userInfos.ContainsKey($authorId)) {
                     # If we haven't seen this userId yet, make a request to get their name and email for the commit metadata.
@@ -344,10 +377,10 @@ try { $Activity = "$PSCmdlet.MyInvocation.MyCommand.Name";$parentId=[int]::MaxVa
         }
 
         # All file revisions commits have now been made.
-        # We will make on last pass through $head and delete every file that Dropbox reports as being deleted.
+        # We will make on last pass through $contents and delete every file that Dropbox reports as being deleted.
         # We have to do this at the end because dropbox doesn't report deletion times - only a boolean on if a file is deleted or not.
         # It's not ideal, but it's what we have to work with.
-        foreach ($entry in $head){
+        foreach ($entry in $contents){
             $outFile = Join-Path "." $entry.subpath_display
             if ($entry.".tag" -eq "deleted"){
                 Remove-Item $outFile
