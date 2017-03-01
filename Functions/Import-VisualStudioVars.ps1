@@ -30,14 +30,24 @@ Function Import-VisualStudioVars {
             '2013' {
                 Import-VisualStudioVarsFromScript "2013" "${Env:VS120COMNTOOLS}" $Architecture
             } 
+            '2015' {
+                Import-VisualStudioVarsFromScript "2015" "${Env:VS140COMNTOOLS}" $Architecture
+            } 
+            '2017' {
+                $batchPath = Resolve-Path  "${Env:ProgramFiles(x86)}\Microsoft Visual Studio\2017\*\Common7\tools\vsdevcmd.bat"
+                if(!(Test-Path $batchPath)) {
+                    throw "Unable to find Visuals Studio Developer Command batch file"
+                }
+                Invoke-BatchFile $batchPath
+            }                         
             default {
                 $vscomntools = Get-Item "env:vs*comntools"
                 If($vscomntools) {
                     Push-EnvironmentBlock -Description "Before importing lastest VS $Architecture environment variables"
                     Invoke-BatchFile "$((Get-Item "env:vs*comntools" | sort value | select -last 1).Value)..\..\VC\vcvarsall.bat" $Architecture
                 }
-                Else {
-                    Throw "Visual Studio is not installed or no 'VS*COMNTOOLS' environment variable was not found."
+                else {
+                    Import-VisualStudioVars 2017
                 }
             }
         }
