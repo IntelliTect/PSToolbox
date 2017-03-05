@@ -41,20 +41,26 @@ Function Import-VisualStudioVars {
                 Invoke-BatchFile $batchPath
             }                         
             default {
-                $vscomntools = Get-Item "env:vs*comntools"
-                If($vscomntools) {
-                    Push-EnvironmentBlock -Description "Before importing lastest VS $Architecture environment variables"
-                    Invoke-BatchFile "$((Get-Item "env:vs*comntools" | sort value | select -last 1).Value)..\..\VC\vcvarsall.bat" $Architecture
+                Resolve-Path  "${Env:ProgramFiles(x86)}\Microsoft Visual Studio\2017" -ErrorAction Ignore -ErrorVariable ResolveVS2017 > $null
+                if(Test-Path VAriable:\ResolveVS2017) {
+                    Import-VisualStudioVars 2017
                 }
                 else {
-                    Import-VisualStudioVars 2017
+                    $vscomntools = Get-Item "env:vs*comntools"
+                    If($vscomntools) {
+                        Push-EnvironmentBlock -Description "Before importing lastest VS $Architecture environment variables"
+                        Invoke-BatchFile "$((Get-Item "env:vs*comntools" | sort value | select -last 1).Value)..\..\VC\vcvarsall.bat" $Architecture
+                    }
+                    else {
+                        Throw "Visual Studio Install was not detected."
+                    }
                 }
             }
         }
     }
 }
 
-Function Import-VisualStudioVarsFromScript([string] $version, [string]$commonToolsPath, [string] $architecture) {
+Function script:Import-VisualStudioVarsFromScript([string] $version, [string]$commonToolsPath, [string] $architecture) {
     If([string]::IsNullOrEmpty($commonToolsPath) -eq $false -and (Test-Path $commonToolsPath)) {
         [string]$batchPath = "$commonToolsPath..\..\VC\vcvarsall.bat"
         If(Test-Path $batchPath) {
