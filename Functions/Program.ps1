@@ -36,8 +36,8 @@ Function Get-ProgramUsingWmi {
 }
 
 $script:commandLineType = @{
-    MemberType = ‘NoteProperty’
-    TypeName = ‘PSDefult.Program.CommandLine’
+    MemberType = ï¿½NotePropertyï¿½
+    TypeName = ï¿½PSDefult.Program.CommandLineï¿½
     Value = $null
 }
  
@@ -143,17 +143,80 @@ Function Uninstall-Program{
 }
 
     
+
+
 Function Install-WebDownload {
-    [CmdletBinding()] param(
-        [Parameter(Mandatory)][alias("Uri")][string] $url, 
-        [Parameter(ParameterSetName="CommandLine")] [string] $arguments = $null, 
-        [Parameter(ParameterSetName="ScriptBlock")][ScriptBlock] $postDownloadScriptBlock, 
-        [Parameter(ParameterSetName="UnattendedSilentSwitchFinder",
-            HelpMessage="Lookup the unattended silent switch for the setup program.")][switch]$ussf,
-        [string] $installFileName = [System.Management.Automation.WildcardPattern]::Escape((Split-Path $url -Leaf)),
-        [switch]$forceDownload ) 
-    $tempPath = Get-TempPath
+[CmdletBinding()] param(
+    [Parameter(Mandatory)][alias("Uri")][string] $url, 
+    [Parameter(Mandatory)][string] $PackageName, 
+    [Parameter(ParameterSetName="CommandLine")] [string] $arguments = $null, 
+    [Parameter(ParameterSetName="ScriptBlock")][ScriptBlock] $postDownloadScriptBlock, 
+    [Parameter(ParameterSetName="UnattendedSilentSwitchFinder",
+        HelpMessage="Lookup the unattended silent switch for the setup program.")][switch]$ussf,
+    [string] $installFileName = [System.Management.Automation.WildcardPattern]::Escape((Split-Path $url -Leaf)),
+    [switch]$forceDownload ) 
+
+# Function Install-WebDownloadFromZipWithoutChocolatey {
+#         [CmdletBinding()] param(
+#             [Parameter(Mandatory)][string] $url,  
+#             [string]$exeFileName, 
+#             [string] $zipFileName = (Split-Path $url -Leaf), 
+#             [switch]$forceDownload ) 
+
+#         # Install PureText but it failed because the version was old. #TODO
+#         #Add-Type -As System.IO.Compression.FileSystem;
+
+#         Install-WebDownload -url $url -installFileName $zipFileName  -postDownloadScriptBlock {
+#                 [string]$tempDirectory = [IO.Path]::GetTempFileName() + ".$zipFileName"
+#                 $extractDirectory = Expand-ZipFile -Path "$(Join-Path (Get-TempPath) $zipFileName)" $tempDirectory
+
+#                 If(!(Test-Path (Join-Path $extractDirectory $exeFileName))) {
+#                     Throw "Unable to find file '$exeFileName' within $zipFileName (see $extractDirectory)."
+#                 }
+#                 [string] $targetPath = Join-Path ${env:ProgramFiles(x86)} "$([io.path]::GetFileNameWithoutExtension($exeFileName))\$exeFileName"
+#                 New-Item (Split-Path $targetPath) -ItemType Directory -Force > $null
+#                 Move-Item (Join-Path $tempDirectory $exeFileName) $targetPath -Force
+#                 [string] $startupDirectory = [Environment]::GetFolderPath("CommonStartup")
+#                 New-WindowsShortcut (Join-Path $startupDirectory "$exeFileName.lnk") $targetPath
+#                 & (Join-Path $startupDirectory "$exeFileName.lnk")
+#             }
+#     }
+
+    Function Install-WebDownloadOfZip {
+        [CmdletBinding()]
+        param(
+            [Parameter(Mandatory)][string] $PackageName, 
+            [Parameter(Mandatory)][alias("Uri")][string] $url, 
+            $UnzipLocation = "$env:ChocolateyInstall\lib\$PackageName"
+        )
+
+        Import-ChocolateyModule
+
+        try {
+            # Needed because Chocolatey is not setting up context.
+            if(!(test-path variable:\helpersPath)) {
+                $setHelpersPath = $true
+                $global:helpersPath = $env:ChocolateyInstall
+            }
+            Install-ChocolateyZipPackage -packageName $PackageName -url $url -unzipLocation $UnzipLocation -specificFolder ''
+            Get-ChildItem $UnzipLocation *.exe | %{ Install-BinFile -name TrayIt -path $_.FullName  }
+        }
+        finally {
+            if($setHelpersPath) {
+                remove-item variable:\global:helpersPath
+            }
+        }
+    }
+
+#TODO Switch to Get-ChocolateyWebFile and use Invoke-WebRequest as fallback.
+$tempPath = Get-TempPath
+
+if([IO.Path]::GetExtension($InstallFileName) -eq ".zip") {
+    Install-WebDownloadOfZip -Uri $url -packageName $PackageName
+}
+else {
     $installFileName = Join-Path $tempPath $installFileName
+
     if($forceDownload -OR ($installFileName -eq "Setup.exe") -OR !(Test-Path $installFileName) ) {
         Invoke-WebRequest $url -OutFile $installFileName
     }
@@ -170,6 +233,7 @@ Function Install-WebDownload {
         }
     }
     Write-Output (Invoke-Command $postDownloadScriptBlock)
+}
 }
 
 Function InfInstall([Parameter(Mandatory)][string] $InfFilePath)
@@ -217,38 +281,6 @@ Function Expand-ZipFile {
     $zipFile.Dispose()
     Return (Get-Item $outputPath)
 }
-
-
-
-
-
-Function Install-WebDownloadFromZip {
-    [CmdletBinding()] param(
-        [Parameter(Mandatory)][string] $url,  
-        [string]$exeFileName, 
-        [string] $zipFileName = (Split-Path $url -Leaf), 
-        [switch]$forceDownload ) 
-
-    # Install PureText but it failed because the version was old. #TODO
-    #Add-Type -As System.IO.Compression.FileSystem;
-
-    Install-WebDownload -url $url -installFileName $zipFileName  -postDownloadScriptBlock {
-            [string]$tempDirectory = [IO.Path]::GetTempFileName() + ".$zipFileName"
-            $extractDirectory = Expand-ZipFile -Path "$(Join-Path (Get-TempPath) $zipFileName)" $tempDirectory
- 
-            If(!(Test-Path (Join-Path $extractDirectory $exeFileName))) {
-                Throw "Unable to find file '$exeFileName' within $zipFileName (see $extractDirectory)."
-            }
-            [string] $targetPath = Join-Path ${env:ProgramFiles(x86)} "$([io.path]::GetFileNameWithoutExtension($exeFileName))\$exeFileName"
-            New-Item (Split-Path $targetPath) -ItemType Directory -Force > $null
-            Move-Item (Join-Path $tempDirectory $exeFileName) $targetPath -Force
-            [string] $startupDirectory = [Environment]::GetFolderPath("CommonStartup")
-            New-WindowsShortcut (Join-Path $startupDirectory "$exeFileName.lnk") $targetPath
-            & (Join-Path $startupDirectory "$exeFileName.lnk")
-        }
-}
-    
-
     
 Function New-AppPath {
     [CmdletBinding()] param(
