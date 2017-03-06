@@ -36,8 +36,8 @@ Function Get-ProgramUsingWmi {
 }
 
 $script:commandLineType = @{
-    MemberType = �NoteProperty�
-    TypeName = �PSDefult.Program.CommandLine�
+    MemberType = 'NoteProperty'
+    TypeName = 'PSDefult.Program.CommandLine'
     Value = $null
 }
  
