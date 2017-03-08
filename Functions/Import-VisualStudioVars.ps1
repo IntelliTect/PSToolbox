@@ -41,15 +41,14 @@ Function Import-VisualStudioVars {
                 Invoke-BatchFile $batchPath
             }                         
             default {
-                Resolve-Path  "${Env:ProgramFiles(x86)}\Microsoft Visual Studio\2017" -ErrorAction Ignore -ErrorVariable ResolveVS2017 > $null
-                if(Test-Path VAriable:\ResolveVS2017) {
+                if(Test-Path "${Env:ProgramFiles(x86)}\Microsoft Visual Studio\2017") {
                     Import-VisualStudioVars 2017
                 }
                 else {
                     $vscomntools = Get-Item "env:vs*comntools"
                     If($vscomntools) {
                         Push-EnvironmentBlock -Description "Before importing lastest VS $Architecture environment variables"
-                        Invoke-BatchFile "$((Get-Item "env:vs*comntools" | sort value | select -last 1).Value)..\..\VC\vcvarsall.bat" $Architecture
+                        Invoke-BatchFile "$((Get-Item "env:vs*comntools" | Sort-Object value | Select-Object -last 1).Value)..\..\VC\vcvarsall.bat" $Architecture
                     }
                     else {
                         Throw "Visual Studio Install was not detected."
