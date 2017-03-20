@@ -64,6 +64,9 @@ Function Search-NugetForType {
             Write-Host "    Page Index    : $($results.pageIndex)" -ForegroundColor DarkCyan
         }
 
+        Write-Verbose "NuGet root: $($results.nuGetRoot)"
+        Write-Verbose "Page size: $($result.pageSize)"
+
         if ($results.packages.Count -eq 0) {
             Write-Host "No packages found."
         }
@@ -136,6 +139,9 @@ Function Search-NugetForNamespace {
         if ($results.pageIndex -ne 0) {
             Write-Host "    Page Index    : $($results.pageIndex)" -ForegroundColor DarkCyan
         }
+        
+        Write-Verbose "NuGet root: $($results.nuGetRoot)"
+        Write-Verbose "Page size: $($result.pageSize)"
 
         if ($results.packages.Count -eq 0) {
             Write-Host "No packages found."
