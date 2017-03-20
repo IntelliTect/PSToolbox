@@ -80,7 +80,7 @@ Function Search-NugetForType {
         the total number of items, the total pages and the current page (if applicable).
 
     .PARAMETER Search
-        Type name to search, can be with full namespace.
+        Namespace name to search.
 
     .PARAMETER AllowPrerelease
         Allow searching for prerelease nuget packages, false by default.
@@ -97,12 +97,12 @@ Function Search-NugetForType {
     .EXAMPLE
         Simple search for a specific type:
 
-        Search-NugetForType OpenStreetMapLayer
+        Search-NugetForNamespace Esri
 
     .EXAMPLE
         Go to a specific page in the search results:
 
-        Search-NugetForType Date -PageIndex 8
+        Search-NugetForNamespace Date -PageIndex 8
 #>
 Function Search-NugetForNamespace {
     [CmdletBinding()] param(
