@@ -66,7 +66,7 @@ CLRVersion = '4.0'
 # NestedModules = @()
 
 # Functions to export from this module
-FunctionsToExport = @('Search-Nuget')
+FunctionsToExport = @('Search-NugetForType', 'Search-NugetForNamespace')
 
 # Cmdlets to export from this module
 CmdletsToExport = '*'
