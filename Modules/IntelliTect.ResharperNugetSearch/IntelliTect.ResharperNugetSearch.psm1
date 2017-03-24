@@ -30,6 +30,11 @@
         Go to a specific page in the search results:
 
         Search-NugetForType Date -PageIndex 8
+
+    .EXAMPLE
+        Display the Nuget.org page for the first result in the default browser:
+
+        Search-NugetForType Mapping | Select-Object -First 1 | % { start $("https://www.nuget.org/packages/{0}/" -f $_.id) }
 #>
 Function Search-NugetForType {
     [CmdletBinding()] param(
