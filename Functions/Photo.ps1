@@ -216,7 +216,7 @@ param(
         , <# [ValidateScript({$_ -notin "True","False" })] #> [string] $toRootDirectory=$DefaultPhotoDirectory
         ,[bool] $move=$true
         ,[Parameter(ValueFromPipeline=$true)][ValidateNotNull()][IO.FileInfo[]]$files=$(
-            dir $fromDirectory -Recurse -Include *.JPG,*.MOV,*.JPEG,*.MTS,*.PDF,*.MP4,*.MP3 )
+            dir $fromDirectory -Recurse -Include *.JPG,*.MOV,*.JPEG,*.MTS,*.PDF,*.MP4,*.MP3,*CR2 )
     ) 
 
 BEGIN {
