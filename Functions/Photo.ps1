@@ -24,14 +24,12 @@ Set-StrictMode -Version "Latest"
 
 function script:LoadPhotoLibraryAssembly()
 {
-    if(test-path variable:\here)
-    {
-        [string] $photoLibraryPath = (join-path($here) "PhotoLibrary.dll");
-    }
-    if( !(test-path variable:\photoLibraryPath) -OR !(test-path $photoLibraryPath) )
+    $photoLibraryPath = Get-ChildItem ".\Lib","$PSScriptRoot",".\" "PhotoLibrary.dll" | Sort-Object -Descending CreationTime | Select-Object -First 1 -ExpandProperty FullName
+    if( !(test-path variable:\photoLibraryPath) -AND !(test-path $photoLibraryPath) )
     {
 	    $photoLibraryPath="$utils\PhotoLibrary.dll"
     }
+    #TODO: Switch to use Add-Type
     [void] [Reflection.Assembly]::LoadFrom($photoLibraryPath)
 }
 
@@ -42,6 +40,7 @@ function script:GetDateTimeOriginal($target) {
 
 #Admittedly we could just take the parameters as System.Object and call the $originalTimeStamp on them directly but
 #the strongly typed approach ensures we can get the more accurate photo metadata when available.
+#TODO: This doesn't work if PhotoLibrary.dll is not loaded.  Update to make it optional when a JPG file is not used.
 function GetSubDirectoryWithDateTimePath(
     [Parameter(ParameterSetName="FileInfo",Mandatory)][IO.FileInfo]$file
     ,[Parameter(ParameterSetName="Photo",Mandatory)][Photolibrary.Photo]$photo
@@ -215,8 +214,9 @@ param(
         [string]$fromDirectory
         , <# [ValidateScript({$_ -notin "True","False" })] #> [string] $toRootDirectory=$DefaultPhotoDirectory
         ,[bool] $move=$true
-        ,[Parameter(ValueFromPipeline=$true)][ValidateNotNull()][IO.FileInfo[]]$files=$(
-            dir $fromDirectory -Recurse -Include *.JPG,*.MOV,*.JPEG,*.MTS,*.PDF,*.MP4,*.MP3 )
+        # TODO: Check 
+        ,[Parameter(ValueFromPipeline=$true)][ValidateNotNull()][IO.FileInfo[]]$files=@(
+            Get-ChildItem $fromDirectory -Recurse -Include *.JPG,*.MOV,*.JPEG,*.MTS,*.PDF,*.MP4,*.MP3,*.CR2 )
     ) 
 
 BEGIN {
@@ -248,7 +248,7 @@ PROCESS {
 	        else
 	        {
                 $targetFileName= $file.Name
-                $targetDirectoryName= GetSubDirectoryWithDateTimePath -file $file
+                $targetDirectoryName= GetSubDirectoryWithDateTimePath -File $file
 	        }
 
             $targetDirectoryName = Join-Path $toRootDirectory $targetDirectoryName;
