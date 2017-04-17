@@ -66,17 +66,17 @@ Function Open-MicrosoftWord {
 Function Open-WordDocument {
     [CmdletBinding()] param(
         [ValidateScript({Test-Path $_ -PathType Leaf})][Parameter(Mandatory, ValueFromPipeLine, ValueFromPipelineByPropertyName, Position)][Alias("FullName","InputObject")][string[]]$wordDocumentPath,
-        [switch]$ReadOnly = $true
+        [switch]$ReadWrite
     )
     PROCESS {
-        $WordDocumentPath | %{
+        $WordDocumentPath | ForEach-Object {
             $eachDocumentPath = (Resolve-Path $_).Path
-            [bool]$readOnly = [bool]$ReadOnly.IsPresent  # TODO: Blog: switch and bool are not the same
+            [bool]$readOnly = ![bool]$ReadWrite.IsPresent  # TODO: Blog: switch and bool are not the same
             [bool]$ConfirmConversions = $false  # Optional Object. True to display the Convert File dialog box if the file isn't in Microsoft Word format.
 
             $wordApplication = Open-MicrosoftWord
             $document = $wordApplication.Documents.Open($eachDocumentPath, $confirmConversions, $ReadOnly) #For additional parameters see https://msdn.microsoft.com/en-us/library/microsoft.office.interop.word.documents.open.aspx
-            if($ReadOnly) {
+            if($readOnly) {
                 # Used to avoid the error, "This method or property is not available because this command is not available for reading."
                 # when using Find.Execute on the document
                 # see http://blogs.msmvps.com/wordmeister/2013/02/22/word2013bug-not-available-for-reading/
@@ -84,7 +84,7 @@ Function Open-WordDocument {
             }
 
             #Add Text Property to Comment where the comment text is the Range.Text property on a comment.
-            $comments = $document.Comments | %{ Add-Member -InputObject $_ -MemberType ScriptProperty -Name Text -Value { $this.Range.Text} -PassThru } 
+            $comments = $document.Comments | ForEach-Object{ Add-Member -InputObject $_ -MemberType ScriptProperty -Name Text -Value { $this.Range.Text} -PassThru } 
             Add-Member -InputObject $document -MemberType ScriptProperty -Name CommentsEx -Value { $comments } -Force
 
             return $document
@@ -95,17 +95,17 @@ Function Open-WordDocument {
 Function Get-WordDocumentComment {
     [CmdletBinding()] param(
         [ValidateScript({Test-Path $_ -PathType Leaf})][Parameter(Mandatory, ValueFromPipelineByPropertyName, Position)][Alias("FullName","InputObject")]
-        [string[]]$wordDocumentPath,  #FullName alias added to support pipeline from Get-ChildItem
+        [string[]]$WordDocumentPath,  #FullName alias added to support pipeline from Get-ChildItem
 
-        [switch]$ReadOnly = $true
+        [switch]$ReadWrite
     )
  
     PROCESS {
-        [bool]$readOnly = [bool]$ReadOnly.IsPresent  # TODO: Blog: switch and bool are not the same
+        [bool]$readOnly = ![bool]$ReadWrite.IsPresent  # TODO: Blog: switch and bool are not the same
 
-        $wordDocumentPath | %{
-            $document = Open-WordDocument -wordDocumentPath $_ -ReadOnly:$ReadOnly
-            $comments = $document.Comments | %{ Add-Member -InputObject $_ -MemberType ScriptProperty -Name Text -Value { $this.Range.Text} -PassThru } 
+        $WordDocumentPath | ForEach-Object{
+            $document = Open-WordDocument -wordDocumentPath $_ -ReadWrite:(!$readOnly)
+            $comments = $document.Comments | ForEach-Object{ Add-Member -InputObject $_ -MemberType ScriptProperty -Name Text -Value { $this.Range.Text} -PassThru } 
             return $comments
         }
     }
@@ -121,7 +121,7 @@ Function Update-WordDocumentAcceptAllChanges {
             try {
                 
                 $eachDocumentPath = (Resolve-Path $_).Path
-                $document = Open-WordDocument $eachDocumentPath -ReadOnly:$false
+                $document = Open-WordDocument $eachDocumentPath -ReadWrite
 
                 if([bool]$PSCmdlet.MyInvocation.BoundParameters["Debug"]) {
                     $document.Application.Visible = $true # Yes, I realize this is dumb (why not just assign it) but it doesn't seem to work (perhaps a COM conversion problem?)
@@ -146,18 +146,18 @@ Function Update-WordDocumentAcceptAllChanges {
 
 Function Protect-WordDocument {
     [CmdletBinding()] param(
-        [ValidateScript({Test-Path $_ -PathType Leaf})][Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position)][Alias("FullName","InputObject")][string[]]$wordDocumentPath,
-        [ValidateSet("NoProtection","AllowOnlyRevisions","AllowOnlyComments","AllowOnlyFormFields","AllowOnlyReading")] $protectionType, #TODO: Restrict to possible values for Microsoft.Office.Interop.Word.WdProtectionType with Intellisense
-        $password
+        [ValidateScript({Test-Path $_ -PathType Leaf})][Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position)][Alias("FullName","InputObject")][string[]]$WordDocumentPath,
+        [ValidateSet("NoProtection","AllowOnlyRevisions","AllowOnlyComments","AllowOnlyFormFields","AllowOnlyReading")] $ProtectionType, #TODO: Restrict to possible values for Microsoft.Office.Interop.Word.WdProtectionType with Intellisense
+        $Password
     )
     PROCESS {
-        $WordDocumentPath | %{
+        $WordDocumentPath | ForEach-Object{
             try {
-                $document = Open-WordDocument $_
+                $document = Open-WordDocument $_ -ReadWrite
 
                 $protectionType = [Microsoft.Office.Interop.Word.WdProtectionType] "wd$protectionType"  #Add on wd to successfully convert.
 
-                $document.Protect( $protectionType, [ref]$false, [ref]$password, [ref]$false, [ref]$false)
+                $document.Protect( $ProtectionType, [ref]$false, [ref]$Password, [ref]$false, [ref]$false)
             }
             finally {
                 if($document -ne $null) {
@@ -267,7 +267,7 @@ PROCESS {
  
             try
             {
-                $document = Open-WordDocument $wordDocumentPath -ReadOnly:$false
+                $document = Open-WordDocument $wordDocumentPath -ReadWrite
                 $visible = $leaveOpen
                 $document.Application.Visible = $visible -or $PSCmdlet.MyInvocation.BoundParameters["Debug"]
 
@@ -309,9 +309,9 @@ PROCESS {
 #>
 Function Find-WordDocumentWord {
     [CmdletBinding()] param(
-        [ValidateScript({Test-Path $_ -PathType Leaf})][Parameter(Mandatory, ValueFromPipelineByPropertyName,Position)][Alias("FullName","InputObject")][string[]]$wordDocumentPath,  #FullName alias added to support pipeline from Get-ChildItem
+        [ValidateScript({Test-Path $_ -PathType Leaf})][Parameter(Mandatory, ValueFromPipelineByPropertyName,Position)][Alias("FullName","InputObject")][string[]]$WordDocumentPath,  #FullName alias added to support pipeline from Get-ChildItem
         [Parameter(Mandatory, Position=0)][string[]]$value,
-        [switch]$leaveOpen,
+        [switch]$LeaveOpen,
         [switch]$matchCase = $true,
         [switch]$matchWholeWord = $false,
         [switch]$matchWildcards = $false,
@@ -322,15 +322,15 @@ Function Find-WordDocumentWord {
 PROCESS {
 
         Write-Progress -Activity "Find-WordDocumentWord" -PercentComplete 0
-        $wordDocumentPath | %{
+        $wordDocumentPath | ForEach-Object{
 
             Write-Progress -Activity "Find-WordDocumentWord" -Status $_
             $result = $null
             $document = $null
             try {
                 $documentPath = $_
-                $document = Open-WordDocument $documentPath -ReadOnly:$leaveOpen
-                $visible = $leaveOpen
+                $document = Open-WordDocument $documentPath -ReadWrite:(!$LeaveOpen)
+                $visible = $LeaveOpen
                 <#
                     BLOG-THIS: 
                     We wasnt to set visible to true when debugging or when -Debug specified.
@@ -378,7 +378,36 @@ PROCESS {
     }
 }
 
+Function Compare-WordDocument {
+    [CmdletBinding()]
+    param(
+        $BaseFileName,
+        $ChangedFileName
+    )
 
+    $ErrorActionPreference = 'Stop'
+
+    # Remove the readonly attribute because Word is unable to compare readonly
+    # files:
+    $baseFile = Get-ChildItem $BaseFileName
+    if ($baseFile.IsReadOnly) {
+        Throw "Error: $BaseFileName is marked as read-only."
+    }
+
+    # Constants
+    $wdDoNotSaveChanges = 0
+    $wdCompareTargetNew = 2
+
+    $wordApplication = Open-MicrosoftWord
+    $wordApplication.Visible = $true
+    $document = Open-WordDocument $baseFile -ReadWrite:$false
+    $document.Compare($ChangedFileName, [ref]"Comparison", [ref]$wdCompareTargetNew, [ref]$true, [ref]$true)
+
+    $wordApplication.ActiveDocument.Saved = 1
+
+    # Now close the document so only compare results window persists:
+    $document.Close([ref]$wdDoNotSaveChanges)
+}
 
 <# 
 
