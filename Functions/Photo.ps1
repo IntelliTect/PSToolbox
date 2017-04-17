@@ -24,10 +24,14 @@ Set-StrictMode -Version "Latest"
 
 function script:LoadPhotoLibraryAssembly()
 {
-    $photoLibraryPath = Get-ChildItem ".\Lib","$PSScriptRoot",".\" "PhotoLibrary.dll" | Sort-Object -Descending CreationTime | Select-Object -First 1 -ExpandProperty FullName
+    $photoLibraryPath = Get-ChildItem "$PSScriptRoot\..\Lib","$PSScriptRoot" "PhotoLibrary.dll" | 
+      Sort-Object -Descending CreationTime | Select-Object -First 1 -ExpandProperty FullName
     if( !(test-path variable:\photoLibraryPath) -AND !(test-path $photoLibraryPath) )
     {
 	    $photoLibraryPath="$utils\PhotoLibrary.dll"
+    }
+    if(!(test-path $photoLibraryPath)) {
+      $photoLibraryPath='C:\data\Programs\Utilities\PhotoLibrary.dll'
     }
     #TODO: Switch to use Add-Type
     [void] [Reflection.Assembly]::LoadFrom($photoLibraryPath)
@@ -186,6 +190,10 @@ function GetFileNameWithCameraTag(
             elseif($photo.Model -eq "GT-I8190N")
             {
                 $targetFileName = "GT-I8190N_" + $photo.GetFileName()
+            }
+            elseif($photo.Model -eq "SM-G935F")
+            {
+                 $targetFileName = "SM-G935F_" + $photo.GetFileName()
             }
             elseif($photo.Model -eq "GT-I9500")
             {
