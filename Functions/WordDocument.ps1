@@ -378,6 +378,7 @@ PROCESS {
     }
 }
 
+# Original pulled from https://github.com/ForNeVeR/ExtDiff
 Function Compare-WordDocument {
     [CmdletBinding()]
     param(
