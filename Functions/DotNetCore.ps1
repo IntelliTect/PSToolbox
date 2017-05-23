@@ -1,9 +1,24 @@
-[CmdletBinding()]
-param(
-  [string]$version
-)
+Function Set-DotNetSdkVersion {
+  [CmdletBinding()]
+  param(
+    [string]$version,
+    [string]$folder = $pwd
+  )
 
-$globalJsonPath = Join-Path $pwd 'global.json'
-$globalJsonContent = Get-Content $globalJsonPath -raw | ConvertFrom-Json
-$globalJsonContent.sdk | % {$_.version=$version}
-$globalJsonContent | ConvertTo-Json  | Set-Content $globalJsonPath 
+  if(Test-Path "global.json") {
+      $globalJsonPath = (Resolve-Path 'global.json').Path
+      $globalJsonContent = Get-Content $globalJsonPath -raw | ConvertFrom-Json
+  }
+  else {
+    $globalJsonPath = Join-Path $pwd 'global.json'
+    New-Item -ItemType File $globalJsonPath
+    $globalJsonContent = "{
+    `"sdk`":  {
+                `"version`":  `"2.0.0`"
+            }
+      }" | ConvertFrom-Json
+  }
+  
+  $globalJsonContent.sdk | % {$_.version=$version}
+  $globalJsonContent | ConvertTo-Json  | Set-Content $globalJsonPath 
+}
