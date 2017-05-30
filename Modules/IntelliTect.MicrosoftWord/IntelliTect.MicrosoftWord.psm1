@@ -1,5 +1,5 @@
 
-add-type -AssemblyName "Microsoft.Office.Interop.Word" 
+#add-type -AssemblyName "Microsoft.Office.Interop.Word" 
 
 <#
 
