@@ -1,5 +1,5 @@
 
-add-type -AssemblyName "Microsoft.Office.Interop.Word" 
+#add-type -AssemblyName "Microsoft.Office.Interop.Word" 
 
 <#
 
@@ -399,12 +399,11 @@ Function Compare-WordDocument {
     $wdDoNotSaveChanges = 0
     $wdCompareTargetNew = 2
 
-    $wordApplication = Open-MicrosoftWord
-    $wordApplication.Visible = $true
     $document = Open-WordDocument $baseFile -ReadWrite:$false
+    $document.Application.Visible = $true
     $document.Compare($ChangedFileName, [ref]"Comparison", [ref]$wdCompareTargetNew, [ref]$true, [ref]$true)
 
-    $wordApplication.ActiveDocument.Saved = 1
+    $document.Application.ActiveDocument.Saved = 1    
 
     # Now close the document so only compare results window persists:
     $document.Close([ref]$wdDoNotSaveChanges)
