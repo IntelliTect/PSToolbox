@@ -24,7 +24,5 @@
     # the default rules except for those you exclude below.
     # Note: if a rule is in both IncludeRules and ExcludeRules, the rule
     # will be excluded.
-    ExcludeRules = @('PSUseSingularNouns'
-        , 'PSUseShouldProcessForStateChangingFunctions'
-    )
+    ExcludeRules = @()
 }
