@@ -54,29 +54,100 @@ Describe 'Remove-DirectoryWithLongName' {
 
 Describe 'Edit-File' {
     It 'Create a new temp file and open it to edit' {
-        $tempFile = [IO.Path]::ChangeExtension([IO.Path]::GetTempFileName(), '.txt')
-        $notepadProcesses = Get-Process #Only needed when not in ISE
         try {
-            Edit-File $tempFile
-            $openedFileProcess = Get-Process | ?{ $notepadProcesses.id -notcontains $_.id }
-            $openedFileProcess.Count | Should Be 1;
-            $openedFileProcess | Stop-Process
+            $tempFile = [IO.Path]::ChangeExtension([IO.Path]::GetTempFileName(), '.txt')
+            $notepadProcesses = Get-Process #Only needed when not in ISE
+            try {
+                Edit-File $tempFile
+                $openedFileProcess = @(Get-Process | ?{ $notepadProcesses.id -notcontains $_.id })
+                $openedFileProcess.Length | Should Be 1;
+            }
+            finally {
+                Get-Process | ?{ $notepadProcesses.id -notcontains $_.id } | Stop-Process
+            }
         }
         finally {
-            Remove-Item $tempFile;
+            if(Test-Path $tempFile) {
+                Remove-Item $tempFile;
+            }
         }
     }
     It 'Create a new temp file and open from the pipeline' {
-        $tempFile = [IO.Path]::ChangeExtension([IO.Path]::GetTempFileName(), '.txt')
-        $notepadProcesses = Get-Process #Only needed when not in ISE
         try {
-            $tempFile | Edit-File
-            $openedFileProcess = Get-Process | ?{ $notepadProcesses.id -notcontains $_.id }
-            $openedFileProcess.Count | Should Be 1;
-            $openedFileProcess | Stop-Process
+            $tempFile = [IO.Path]::ChangeExtension([IO.Path]::GetTempFileName(), '.txt')
+            $notepadProcesses = Get-Process #Only needed when not in ISE
+            try {
+                $tempFile | Edit-File 
+                $openedFileProcess = @(Get-Process | ?{ $notepadProcesses.id -notcontains $_.id })
+                $openedFileProcess.Length | Should Be 1;
+            }
+            finally {
+                Get-Process | ?{ $notepadProcesses.id -notcontains $_.id } | Stop-Process
+            }
         }
         finally {
-            Remove-Item $tempFile;
+            if(Test-Path $tempFile) {
+                Remove-Item $tempFile;
+            }
         }
     }
+}
+
+
+Describe 'Test-FileIsLocked' {
+    It 'Create a new temp file and verify it is not locked' {
+        $tempFile = [IO.Path]::GetTempFileName()
+        Test-Path $tempFile | Should Be $true
+        try {
+            Test-FileIsLocked $tempFile | Should Be $false
+        }
+        finally {
+            if(Test-Path $tempFile) {
+                Remove-Item $tempFile;
+            }
+        }
+    }
+    It 'Create a new temp file, lock it, and verify it is locked' {
+        $fileStream = $null
+        try {
+            $tempFile = [IO.Path]::GetTempFileName()
+            Test-Path $tempFile | Should Be $true
+            try {
+                $fileInfo = New-Object System.IO.FileInfo $tempFile
+                $fileStream = $fileInfo.Open( [System.IO.FileMode]::OpenOrCreate,[System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::None )
+
+                Test-FileIsLocked $tempFile | Should Be $true
+            }
+            finally {
+                if($fileStream) {
+                    $fileStream.Close()
+                }
+            }                
+        }
+        finally {
+            if(Test-Path $tempFile) {
+                Remove-Item $tempFile;
+            }
+        }
+    }
+    
+}
+
+Function Test-FileIsLocked {
+    [CmdletBinding()]
+    ## Attempts to open a file and trap the resulting error if the file is already open/locked
+    param ([string]$filePath )
+    $filelocked = $false
+    try {
+        $fileInfo = New-Object System.IO.FileInfo $filePath
+        $fileStream = $fileInfo.Open( [System.IO.FileMode]::OpenOrCreate,[System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::None )
+    }
+    catch {
+        $filelocked = $true
+        if ($fileStream) {
+            $fileStream.Close()
+        }
+    }
+
+    return $filelocked
 }

@@ -52,7 +52,7 @@ Deletes the $env:Temp\SampleDirectory directory.
 #>
 Function Remove-Directory {
     param(
-        [ValidateScript({Test-Path $_ -PathType ‘Container’})] 
+        [ValidateScript({Test-Path $_ -PathType ï¿½Containerï¿½})] 
         $directory
     )
 
@@ -88,3 +88,24 @@ Set-Item "Function:Edit-File" -Options "ReadOnly" #Used to prevent the PSCX modu
                                                   # this function but causes an error to occur when 
                                                   # PSCX loads.  Use remove-item with -force to remove
                                                   # the function.
+
+Function Test-FileIsLocked {
+    [CmdletBinding()]
+    ## Attempts to open a file and trap the resulting error if the file is already open/locked
+    param ([string]$filePath )
+    $filelocked = $false
+    try {
+        $fileInfo = New-Object System.IO.FileInfo $filePath
+        $fileStream = $fileInfo.Open( [System.IO.FileMode]::OpenOrCreate,[System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::None )
+    }
+    catch {
+        $filelocked = $true
+    }
+    finally {
+        if ($fileStream) {
+            $fileStream.Close()
+        }
+    }
+
+    return $filelocked
+}
