@@ -1,6 +1,32 @@
 
-#add-type -AssemblyName "Microsoft.Office.Interop.Word" 
+try {
+    add-type -AssemblyName "Microsoft.Office.Interop.Word" 
+}
+catch {
+    throw "Unable to find 'Microsoft.Office.Interop.Word' assembly."
+}
 
+#TODO: Remove and use dependency on File.ps1 (module needed) instead.
+Function Test-FileIsLocked {
+    [CmdletBinding()]
+    ## Attempts to open a file and trap the resulting error if the file is already open/locked
+    param ([string]$filePath )
+    $filelocked = $false
+    try {
+        $fileInfo = New-Object System.IO.FileInfo $filePath
+        $fileStream = $fileInfo.Open( [System.IO.FileMode]::OpenOrCreate,[System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::None )
+    }
+    catch {
+        $filelocked = $true
+    }
+    finally {
+        if ($fileStream) {
+            $fileStream.Close()
+        }
+    }
+
+    return $filelocked
+}
 <#
 
 This document http://blogs.technet.com/b/heyscriptingguy/archive/2012/08/01/find-all-word-documents-that-contain-a-specific-phrase.aspx
@@ -65,7 +91,10 @@ Function Open-MicrosoftWord {
 
 Function Open-WordDocument {
     [CmdletBinding()] param(
-        [ValidateScript({Test-Path $_ -PathType Leaf})][Parameter(Mandatory, ValueFromPipeLine, ValueFromPipelineByPropertyName, Position)][Alias("FullName","InputObject")][string[]]$wordDocumentPath,
+        [ValidateScript({Test-Path $_ -PathType Leaf})]
+            [Parameter(Mandatory, ValueFromPipeLine, ValueFromPipelineByPropertyName, Position)]
+            [Alias("FullName","InputObject")]
+            [string[]]$wordDocumentPath,
         [switch]$ReadWrite
     )
     PROCESS {
@@ -75,6 +104,11 @@ Function Open-WordDocument {
             [bool]$ConfirmConversions = $false  # Optional Object. True to display the Convert File dialog box if the file isn't in Microsoft Word format.
 
             $wordApplication = Open-MicrosoftWord
+
+            if(Test-FileIsLocked $eachDocumentPath) {
+                throw "The $eachDocumentPath document is already opened."
+            }
+
             $document = $wordApplication.Documents.Open($eachDocumentPath, $confirmConversions, $ReadOnly) #For additional parameters see https://msdn.microsoft.com/en-us/library/microsoft.office.interop.word.documents.open.aspx
             if($readOnly) {
                 # Used to avoid the error, "This method or property is not available because this command is not available for reading."
@@ -179,21 +213,18 @@ Function script:Invoke-WordDocumentFind {
     [CmdletBinding()] param(
         [Parameter(Mandatory, ValueFromPipeline)]$document,
         [Parameter(Mandatory)][string[]]$findValue,
-        [string]$replaceValue,
+        # Not strongly typed to string to avoid automatic coersion of $null to empty string (Arghhh!)
+        $replaceValue = $null,
         [bool]$matchCase = $true,
         [bool]$matchWholeWord = $false,
         [bool]$matchWildcards = $false,
         [bool]$matchSoundsLike = $false,
-        [bool]$matchAllWordForms = $false,
-        [ValidateSet("ReplaceNone", "ReplaceOne", "ReplaceAll")][string]$replace = "ReplaceAll"
+        [bool]$matchAllWordForms = $false
     )
 
-    $wdReplace = [Microsoft.Office.Interop.Word.wdReplace] "wd$replace"
+    [bool]$isActionReplacing = ($replaceValue -ne $null)
 
-    if( ($wdReplace -ne [Microsoft.Office.Interop.Word.wdReplace]::wdReplaceNone) -and (!$replaceValue)) {
-        throw "`$newValue is a required parameter when `$replace is not set to 'ReplaceNone'"
-    }
-
+    $wdReplace = [Microsoft.Office.Interop.Word.wdReplace] "wdReplaceNone"
     # Set the Find not to wrap back to the beginning of the document with wdFindStop
     $wdFindWrap =  [Microsoft.Office.Interop.Word.WdFindWrap] "wdFindStop"  # Other potential valudes: wdFindContinue, wdFindAsk, wdFindStop
 
@@ -207,35 +238,55 @@ Function script:Invoke-WordDocumentFind {
                 $matchWholeWord,$matchWildcards,$matchSoundsLike,
                 $matchAllWordForms,$Forward,$wdFindWrap,$Format,
                 $replaceValue,$wdReplace)) {
-
+            
             $wdLine = [Microsoft.Office.Interop.Word.WdUnits]"wdLine"
 
-            #$selection.Expand($wdLine) | Out-Null
-            $start = $selection.Start
-            $end = $selection.End
+            # Retrieve a snippet that contains the found text.
+            Function Get-TextSnippet($foundSelection)
+            {
+                $start = $foundSelection.Start
+                $end = $foundSelection.End
+                try {
+                    [int]$paragraphStart = $foundSelection.Paragraphs.First.Range.start                                                                                                                                                                                                   
+                    [int]$paragraphEnd = $foundSelection.Paragraphs.First.Range.End    
+                    $foundSelection.SetRange(
+                        [Math]::Max($paragraphStart, $start-100), 
+                        [Math]::Min($paragraphEnd, $end+100)
+                        )
+                    $foundSelection.SetRange(
+                        $selection.Words.First.Start, 
+                        $selection.Words.Last.End
+                        )
 
-            [int]$paragraphStart = $selection.Paragraphs.First.Range.start                                                                                                                                                                                                   
-            [int]$paragraphEnd = $selection.Paragraphs.First.Range.End    
-            $selection.SetRange(
-                [Math]::Max($paragraphStart, $start-100), 
-                [Math]::Min($paragraphEnd, $end+100)
-                )
-            $selection.SetRange(
-                $selection.Words.First.Start, 
-                $selection.Words.Last.End
-                )
-
-            $text = $selection.Text
-            if($paragraphStart -lt $selection.Start) {
-                $text = "...$text"
+                    $text = $foundSelection.Text
+                    if($paragraphStart -lt $foundSelection.Start) {
+                        $text = "...$text"
+                    }
+                    if($paragraphEnd -gt $foundSelection.End) {
+                        $text = "$text..."
+                    }
+                }
+                finally {
+                    #Reselect the found text
+                    $selection.SetRange($start,$end)                    
+                }
+                return $text
             }
-            if($paragraphEnd -gt $selection.End) {
-                $text = "$text..."
-            }
 
-            Write-Output $text
+
+            [string]$before = Get-TextSnippet $selection
+            [string]$after=$null
+            if($isActionReplacing) {
+                #Replace the text. We replace manually so that we can retrieve the snippets.
+                $selection.Text = $replaceValue
+            
+                $after = Get-TextSnippet $selection
+            }
+            # Return $null for after if we are not performing a replace.
+            Write-Output ([pscustomobject]@{Before = $before.Trim(); After = $after.Trim()})
 
             $selection.SetRange($selection.End, $selection.End);
+            
         }
     }
         
@@ -252,15 +303,14 @@ Function Replace-WordDocumentWord {
         [switch]$matchWholeWord = $false,
         [switch]$matchWildcards = $false,
         [switch]$matchSoundsLike = $false,
-        [switch]$matchAllWordForms = $false,
-        [ValidateSet("ReplaceOne", "ReplaceAll")][string]$replace = "ReplaceAll"
+        [switch]$matchAllWordForms = $false
     )
 
 PROCESS {
-        Write-Progress -Activity "Find-WordDocumentWord" -PercentComplete 0
+        Write-Progress -Activity "Replace-WordDocumentWord" -PercentComplete 0
         $wordDocumentPath | %{
 
-            Write-Progress -Activity "Find-WordDocumentWord" -Status $_
+            Write-Progress -Activity "Replace-WordDocumentWord" -Status $_
             $result = $null
             $document = $null
             $wdReplace = [Microsoft.Office.Interop.Word.wdReplace] "wd$replace"
@@ -271,12 +321,11 @@ PROCESS {
                 $visible = $leaveOpen
                 $document.Application.Visible = $visible -or $PSCmdlet.MyInvocation.BoundParameters["Debug"]
 
-
-                $textSnippets = script:Invoke-WordDocumentFind -document $document -findValue $findValue -replaceValue $replaceValue -replace ReplaceAll `
+                $textSnippets = script:Invoke-WordDocumentFind -document $document -findValue $findValue -replaceValue $replaceValue `
                     -matchCase $matchCase -matchWholeWord $matchWholeWord -matchWildcards $matchWildcards -matchSoundsLike $matchSoundsLike -matchAllWordForms $matchAllWordForms
 
                 if(@($textSnippets).Count -gt 0) {
-                    $result = ([pscustomobject]@{Chapter = Get-Item $documentPath; Snippets = $textSnippets.Trim()})
+                    $result = [pscustomobject]@{Document = Get-Item $wordDocumentPath; Snippets = $textSnippets } 
                     Write-Output $result
                 }
             }
@@ -292,7 +341,7 @@ PROCESS {
                 }
             }
         }
-        Write-Progress -Activity "Find-WordDocumentWord" -Completed
+        Write-Progress -Activity "Replace-WordDocumentWord" -Completed
     }
 }
 
@@ -350,12 +399,12 @@ PROCESS {
                 
 
                 # Use empty string for replace value since we are not replacing with anything.
-                $textSnippets = script:Invoke-WordDocumentFind -document $document -findValue $value -replaceValue "" -replace ReplaceNone `
+                $textSnippets = script:Invoke-WordDocumentFind -document $document -findValue $value `
                     -matchCase $matchCase -matchWholeWord $matchWholeWord -matchWildcards $matchWildcards -matchSoundsLike $matchSoundsLike -matchAllWordForms $matchAllWordForms
 
                 
                 if(@($textSnippets).Count -gt 0) {
-                    $result = ([pscustomobject]@{Chapter = Get-Item $documentPath; Snippets = $textSnippets.Trim()})
+                    $result = ([pscustomobject]@{Document = Get-Item $documentPath; Snippets = $textSnippets.Before})
                     Write-Output $result
                 }
             }
@@ -476,3 +525,7 @@ Microsoft.Office.Interop.Word.WdUnits
 
 
 #>
+
+# TODO
+# Blog: https://stackoverflow.com/questions/6403342/how-to-validate-powershell-function-parameters-allowing-empty-strings
+# Blog: https://stackoverflow.com/questions/226596/powershell-array-initialization
