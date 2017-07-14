@@ -210,7 +210,7 @@ Function Protect-WordDocument {
 
 #TODO: Change to use parameter separate parameter set for Find.
 Function script:Invoke-WordDocumentFind {
-    [CmdletBinding()] param(
+    [CmdletBinding(SupportsShouldProcess=$true)] param(
         [Parameter(Mandatory, ValueFromPipeline)]$document,
         [Parameter(Mandatory)][string[]]$findValue,
         # Not strongly typed to string to avoid automatic coersion of $null to empty string (Arghhh!)
@@ -232,6 +232,9 @@ Function script:Invoke-WordDocumentFind {
 
     $Forward = $True
     $Format = $False
+
+    # Set initial message.
+    [string] $whatIfMessage = "Replacing text: $wordDocumentPath"
 
     foreach($eachFindValue in $findValue) {
         while($selection.Find.Execute($eachFindValue,$matchCase,
@@ -277,24 +280,52 @@ Function script:Invoke-WordDocumentFind {
             [string]$before = Get-TextSnippet $selection
             [string]$after=$null
             if($isActionReplacing) {
-                #Replace the text. We replace manually so that we can retrieve the snippets.
-                $selection.Text = $replaceValue
+                if($matchCase) {
+                    $after = $before -replace "$findValue","$replaceValue"
+                }
+                else {
+                    $after = $before -creplace "$findValue","$replaceValue"
+                }
+                if (!$WhatIfPreference) {
+                    #Replace the text. We replace manually so that we can retrieve the snippets.
+                    $selection.Text = $replaceValue
             
-                $after = Get-TextSnippet $selection
+                    $after = Get-TextSnippet $selection
+                }
+                else {
+                    # Replace the text in $before rather than in the document.
+                    if($matchCase) {
+                        $after = $before -replace "$findValue","$replaceValue"
+                    }
+                    else {
+                        $after = $before -creplace "$findValue","$replaceValue"
+                    }
+                }
+                
             }
-            # Return $null for after if we are not performing a replace.
-            Write-Output ([pscustomobject]@{Before = $before.Trim(); After = $after.Trim()})
 
+            if($WhatIfPreference) {
+                $whatIfMessage += "`n`t$before => $After"
+            }
+            else {
+                # Write out the changes.
+                # Return $null for after if we are not performing a replace.
+                Write-Output ([pscustomobject]@{Before = $before.Trim(); After = $after.Trim()})
+            }
             $selection.SetRange($selection.End, $selection.End);
             
         }
+
+        # Display What If Message
+        $PSCmdlet.ShouldProcess($WhatIfPreference)
+
     }
         
 }
 
 #TODO: Change to use parameter separate parameter set for Find.
-Function Replace-WordDocumentWord {
-    [CmdletBinding()] param(
+Function Update-WordDocumentWord {
+    [CmdletBinding(SupportsShouldProcess=$true)] param(
         [ValidateScript({Test-Path $_ -PathType Leaf})][Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)][Alias("FullName","InputObject")][string[]]$wordDocumentPath, #FullName alias added to support pipeline from Get-ChildItem
         [Parameter(Mandatory, Position=0)][string]$findValue,
         [Parameter(Mandatory)][string]$replaceValue,
@@ -307,18 +338,23 @@ Function Replace-WordDocumentWord {
     )
 
 PROCESS {
-        Write-Progress -Activity "Replace-WordDocumentWord" -PercentComplete 0
+        Write-Progress -Activity "Update-WordDocumentWord" -PercentComplete 0
         $wordDocumentPath | %{
 
-            Write-Progress -Activity "Replace-WordDocumentWord" -Status $_
+            Write-Progress -Activity "Update-WordDocumentWord" -Status $_
             $result = $null
             $document = $null
-            $wdReplace = [Microsoft.Office.Interop.Word.wdReplace] "wd$replace"
  
             try
             {
-                $document = Open-WordDocument $wordDocumentPath -ReadWrite
-                $visible = $leaveOpen
+                if ($PSCmdlet.ShouldProcess("Show Word Document: $wordDocumentPath")) {
+                    # Only leave the document open if we are executing the replace.
+                    $visible = $leaveOpen
+                    $document = Open-WordDocument $wordDocumentPath -ReadWrite
+                }
+                else {
+                    $document = Open-WordDocument $wordDocumentPath # ReadOnly (default)                    
+                }
                 $document.Application.Visible = $visible -or $PSCmdlet.MyInvocation.BoundParameters["Debug"]
 
                 $textSnippets = script:Invoke-WordDocumentFind -document $document -findValue $findValue -replaceValue $replaceValue `
@@ -341,7 +377,7 @@ PROCESS {
                 }
             }
         }
-        Write-Progress -Activity "Replace-WordDocumentWord" -Completed
+        Write-Progress -Activity "Update-WordDocumentWord" -Completed
     }
 }
 
