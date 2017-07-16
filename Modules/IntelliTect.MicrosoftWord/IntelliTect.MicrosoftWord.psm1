@@ -527,12 +527,12 @@ Function Invoke-WordDocumentFindReplace {
       the value searched for.
 
     .EXAMPLE
-    Get-ChildItem C:\data\EssentialCSharp *.docx | Find-WordDocumentWord -value "Chapter" | Write-Host
+    Get-ChildItem C:\data\EssentialCSharp *.docx | Invoke-WordDocumentFind -value "Chapter" | Write-Host
      
     Returns the find value and the text snippet containing the specific word.
 
     .EXAMPLE
-    Find-WordDocumentWord Document.docx -value "<Output[ $([char]160)]14.[0-9]{1,2}>" -matchWildcards
+    Invoke-WordDocumentFind Document.docx -value "<Output[ $([char]160)]14.[0-9]{1,2}>" -matchWildcards
 
     Searches for Output followed by either a space or a no-break space (character code 160) and then 1-2 digits
 
@@ -567,7 +567,7 @@ Function Invoke-WordDocumentFindReplace {
         ^b - Section Break
         ^w - White Space
 #>
-Function Find-WordDocumentWord {
+Function Invoke-WordDocumentFind {
     [OutputType('WordDocument.FindResult')]
     [CmdletBinding()] param(
         [ValidateScript({Test-Path $_ -PathType Leaf})][Parameter(Mandatory, ValueFromPipelineByPropertyName,Position)][Alias("FullName","InputObject")][string[]]$Path,  #FullName alias added to support pipeline from Get-ChildItem
@@ -582,11 +582,11 @@ Function Find-WordDocumentWord {
 
 PROCESS {
 
-        Write-Progress -Activity "Find-WordDocumentWord" -PercentComplete 0
+        Write-Progress -Activity "Invoke-WordDocumentFind" -PercentComplete 0
         $Path | ForEach-Object{
 
-            Write-Progress -Activity "Find-WordDocumentWord" -Status $_
-            Write-Progress -Activity "Find-WordDocumentWord" -Status $_ -CurrentOperation "Find: $Value"
+            Write-Progress -Activity "Invoke-WordDocumentFind" -Status $_
+            Write-Progress -Activity "Invoke-WordDocumentFind" -Status $_ -CurrentOperation "Find: $Value"
             $result = $null
             $document = $null
             try {
@@ -636,7 +636,7 @@ PROCESS {
                 }
             }
         }
-        Write-Progress -Activity "Find-WordDocumentWord" -Completed
+        Write-Progress -Activity "Invoke-WordDocumentFind" -Completed
     }
 }
 
