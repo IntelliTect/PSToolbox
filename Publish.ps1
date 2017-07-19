@@ -2,91 +2,104 @@
 param (
     [string]$Filter = "",
     [bool]$IgnoreNoExportedCommands = $false,
+    [string]$PowerShellGalleryAPIKey,
     [switch]$SaveAPIKey
 )
 
+
 $omniModule = "IntelliTect.PSToolbox"
-$moduleFolders = $moduleFolders = Get-ChildItem $PSScriptRoot\Modules\IntelliTect.* -Directory -Filter $filter
+$moduleFolders = Get-ChildItem $PSScriptRoot\Modules\IntelliTect.* -Directory -Filter $filter
 $modulesToPublish = @()
 
-Write-Host "Searching for manifests ready to publish"
+Write-Progress -Activity "Publish IntelliTect Module" -Status "Searching for manifests ready to publish"
+
+if(!$moduleFolders) {
+    throw "Nothing matches the filter, '$Filter'"
+}
+
 foreach ($item in $moduleFolders){
     $moduleName = $item.Name
-    $moduleStatus = ""
+
 
     $manifestPath = "$($item.FullName)\$moduleName.psd1"
 
     if (!(Test-Path $manifestPath)) {
-            Write-Host "$($moduleName): Manifest was not found." -ForegroundColor Red
+            Write-Error "$($moduleName): Manifest was not found."
             $submodules = git config --file (Join-Path $PSScriptRoot .gitmodules) --get-regexp path
             if ($submodules | ?{$_ -match $moduleName}) {
-                Write-Host "$moduleName looks like a git submodule. Did you forget to run 'git submodule update --init --recursive'?" -ForegroundColor Red
+                Write-Error "$moduleName looks like a git submodule. Did you forget to run 'git submodule update --init --recursive'?" 
             }
     }
     else {
-        $manifest = Test-ModuleManifest -Path $manifestPath
+        $moduleStatus = ""
+        $testModuleFailed = $null
+        $manifest = Test-ModuleManifest -Path $manifestPath -ErrorVariable testModuleFailed
         if (!$manifest.Description){
-            $moduleStatus = "Missing required description. $($moduleStatus)"
+            $moduleStatus += "`n`tMissing required description."
         }
         if (!$manifest.Author){
-            $moduleStatus = "Missing required author(s). $($moduleStatus)"
+            $moduleStatus += "`n`tMissing required author(s)."
         }
         if ($manifest.ExportedCommands.Count -eq 0 -and $moduleName -ne $omniModule -and -not $IgnoreNoExportedCommands){
-            $moduleStatus = "No exported commands. $($moduleStatus)"
+            $moduleStatus += "`n`tNo exported commands."
         }
+
 
         # This cmdlet doesn't report errors properly.
         # We can't use -ErrorVariable, and can't use try/catch. So, we use a slient continue and check the result for null instead.
+        Write-Progress -Activity "Publish IntelliTect Module" -Status "Checking if module has ever been published."
         $moduleInfo = Find-Module $moduleName -ErrorAction SilentlyContinue
 
-    
-        $color = [System.ConsoleColor]::Red
-        if ($moduleInfo.Version -eq $manifest.Version) {
-            $color = [System.ConsoleColor]::Gray
+        if ($moduleInfo) {
+            if($moduleInfo.Version -eq $manifest.Version) {
             $moduleStatus = "Current version is already published. $($moduleInfo.Version) $($moduleStatus)"
+            }
+            elseif ($moduleInfo.Version -gt $manifest.Version) {
+                $moduleStatus = "Newer version is already published. $($moduleStatus)"
+            }
+            Write-Progress -Activity "Publish IntelliTect Module" -Status "$($moduleName): Ready to publish. $($moduleInfo.Version) -> $($manifest.Version)"
         }
-        elseif ($moduleInfo.Version -gt $manifest.Version) {
-            $moduleStatus = "Newer version is already published. $($moduleStatus)"
+        else {
+            Write-Progress -Activity "Publish IntelliTect Module" -Status "$($moduleName): Ready to publish new module version $($manifest.Version)"
         }
 
-        if ($moduleStatus -eq "") {
-            Write-Host "$($moduleName): Ready to publish. $($moduleInfo.Version) -> $($manifest.Version)" -ForegroundColor Green
-            $modulesToPublish += $item
-        } else {
-            Write-Host "$($moduleName): $moduleStatus" -ForegroundColor $color
+        if($testModuleFailed) {}
+        elseif($moduleStatus -ne "") {-and !$testModuleFailed
+            Write-Warning "$($moduleName): $moduleStatus" testModuleFailed
         }
+        else {
+            $modulesToPublish += $item
+        } 
     }
 }
 
 if ($modulesToPublish.Count -gt 0){
-    $apiKey = $null
 
     Import-Module (Join-Path $PSScriptRoot /Modules/IntelliTect.CredentialManager)
     $credential = Get-CredentialManagerCredential "pstoolbox" -ErrorAction SilentlyContinue
-    if (!$SaveAPIKey) {
-        if (!$credential) {
-            Write-Host "No credentials were found for TargetName: pstoolbox."
-            Write-Host "If you want to save the API key, re-run with the -SaveAPIKey flag"
-        } else {
-            $apiKey = ([PSCredential]$credential).GetNetworkCredential().Password
-            Write-Host "Retrieved API key from credential manager."
-        }
-    }
     
-    if (!$apiKey) {
-        $apiKey = Read-Host "Enter your PS Gallery API Key"
-        if ($apiKey -and $SaveAPIKey) {
-            $cred = New-Object System.Management.Automation.PSCredential "intellitect", ($apiKey | ConvertTo-SecureString -AsPlainText -Force)
+    if (!$PowerShellGalleryAPIKey) {
+        $PowerShellGalleryAPIKey = ([PSCredential]$credential).GetNetworkCredential().Password       
+    }
+
+    if(!$PowerShellGalleryAPIKey) {
+        $PowerShellGalleryAPIKey = Read-Host "Enter your PS Gallery API Key"
+    }
+
+    if (!$PowerShellGalleryAPIKey) {
+        throw "No API key was given. Stopping"
+    }
+
+    if ($SaveAPIKey) {
+        if ($PowerShellGalleryAPIKey -and $SaveAPIKey) {
+            $cred = New-Object System.Management.Automation.PSCredential "intellitect", ($PowerShellGalleryAPIKey | ConvertTo-SecureString -AsPlainText -Force)
             Set-CredentialManagerCredential -TargetName "pstoolbox" -Credential $cred
         }
     }
-    if (!$apiKey) {
-        throw "No API key was given. Stopping"
-    }
-    
+        
     foreach ($item in $modulesToPublish) {    
-        if ($PSCmdlet.ShouldProcess($item.Name)) {
-            Publish-Module -Path $item.FullName -NuGetApiKey $apiKey
-        }
+        Publish-Module -Path $item.FullName -NuGetApiKey $PowerShellGalleryAPIKey
     }
+    Write-Progress -Activity "Publish IntelliTect Module" -Completed
 }
+
