@@ -14,7 +14,7 @@
 RootModule = './IntelliTect.MicrosoftWord.psm1'
 
 # Version number of this module.
-ModuleVersion = '1.0.0.0'
+ModuleVersion = '0.1.0.0'
 
 # ID used to uniquely identify this module
 GUID = '46f84048-02ed-4a12-8ec5-00be86a95abb'
@@ -53,7 +53,6 @@ Description = 'Provides an easy-to-use interface to Microsoft Word via PowerShel
 # RequiredModules = @()
 
 # Assemblies that must be loaded prior to importing this module
-# TODO: Fix so that this passes Test-ModuleManifest
 # RequiredAssemblies = @('Microsoft.Office.Interop.Word')
 
 # Script files (.ps1) that are run in the caller's environment prior to importing this module.
