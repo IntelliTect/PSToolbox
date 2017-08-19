@@ -309,7 +309,7 @@ $resultTypeData = @{
         TypeName = "WordDocument.FindReplaceResult"
         DefaultDisplayPropertySet = 'FindReplaceResult','BeforeSnippet','AfterSnippet'
 }
-        
+         
 Update-TypeData @resultTypeData -Force
 $resultTypeData = @{
     TypeName = "WordDocument.FindResult"
@@ -437,8 +437,9 @@ Function script:Invoke-WordDocumentInternalFindReplace {
                         AfterSnippet = $after.Trim(); 
                         FindValue = $eachFindValue; 
                         ReplaceValue = $eachReplaceValue;  
-                        FindReplaceResult = $findResult
-                        PSTypeName="WordDocument.FindReplaceResult"
+                        FindReplaceResult = $findResult;
+                        PSTypeName="WordDocument.FindReplaceResult";
+                        Path = (Get-Item $Document.FullName)
                     }
 
                     Write-Output $result
@@ -471,8 +472,9 @@ Function script:Invoke-WordDocumentInternalFindReplace {
                 $result = [pscustomobject]@{
                             FindSnippet = $before.Trim();
                             FindValue = $eachFindValue;  
-                            FindResult = $findResult
-                            PSTypeName="WordDocument.FindResult"
+                            FindResult = $findResult;
+                            PSTypeName="WordDocument.FindResult";
+                            Path = (Get-Item $Document.FullName)
                 }                
 
                 Write-Output $result
