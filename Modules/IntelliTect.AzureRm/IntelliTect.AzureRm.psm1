@@ -390,8 +390,8 @@ function Get-AzureRmSubscriptionMenu {
 
     Write-Information "Retrieving subscriptions ..." -InformationAction Continue    
     $subscriptions = Get-AzureRmSubscription -WarningAction SilentlyContinue | `
-                        Sort-Object SubscriptionName | `
-                        Select-Object @{ Name = "Subscription"; Expression = { "$($_.SubscriptionName) [$($_.SubscriptionId)]" } } | `
+                        Sort-Object Name | `
+                        Select-Object @{ Name = "Subscription"; Expression = { "$($_.Name) [$($_.Id)]" } } | `
                         Select-Object -ExpandProperty Subscription
     Get-InputFromMenu $inputs "SubscriptionId" "Select Subscription" { $subscriptions }
     
