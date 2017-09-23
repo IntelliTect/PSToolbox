@@ -257,3 +257,11 @@ function Get-CredentialManagerCredential {
 
 }
 
+Function Get-CredentialPassword {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][PSCredential]$credential
+    )
+
+    return $credential.GetNetworkCredential().password
+}
