@@ -1,5 +1,5 @@
 
-##Contributing to PSToolbox
+## Contributing to PSToolbox
 
 - First, make sure you have the required tools installed. If you have Windows 10, you already have them. Otherwise, see [here](https://www.powershellgallery.com/GettingStarted?section=Get%20Started) for instructions.
 - Next, clone this repository with the `--recursive` flag, or clone normally and then run `git submodule update --init --recursive` to initialize any submodules.
@@ -35,9 +35,9 @@
   - Otherwise, submit a pull request on Github with your changes. Whoever merges the pull request is responsible for publishing to PowerShell Gallery.
 
 
-##Deploying to PowerShell Gallery
+## Deploying to PowerShell Gallery
 
-###Steps to Deploy
+### Steps to Deploy
 - Sign in to powershellgallery.com using the IntelliTect account, and then get the API key from the user profile page.
 - Open a PowerShell window as administrator.
 - Navigate to the root folder of the PowerShellGallery project.
@@ -50,7 +50,7 @@
   - When prompted, enter the API key. If you wish to save it to avoid being prompted in the future, add the `-SaveAPIKey` flag.
 
 
-###Module Requirements
+### Module Requirements
 - Must have Description and Author properties in the manifest.
 - Must contain exported commands.
 - Current version must not exist on powershellgallery.com.
