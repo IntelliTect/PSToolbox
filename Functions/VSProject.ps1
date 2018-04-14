@@ -1,3 +1,28 @@
+Function Get-DotNetProjectFramework {
+    [CmdletBinding()]
+    param(
+            [string]$Path
+    )
+    
+    [xml]$csproj = Get-Content -Path $Path
+    $csproj.Project.PropertyGroup.TargetFramework
+}
+Function Set-DotNetProjectFramework {
+    [CmdletBinding(SupportsShouldProcess=$true)]
+    param(
+            [string]$Path,
+            [string]$TargetFramework
+    )
+    
+    [xml]$csproj = Get-Content -Path $Path
+    $targetFrameworkBefore = $csproj.Project.PropertyGroup.TargetFramework
+    if($PSCmdlet.ShouldProcess("Change target framework in '$Path' from $targetFrameworkBefore to $TargetFramework")) {
+        $csproj.Project.PropertyGroup.TargetFramework = $TargetFramework
+        $csproj.Save($Path)
+    }
+}
+
+
 Function Rename-VSProject {
     [CmdletBinding()] param(
         [ValidateScript({Test-Path $_ -PathType Leaf})][Parameter(Mandatory)][string] $projFile, 
