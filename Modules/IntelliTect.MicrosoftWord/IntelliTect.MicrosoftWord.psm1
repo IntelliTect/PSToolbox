@@ -307,7 +307,7 @@ Function Set-WordDocumentProtection {
 
 $resultTypeData = @{
         TypeName = "WordDocument.FindReplaceResult"
-        DefaultDisplayPropertySet = 'FindReplaceResult','BeforeSnippet','AfterSnippet'
+        DefaultDisplayPropertySet = 'FindResult','ReplaceResult','BeforeSnippet','AfterSnippet'
 }
          
 Update-TypeData @resultTypeData -Force
@@ -320,12 +320,18 @@ Update-TypeData @resultTypeData -Force
 #TODO: Change to use parameter separate parameter set for Find.
 Function script:Invoke-WordDocumentInternalFindReplace {
     [OutputType('WordDocument.FindReplaceResult')]
-    [CmdletBinding(SupportsShouldProcess=$true <#, DefaultParameterSetName="Path"#>)] param(
+    [CmdletBinding(SupportsShouldProcess=$true)] 
+    param(
         [Parameter(Mandatory, ValueFromPipeline)]$Document,
+        # The Microsoft Word Seach string - see https://support.office.com/en-us/article/Find-and-replace-text-and-other-data-in-a-Word-document-c6728c16-469e-43cd-afe4-7708c6c779b7
         [Parameter(Mandatory)][string[]]$FindValue,
         # Not strongly typed to string to avoid automatic coersion of $null to empty string (Arghhh!)
-        [Parameter(ParameterSetName='Replace')]$ReplaceValue = $null,
-        [bool]$MatchCase = $true,
+        [Parameter(ParameterSetName='MicrosoftWordReplace')]$ReplaceValue,
+        # The regular expression to use to search after the $FindVaue is located
+        [Parameter(Mandatory,ParameterSetName='RegExReplace')][string[]]$RegExFindValue,
+        # The regular expression to replace with after the $FindValue is located
+        [Parameter(ParameterSetName='RegExReplace')][string[]]$RegExReplaceValue,
+        [bool]$MatchCase = $false,
         [bool]$MatchWholeWord = $false,
         [bool]$MatchWildcards = $false,
         [bool]$MatchSoundsLike = $false,
@@ -333,12 +339,26 @@ Function script:Invoke-WordDocumentInternalFindReplace {
     )
 
     [string] $whatIfMessage = $null
-    [bool]$isActionReplacing = ($PSCmdlet.ParameterSetName -eq "Replace")
-    $FindValues = @($FindValue)
+    [bool]$isActionReplacing = (($PSCmdlet.ParameterSetName -in 'MicrosoftWordReplace','RegExReplace') -and ((('ReplaceValue' -in $PSBoundParameters.Keys) -or ('RegExFindValue' -in $PSBoundParameters.Keys))) )
+    $findValues = @($FindValue)
+    $searchRegEx = 'RegExFindValue' -in $PSBoundParameters.Keys
+    if($searchRegEx) {
+        $regExFindValues = @($RegExFindValue)
+        if($findValues.Length -ne $regExFindValues.Length) {
+            throw "The number of items in FindValue is different from the number of items in RegExFindValue"
+        }
+    }
+    
     if($isActionReplacing) {
-        $ReplaceValues = @($ReplaceValue)
-        if($FindValue.Length -ne $ReplaceValue.Length) {
+        $replaceValues = @($ReplaceValue)
+        if($FindValues.Length -ne $replaceValues.Length) {
             throw "The number of items in FindValue is different from the number of items in ReplaceValue"
+        }
+        if($searchRegEx) {
+            $regexReplaceValues = @($RegExReplaceValue)
+            if($replaceValues.Length -ne $regexReplaceValues.Length) {
+                throw "The number of items in ReplaceValue is different from the number of items in RegExReplaceValue"
+            }            
         }
         $whatIfMessage = "Replacing text in $Path"
     }
@@ -346,36 +366,40 @@ Function script:Invoke-WordDocumentInternalFindReplace {
         # $whatIfMessage is not needed for the find case since there is not change.
     }
 
-    $wdReplace = [Microsoft.Office.Interop.Word.wdReplace] "wdReplaceNone"
     # Set the Find not to wrap back to the beginning of the document with wdFindStop
-    $wdFindWrap =  [Microsoft.Office.Interop.Word.WdFindWrap] "wdFindStop"  # Other potential valudes: wdFindContinue, wdFindAsk, wdFindStop
+    $wdFindWrap =  [Microsoft.Office.Interop.Word.WdFindWrap]::wdFindStop  # Other potential valudes: wdFindContinue, wdFindAsk, wdFindStop
 
     $forward = $True
     $format = $False
 
     $selection = $Document.Application.Selection
 
-    for($count=0; $count -le $FindValues.Length; $count++) {
+    for($count=0; $count -le $findValues.Length; $count++) {
         
-        $eachFindValue = $FindValues[$count]
+        $eachFindValue = $findValues[$count]
+        if($searchRegEx) {
+            $eachRegExFindValue = $regExFindValues[$count]
+        }
         $eachReplaceValue = $null
         if($isActionReplacing) {
-            $eachReplaceValue = $ReplaceValues[$count]
+            $eachReplaceValue = $replaceValues[$count]
+            if($searchRegEx) {
+                $eachRegExReplaceValue = $regExReplaceValues[$count]
+            }
             $whatIfMessage += "`n`t$eachFindValue => $eachReplaceValue"
         }
 
         $selection.SetRange(0,0)
-
+        Write-Debug -Message "Location $($Document.$BaseFileName): $($selection.Start)-$($selection.End)"
         # TODO: Change to use "Simple" for the display of track changes
         #       so that items that have been modified but changes tracked do not show
         #       up in search.
         while($selection.Find.Execute($eachFindValue,$MatchCase,
                 $MatchWholeWord,$MatchWildcards,$MatchSoundsLike,
                 $MatchAllWordForms,$forward,$wdFindWrap,$format,
-                $eachReplaceValue,$wdReplace)) {
-            
-            $wdLine = [Microsoft.Office.Interop.Word.WdUnits]"wdLine"
+                $eachReplaceValue,[Microsoft.Office.Interop.Word.wdReplace]::wdReplaceNone)) {
 
+            Write-Debug -Message "Location $($Document.$BaseFileName): $($selection.Start)-$($selection.End)"
             # Retrieve a snippet that contains the found text.
             Function Get-TextSnippet($foundSelection) {
                 $start = $foundSelection.Start
@@ -407,27 +431,42 @@ Function script:Invoke-WordDocumentInternalFindReplace {
                 return $text
             }
 
-            [string]$findResult = $selection.Text
+            [string]$findResult=$null;
+
+            if($searchRegEx) {
+                $findResult = $selection.Text
+                if($findResult -match $eachRegExFindValue) {
+                    $findResult = $Matches.0
+                }
+                else {
+                    Continue # Skip to the next item in the while loop
+                }
+            }
+            else {
+                $findResult = $selection.Text
+            }
             [string]$before = Get-TextSnippet $selection
             [string]$after=$null
             if($isActionReplacing) {
                 
-                if(!$selection.Find.Execute($eachFindValue,$MatchCase,
-                    $MatchWholeWord,$MatchWildcards,$MatchSoundsLike,
-                    $MatchAllWordForms,$forward,$wdFindWrap,$format,
-                    $eachReplaceValue,([Microsoft.Office.Interop.Word.wdReplace] "wdReplaceOne")))
-                {
-                    throw "Search failed unexpectedly - since we already found the text in the previous search and now have it selected."
-                }
-
-                <# Possible RegExt implementation.
-                if($matchCase) {
-                    $after = $before -replace "$eachfindValue","$eachReplaceValue"
+                if($searchRegEx) {
+                    if($matchCase) {
+                        $selection.Text = $selection.Text -replace "$eachRegExFindValue","$eachRegExReplaceValue"
+                    }
+                    else {
+                        $selection.Text = $selection.Text -creplace "$eachRegExFindValue","$eachRegExReplaceValue"
+                    }
                 }
                 else {
-                    $after = $before -creplace "$eachfindValue","$eachReplaceValue"
+                    if(!$selection.Find.Execute($eachFindValue,$MatchCase,
+                        $MatchWholeWord,$MatchWildcards,$MatchSoundsLike,
+                        $MatchAllWordForms,$forward,$wdFindWrap,$format,
+                        $eachReplaceValue,([Microsoft.Office.Interop.Word.wdReplace]::wdReplaceOne)))
+                    {
+                        throw "Search failed unexpectedly - since we already found the text in the previous search and now have it selected."
+                    }
                 }
-                #>
+                $replaceResult = $selection.Text
                 $after = Get-TextSnippet $selection
                 if ($PSCmdlet.ShouldProcess("`t`t$before => $After", "`n`t`t$before => $After", "Search/Replace")) {
                     # -Whatif NOT specified so sending the results to the output.
@@ -437,7 +476,8 @@ Function script:Invoke-WordDocumentInternalFindReplace {
                         AfterSnippet = $after.Trim(); 
                         FindValue = $eachFindValue; 
                         ReplaceValue = $eachReplaceValue;  
-                        FindReplaceResult = $findResult;
+                        FindResult = $findResult;
+                        ReplaceResult = $replaceResult;
                         PSTypeName="WordDocument.FindReplaceResult";
                         Path = (Get-Item $Document.FullName)
                     }
@@ -478,10 +518,13 @@ Function script:Invoke-WordDocumentInternalFindReplace {
                 }                
 
                 Write-Output $result
+                if(Test-Path Variable:PSDebugContext) {
+                    # If we are debugging, display the updated text in word and pause
+                    pause
+                }
             }
 
-            $selection.SetRange($selection.End, $selection.End)
-            
+            $selection.SetRange($selection.End, $selection.End)                
         }
     }
 
@@ -533,20 +576,27 @@ Function script:Invoke-WordDocumentInternalFindReplace {
 #>
 Function Invoke-WordDocumentFindReplace {
     [OutputType('WordDocument.FindReplaceResult')]
-    [CmdletBinding(SupportsShouldProcess=$true)] 
+    [CmdletBinding(SupportsShouldProcess=$true, DefaultParameterSetName='MicrosoftWordReplace')] 
     param(
-        [ValidateScript({Test-Path $_ -PathType Leaf})][Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)][Alias("FullName","InputObject")][Parameter(ParameterSetName='Path')][string[]]$Path, #FullName alias added to support pipeline from Get-ChildItem
-        #[Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)][Alias("InputObject")][Parameter(ParameterSetName='Document')][Microsoft.Office.Interop.Word.Document[]]$document,
-        [Parameter(Mandatory, Position=0)][string[]]$FindValue,
-        [Parameter(Mandatory)][string[]]$ReplaceValue,
+        [ValidateScript({Test-Path $_ -PathType Leaf})]
+            [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)]
+            [Alias("FullName","InputObject")]
+            [string[]]$Path, #FullName alias added to support pipeline from Get-ChildItem
+        # The Microsoft Word Seach string - see https://support.office.com/en-us/article/Find-and-replace-text-and-other-data-in-a-Word-document-c6728c16-469e-43cd-afe4-7708c6c779b7
+        [Parameter(Mandatory)][string[]]$FindValue,
+        # Not strongly typed to string to avoid automatic coersion of $null to empty string (Arghhh!)
+        [Parameter(ParameterSetName='MicrosoftWordReplace')]$ReplaceValue,
+        # The regular expression to use to search after the $FindVaue is located
+        [Parameter(ParameterSetName='RegExReplace')][string[]]$RegExFindValue,
+        # The regular expression to replace with after the $FindValue is located
+        [Parameter(ParameterSetName='RegExReplace')][string[]]$RegExReplaceValue,
         [switch]$LeaveOpen,
-        [switch]$MatchCase = $true,
+        [switch]$MatchCase = $false,
         [switch]$MatchWholeWord = $false,
         [switch]$MatchWildcards = $false,
         [switch]$MatchSoundsLike = $false,
         [switch]$MatchAllWordForms = $false
     )
-
     #TODO: Change to support reusing the same file (such as when searching for different things in the same file) and leaving the file open.
 
     PROCESS {
@@ -554,13 +604,6 @@ Function Invoke-WordDocumentFindReplace {
         Write-Debug "Starting: Invoke-WordDocumentFindReplace '$Path': $FindValue => $ReplaceValue"
         Write-Progress -Activity "Invoke-WordDocumentFindReplace" -PercentComplete 0
  
-        $FindValues = @($FindValue)
-
-        $ReplaceValues = @($ReplaceValue)
-        if($FindValue.Length -ne $ReplaceValue.Length) {
-            throw "The number of items in FindValue is different from the number of items in ReplaceValue"
-        }
-
         $Path | ForEach-Object{
 
             Write-Progress -Activity "Invoke-WordDocumentFindReplace" -Status $_
@@ -572,8 +615,17 @@ Function Invoke-WordDocumentFindReplace {
                 $document = Open-WordDocument $Path -ReadWrite:(!$WhatIfPreference)
                 $document.Application.Visible = $leaveOpen -or $PSCmdlet.MyInvocation.BoundParameters["Debug"]
 
-                $findReplaceResult = script:Invoke-WordDocumentInternalFindReplace -document $document -FindValue $FindValues -ReplaceValue $ReplaceValues `
-                    -matchCase $matchCase -matchWholeWord $matchWholeWord -matchWildcards $matchWildcards -matchSoundsLike $matchSoundsLike -matchAllWordForms $matchAllWordForms
+                if($PSCmdlet.ParameterSetName -eq 'MicrosoftWordReplace') {
+                    $findReplaceResult = script:Invoke-WordDocumentInternalFindReplace -document $document -FindValue $FindValue -ReplaceValue $ReplaceValue `
+                        -matchCase $matchCase -matchWholeWord $matchWholeWord -matchWildcards $matchWildcards `
+                        -matchSoundsLike $matchSoundsLike -matchAllWordForms $matchAllWordForms
+                }
+                else {
+                    $findReplaceResult = script:Invoke-WordDocumentInternalFindReplace -document $document -FindValue $FindValue `
+                        -RegExFindValue $RegExFindValue -RegExReplaceValue $RegExReplaceValue `
+                        -matchCase $matchCase -matchWholeWord $matchWholeWord -matchWildcards $matchWildcards `
+                        -matchSoundsLike $matchSoundsLike -matchAllWordForms $matchAllWordForms                    
+                }
 
                 if(@($findReplaceResult).Count -gt 0) {
                     $fileChanged = $true                    
@@ -654,10 +706,13 @@ Function Invoke-WordDocumentFindReplace {
 Function Invoke-WordDocumentFind {
     [OutputType('WordDocument.FindResult')]
     [CmdletBinding()] param(
-        [ValidateScript({Test-Path $_ -PathType Leaf})][Parameter(Mandatory, ValueFromPipelineByPropertyName,Position)][Alias("FullName","InputObject")][string[]]$Path,  #FullName alias added to support pipeline from Get-ChildItem
+        [ValidateScript({Test-Path $_ -PathType Leaf})]
+            [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName,Position)]
+            [Alias("FullName","InputObject")]
+            [string[]]$Path,  #FullName alias added to support pipeline from Get-ChildItem
         [Parameter(Mandatory)][string]$value,
         [switch]$LeaveOpen,
-        [switch]$matchCase = $true,
+        [switch]$matchCase = $false,
         [switch]$matchWholeWord = $false,
         [switch]$matchWildcards = $false,
         [switch]$matchSoundsLike = $false,
@@ -671,7 +726,7 @@ PROCESS {
 
             Write-Progress -Activity "Invoke-WordDocumentFind" -Status $_
             Write-Progress -Activity "Invoke-WordDocumentFind" -Status $_ -CurrentOperation "Find: $Value"
-            $result = $null
+
             $document = $null
             try {
                 $documentPath = $_
