@@ -1,18 +1,29 @@
+#Requires -Version 5.0  # Needed for enum definition.
+
+enum GitAction {
+    Untracked
+    Copied
+    Renamed
+    Deleted
+    Added
+    Modified
+}
 
 
 $script:gitActionsLookup =@{
-    '??'= 'Untracked'
-    'C'= 'Copied';
-    'R'= 'Renamed';
-    'D'= 'Deleted';
-    'A'= 'Added';
-    'M'= 'Modified'
+    '??'= [GitAction]::Untracked;
+    'C'= [GitAction]::Copied;
+    'R'= [GitAction]::Renamed;
+    'D'= [GitAction]::Deleted;
+    'A'= [GitAction]::Added;
+    'M'= [GitAction]::Modified;
 };
 
 Function Get-GitStatus {
     [CmdletBinding()]
     param(
-
+        [GitAction[]]$action,
+        [string[]]$path='*'
     )
 
     git status --porcelain | ?{ 
@@ -21,6 +32,9 @@ Function Get-GitStatus {
                 "Action"="$($script:gitActionsLookup.Item($_.Action))";
                 "FileName"=$_.FileName
             }
+        } | Where-Object{
+            (!$PSBoundParameters.ContainsKey('action') -or @($action) -contains $_.Action) -and 
+                ($_.FileName -like $path)
         }
 }
 
