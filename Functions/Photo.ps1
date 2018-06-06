@@ -6,7 +6,7 @@ param(
         [string]$fromDirectory
         ,[string] $toRootDirectory="C:\Data\Photos\MarEli"
         ,[bool] $move=$true
-        ,[Parameter(ValueFromPipeline=$true)][IO.FileInfo[]]$files=$(dir $fromDirectory -Recurse -Include *.MTS,*.JPG,*.MOV,*.JPEG,*MP4 ) 
+        ,[Parameter(ValueFromPipeline=$true)][IO.FileInfo[]]$files=$(dir $fromDirectory -Recurse -Include *.MTS,*.JPG,*.MOV,*.JPEG,*MP4 )
 )
 #>
 
@@ -22,9 +22,9 @@ Set-StrictMode -Version "Latest"
 
 [string]$here=Split-Path -Path ($MyInvocation.MyCommand.Path);
 
-function script:LoadPhotoLibraryAssembly()
+Function script:LoadPhotoLibraryAssembly()
 {
-    $photoLibraryPath = Get-ChildItem "$PSScriptRoot\..\Lib","$PSScriptRoot" "PhotoLibrary.dll" | 
+    $photoLibraryPath = Get-ChildItem "$PSScriptRoot\..\Lib","$PSScriptRoot" "PhotoLibrary.dll" |
       Sort-Object -Descending CreationTime | Select-Object -First 1 -ExpandProperty FullName
     if( !(test-path variable:\photoLibraryPath) -AND !(test-path $photoLibraryPath) )
     {
@@ -35,7 +35,18 @@ function script:LoadPhotoLibraryAssembly()
     }
     #TODO: Switch to use Add-Type
     [void] [Reflection.Assembly]::LoadFrom($photoLibraryPath)
+    $rootPath = $PSScriptRoot
+    $photoLibraryPath = Get-ChildItem "$rootPath\..\Lib","$rootPath" "PhotoLibrary.dll" |
+      Sort-Object -Descending CreationTime | Select-Object -First 1 -ExpandProperty FullName
+
+    if(!(test-path variable:\photoLibraryPath) -or !(test-path $photoLibraryPath)) {
+        throw "Unable to find PhotoLibrary.dll"
+    }
+
+    #TODO: Switch to use Add-Type
+    Add-Type -Path $photoLibraryPath -ErrorAction Stop
 }
+LoadPhotoLibraryAssembly
 
 function script:GetDateTimeOriginal($target) {
     [System.Nullable[System.DateTime]] $originalTimeStamp = Get-member DateTimeOriginal -InputObject $target | %{$target.DateTimeOriginal};
@@ -73,18 +84,12 @@ function GetSubDirectoryWithDateTimePath(
 	return [String]$targetDirectory;
 }
 
-function GetFileNameWithCameraTag(
-    [Parameter(
-        ValueFromPipeline=$true
-        )][Photolibrary.Photo]$photo,
-        [IO.FileInfo]$file)
-{
-    if($photo -eq $null) {
-        LoadPhotoLibraryAssembly
 
-        $photo = new-object photolibrary.photo($file.fullname)
-    }
-
+# Temporarily Leaving function as a way of verifying
+# new functionality matches the old.
+# TODO: Delete this function if the replace
+#       proves accruate.
+Function Script:Get-LegacyTargetName([Photolibrary.Photo]$photo) {
     [string] $targetFileName=$photo.GetFileName();
     switch($photo.Model) {
         "NIKON D70" {
@@ -140,11 +145,11 @@ function GetFileNameWithCameraTag(
             elseif($photo.Model -eq "Canon PowerShot A2400 IS")
             {
                 $targetFileName = $targetFileName.Replace("IMG_", "A2400_")
-            }	      
+            }
             elseif($photo.Model -eq "Canon PowerShot G12")
             {
                 $targetFileName = $targetFileName.Replace("IMG_", "PS-G12_")
-            }	      
+            }
             elseif($photo.Model -eq "RHOD500")
             {
                 $targetFileName = "RHOD500_" + $photo.GetFileName()
@@ -152,7 +157,7 @@ function GetFileNameWithCameraTag(
             elseif($photo.Model -eq "NIKON D60")
             {
                 $targetFileName = "NIKOND60_" + $photo.GetFileName()
-            }	
+            }
             elseif($photo.Model -eq "NIKON D3300")
             {
                 $targetFileName = $targetFileName.Replace("DSC_", "NIKOND3300_")
@@ -164,7 +169,7 @@ function GetFileNameWithCameraTag(
             elseif($photo.Model -eq "Canon PowerShot SD1200 IS")
             {
                 $targetFileName = $targetFileName.Replace("IMG_", "SD1200_")
-            }            	   
+            }
             elseif($photo.Model -like "iPhone*")
             {
                 $targetFileName = $photo.Model.Replace(" ", "") + "_" + $targetFileName
@@ -172,7 +177,7 @@ function GetFileNameWithCameraTag(
             elseif($photo.Model -eq "HDR-CX160")
             {
                 $targetFileName = "HDR-CX160_" + $photo.GetFileName()
-            }	
+            }
             elseif($photo.Model -eq "iPod touch")
             {
                 $targetFileName = $targetFileName.Replace("image_", "")
@@ -182,7 +187,7 @@ function GetFileNameWithCameraTag(
             elseif($photo.Model -eq "GT-I9300")
             {
                 $targetFileName = "GT-I3900_" + $photo.GetFileName()
-            }	      
+            }
             elseif($photo.Model -eq "XT907")
             {
                 $targetFileName = "XT907_" + $photo.GetFileName()
@@ -193,19 +198,100 @@ function GetFileNameWithCameraTag(
             }
             elseif($photo.Model -eq "SM-G935F")
             {
-                 $targetFileName = "SM-G935F_" + $photo.GetFileName()
+                    $targetFileName = "SM-G935F_" + $photo.GetFileName()
             }
             elseif($photo.Model -eq "GT-I9500")
             {
                 $targetFileName = "GT-I9500_" + $photo.GetFileName()
             }
-            else
-            {
-                throw "The file prefix for '" + $photo.Model + "' is missing on photo '" + $photo.GetFileName() + "'."
-                $targetFileName = "UNKNOWN" + $targetFileName
-            }
         }
     }
+    return $targetFileName;
+}
+
+function GetFileNameWithCameraTag(
+    [Parameter(
+        ValueFromPipeline=$true
+        )][Photolibrary.Photo]$photo,
+        [IO.FileInfo]$file)
+{
+    if($photo -eq $null) {
+        LoadPhotoLibraryAssembly
+
+        $photo = new-object photolibrary.photo($file.fullname)
+    }
+
+    $findValues = "IMG_","_MG","DSC","image_","image"
+
+    $replaceLookup =
+         @{
+            "NIKON D70" = "NikonD70_";
+            "Canon EOS 30D" = "EOS30D_";
+            "Canon EOS 20D" = "EOS20D_";
+            "Canon EOS 70D" = "EOS70D_"
+            "BlackBerry 9650" = "BB9650_";
+            "Canon IXY DIGITAL 800 IS" = "800IS_";
+            "SQ908 MEGA-Cam" = "SQ908_";
+            "Canon PowerShot SD3500 IS" = "SD3500_";
+            "Canon PowerShot SD780 IS" = "SD780_";
+            "Canon PowerShot SD1200 IS" = "SD1200_";
+            "COOLPIX S4100" = "NikonS4100_"
+            "Canon PowerShot ELPH 100 HS" = "Elph100HS_";
+            "Canon EOS REBEL T4i" = "EOST4i_";
+            "Canon PowerShot A2400 IS" = "A2400_";
+            "Canon PowerShot G12" = "PS-G12_";
+            "NIKON D3300"="NIKOND3300_";
+            "T-Mobile G2" = "G2_";
+            "iPod touch" = "iPod"
+    }
+
+    $prefixLookup = @{
+        "NIKON D60" = "NIKOND60_";
+    }
+    "iPhone","RHOD500","HDR-CX160","GT-I9300","XT907","GT-I8190N","SM-G935F","GT-I9500" |
+        %{ $prefixLookup.Add($_, "$($_)_") }
+
+    $suffixLookup = @{
+        "iPhone" = "iOS"
+    }
+
+    [string]$targetFileName = $null
+    $replacement = $replaceLookup[$photo.Model]
+    Write-Debug "`$replacement = $replacement"
+    $prefix = $prefixLookup[$photo.Model]
+    Write-Debug "`$prefix = $prefix"
+    $suffixFindValue = $suffixLookup[$photo.Model]
+    Write-Debug "`$suffixFindValue = $suffixFindValue"
+
+    if($replacement) {
+        [string] $targetFileName=$photo.GetFileName();
+        $findValues | %{
+                $targetFileName = $targetFileName.Replace($_, $replacement)
+        }
+    }
+    elseif($prefix) {  # Currently: replaceLookup & suffixLookup are unique.
+        $targetFileName = $prefix + $photo.GetFileName()
+    }
+
+    # We suffix search in addition to the above.
+    if($suffixFindValue) {
+        $targetFileName = $targetFileName.Replace(
+            $suffixFindValue, "")
+    }
+
+    # TODO: Delete this function if the replace
+    #       proves accruate.
+    $legacyTargetName = Script:Get-LegacyTargetName($photo)
+    if($targetFileName -ne $LegacyTargetName) {
+        throw "New functionality did not match old functionlity: $targetFileName <> $legacyTargetName"
+    }
+
+    if(!$targetFileName)
+    {
+        throw "The file prefix for '" + $photo.Model + "' is missing on photo '" + $photo.GetFileName() + "'."
+        $targetFileName = "UNKNOWN" + $targetFileName
+    }
+
     return $targetFileName;
 }
 
@@ -213,7 +299,28 @@ if(!(Test-Path variable:DefaultPhotoDirectory)) {
     $DefaultPhotoDirectory=[environment]::GetFolderPath([environment+specialfolder]::MyPictures)
 }
 
-function Copy-Photo {
+
+Function Copy-Photo {
+[CmdletBinding(
+    SupportsShouldProcess=$true #Tells the shell that your function supports both -confirm and -whatif.
+    ,ConfirmImpact="Medium" #Causes Confirm prompt when $ConfirmPreference is "High"
+)]
+param(
+        [string]$fromDirectory
+        , <# [ValidateScript({$_ -notin "True","False" })] #> [string] $toRootDirectory=$DefaultPhotoDirectory
+        # TODO: Check
+        ,[Parameter(ValueFromPipeline=$true)][ValidateNotNull()][IO.FileInfo[]]$files=@(
+            Get-ChildItem $fromDirectory -Recurse -Include *.JPG,*.MOV,*.JPEG,*.MTS,*.PDF,*.MP4,*.MP3,*.CR2 )
+    )
+
+    Get-ChildItem -Path $fromDirectory -Recurse -File |
+        %{
+            Move-Item (Join-Path $fromDirectory $_.Name) (Join-Path $fromDirectory (GetFileNameWithCameraTag $photo))
+        }
+
+}
+
+Function Copy-Photo {
 [CmdletBinding(
     SupportsShouldProcess=$true #Tells the shell that your function supports both -confirm and -whatif.
     ,ConfirmImpact="Medium" #Causes Confirm prompt when $ConfirmPreference is "High"
@@ -222,14 +329,14 @@ param(
         [string]$fromDirectory
         , <# [ValidateScript({$_ -notin "True","False" })] #> [string] $toRootDirectory=$DefaultPhotoDirectory
         ,[bool] $move=$true
-        # TODO: Check 
+        # TODO: Check
         ,[Parameter(ValueFromPipeline=$true)][ValidateNotNull()][IO.FileInfo[]]$files=@(
             Get-ChildItem $fromDirectory -Recurse -Include *.JPG,*.MOV,*.JPEG,*.MTS,*.PDF,*.MP4,*.MP3,*.CR2 )
-    ) 
+    )
 
 BEGIN {
     [string]$targetFileName=$null;
-    [string]$targetDirectoryName=$null;	
+    [string]$targetDirectoryName=$null;
 
     #TODO There must be a better way to bind parameters but I am not sure what it is.
     if($toRootDirectory -in "True","False") {
@@ -239,12 +346,12 @@ BEGIN {
     }
 }
 
-PROCESS {    
+PROCESS {
         Write-Progress -Id 42 -Activity "Copy-Photo";
         [int]$totalFileCount = $files.Count
         [int]$filesProcessedCount = 0
         foreach($file in $files) {
-            if($file.Extension -in ".JPG",".JPEG") 
+            if($file.Extension -in ".JPG",".JPEG")
 	        {
                 LoadPhotoLibraryAssembly
 
@@ -260,9 +367,9 @@ PROCESS {
 	        }
 
             $targetDirectoryName = Join-Path $toRootDirectory $targetDirectoryName;
-		
+
             $targetFullName = Join-Path $targetDirectoryName $targetFileName
-	
+
 
 
 	        if(!(test-path $targetDirectoryName) )
@@ -282,18 +389,18 @@ PROCESS {
                 $copyCommand = "Copy-Item"
                 $Status = "Copying ";
             }
-            
+
             if( (-not (Test-Path $targetFullName)) -or $PSCmdlet.ShouldContinue("Overwrite $targetFullName`?", "Confirm") ) {
                     Write-Progress -Id 42 -Activity "Copy-Photo" -Status "$Status $file to $targetFullName" -PercentComplete ($filesProcessedCount++/$totalFileCount)
                     #ToDo yes-to-all currently doesn't work.
                     &  $copyCommand $file.FullName $targetFullName -ErrorAction SilentlyContinue -ErrorVariable commandError -force:$true
-            
+
                     if($commandError) {
-                        Write-Error "$copyCommand $file.FullName $targetFullName`: $($commandError[0].Exception)"; 
+                        Write-Error "$copyCommand $file.FullName $targetFullName`: $($commandError[0].Exception)";
                         $commandError = $null;
                     }
-            }            
-            
+            }
+
         }
     }
 }
@@ -304,20 +411,20 @@ function Write-PhotoInfo
 	param ([IO.FileInfo] $photoFileInfo)
 
 	$photo=new-object photolibrary.photo($photoFileInfo.FullName)
-	
-	Write-Host "`tAdd $numberOfHours hours to $photoFileInfo`: " 
+
+	Write-Host "`tAdd $numberOfHours hours to $photoFileInfo`: "
 	Write-Host	"`t`t DateOriginal  :`t"	$photo.DateTimeOriginal -noNewLine
-				Write-Host "`t`t" $photo.DateTimeOriginal.AddHours($numberOfHours) -foregroundcolor Green 
+				Write-Host "`t`t" $photo.DateTimeOriginal.AddHours($numberOfHours) -foregroundcolor Green
 	Write-Host	"`t`t PhotoDateTime :`t" 	$photo.DateTime -noNewLine
-				Write-Host "`t`t" $photo.DateTimeOriginal.AddHours($numberOfHours) -foregroundcolor Green 
+				Write-Host "`t`t" $photo.DateTimeOriginal.AddHours($numberOfHours) -foregroundcolor Green
 	Write-Host	"`t`t DateDigitized :`t" 	$photo.DateTimeDigitized -noNewLine
-				Write-Host "`t`t" $photo.DateTimeOriginal.AddHours($numberOfHours) -foregroundcolor Green 
+				Write-Host "`t`t" $photo.DateTimeOriginal.AddHours($numberOfHours) -foregroundcolor Green
 	Write-Host	"`t`t FileCreateTime:`t"	$photoFileInfo.CreationTime -noNewLine
-		Write-Host "`t`t" $photo.DateTimeOriginal.AddHours($numberOfHours) -foregroundcolor Green 
-	
+		Write-Host "`t`t" $photo.DateTimeOriginal.AddHours($numberOfHours) -foregroundcolor Green
+
 	## LastWriteTime is not set.
 	Write-Host	"`t`t DateModified  :`t" 	$photoFileInfo.LastWriteTime -noNewLine
-				Write-Host "`t`t" $photoFileInfo.LastWriteTime ## Unchanged -foregroundcolor Green 
+				Write-Host "`t`t" $photoFileInfo.LastWriteTime ## Unchanged -foregroundcolor Green
 }
 
 
@@ -338,7 +445,7 @@ function Add-HourToPhoto {
 
     if($fromDirectory -eq $null)
     {
-        Write-Error fromDirectory 
+        Write-Error fromDirectory
     }
     if(! (test-path $fromDirectory) )
     {
@@ -347,19 +454,19 @@ function Add-HourToPhoto {
 	    exit
     }
 
-    $photoFileInfos = dir $fromDirectory $filter -recur 
+    $photoFileInfos = dir $fromDirectory $filter -recur
 
     foreach( $photoFileInfo in $photoFileInfos )
     {
 	    $photo=new-object photolibrary.photo($photoFileInfo.FullName)
-	
+
 	    [string] $verboseMessage = "`nAdd $numberOfHours hours to $photoFileInfo`: " +
-		    "`n`t FileCreateTime: " 	+ 	$photoFileInfo.CreationTime + 
-		    "`n`t PhotoDateTime: " 		+ 	$photo.DateTime + 
+		    "`n`t FileCreateTime: " 	+ 	$photoFileInfo.CreationTime +
+		    "`n`t PhotoDateTime: " 		+ 	$photo.DateTime +
 		    "`n`t DateDigitized: " 		+ 	$photo.DateTimeDigitized +
 		    "`n`t DateOriginal: "		+	$photo.DateTimeOriginal +
 		    "`n`t DateModified: " 		+ 	$photoFileInfo.LastWriteTime
-	
+
 	    $shouldProcess = Should-Process AddHours-Photo $photoFileInfo ([REF]$AllAnswer) "" -Verbose:$Verbose -Confirm:$Confirm -Whatif:$Whatif
 
 	    if($shouldProcess)
@@ -373,13 +480,14 @@ function Add-HourToPhoto {
 		    ## No change
 		    ##$photoFileInfo.LastWriteTime
 	    }
-	
+
 	    if($verbose)
 	    {
 		    Write-PhotoInfo $photoFileInfo
-	    }	
+	    }
     }
 }
+
 
 
 
@@ -389,7 +497,7 @@ function Convert-KmlToTcx {
         [ValidateScript({Test-Path $_ -PathType Leaf})][Parameter(Mandatory)][string]$kmlFile
         , [string]$tcxFile=[IO.Path]::ChangeExtension($kmlFile, "tcx")
     )
-    
+
 
     #gpsbabel -t -i kml -f C:/Data/Photos/MarEli/2015/04/history-04-09-2015.kml -o gtrnctr -F C:/Data/Photos/MarEli/2015/04/history-04-09-2015.tcx -o gpx -F C:/Users/Mark/AppData/Local/Temp/GPSBabel.d13316
     #gpsbabel -t -i kml -f C:/Data/Photos/MarEli/2015/04/history-04-12-2015.kml -o gtrnctr -F C:/Data/Photos/MarEli/2015/04/history-04-12-2015.tcx
@@ -417,7 +525,7 @@ function Set-PhotoGeoTag {
 
     )
 
-    
+
 
 }
 
@@ -442,7 +550,7 @@ if($PSBoundParameters.Count -ne 0) {
 
 
 # $items | %{$_.DateTimeOriginal}
-# | %{ if(! test-path (.getdirectoryname() + 
+# | %{ if(! test-path (.getdirectoryname() +
 #\ + .datetimeoriginal.Month.tostring(00)))) { ni (.getdirectoryname() + \ + .datetimeoriginal.Month.tostring(00)) -type directory}}
 
 
