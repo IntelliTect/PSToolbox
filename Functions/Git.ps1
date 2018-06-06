@@ -20,10 +20,10 @@ $script:gitActionsLookup =@{
 };
 
 
-Function Script:Invoke-GitCommand {
-    [CmdletBinding()]
+Function Invoke-GitCommand {
+    [CmdletBinding(SupportsShouldProcess)]
     param(
-        [Parameter(Mandatory)][string]$command,
+        [Parameter(Mandatory)][string]$Command,
         [string]$Action
     )
 
@@ -31,31 +31,42 @@ Function Script:Invoke-GitCommand {
         $Action = " $($Action.Trim())";
     }
 
-    if($PSBoundParameters['Verbose'] -and ($commnd -notmatch '.*\s(-v|--verbose)(?:\s.*?|$).*')) {
-        $command += ' --verbose'
+    if($PSBoundParameters['Verbose'] -and ($Commnd -notmatch '.*\s(-v|--verbose)(?:\s.*?|$).*')) {
+        $Command += ' --verbose'
     }
 
-    if ($PSCmdlet.ShouldProcess("`tExecute$($Action): `n$command", "`tExecute$($Action): `n$command", "Executing$Action...")) {
+    if ($PSCmdlet.ShouldProcess("`tExecute$($Action): `n$Command", "`tExecute$($Action): `n$Command", "Executing$Action...")) {
         try {
-            Write-Host "Executing...`n$command" -ForegroundColor $host.PrivateData.VerboseForegroundColor -BackgroundColor $host.PrivateData.VerboseBackgroundColor
+            $foregroundColor = $host.PrivateData.VerboseForegroundColor
+            $backgroundColor = $host.PrivateData.VerboseBackgroundColor
+            Write-Verbose $foregroundColor
+            # TODO: $host.PrivateData.VerboseForegroundColor returns  RBG, not a color name.
+            #       We need to convert to color name of vise-versa to compare.
+            if( <# ("$foregroundColor" -eq "$($Host.ui.RawUI.ForegroundColor)") -and #>
+                    ("$backgroundColor" -ne 'Gray') ) {
+                $foregroundColor = 'Gray'
+            }
+            Write-Host "Executing: `n`t$Command" -ForegroundColor $foregroundColor -BackgroundColor $backgroundColor
         }
         catch {
-            Write-Host "Executing...`n$command"
+            Write-Host "Executing: `n`t$Command" -ForegroundColor Gray
         }
 
-        Invoke-Expression "$command" -ErrorAction Stop  #Change error handling to use throw instead.
+        Invoke-Expression "$Command" -ErrorAction Stop  #Change error handling to use throw instead.
     }
 }
 
-Function Get-GitStatus {
+Function Get-GitStatusObject {
     [CmdletBinding()]
     param(
         [GitAction[]]$action,
         [string[]]$path='*'
     )
 
-    git status --porcelain | ?{
-        $_ -match '(?<Action>[AMRDC]|\?\?)\s+(?<Filename>.*)' } | %{ $matches } | %{
+    Invoke-GitCommand 'git status --porcelain' | Where-Object{
+        $_ -match '(?<Action>[AMRDC]|\?\?)\s+(?<Filename>.*)' } | ForEach-Object{
+            $matches
+        } | ForEach-Object{
             [PSCustomObject]@{
                 "Action"="$($script:gitActionsLookup.Item($_.Action))";
                 "FileName"=$_.FileName
@@ -66,6 +77,21 @@ Function Get-GitStatus {
         }
 }
 
+Function Update-GitAuthor {
+        [CmdletBinding(SupportsShouldProcess)] param(
+            [string]$originalHash,
+            [string]$newAuthor
+        )
+
+        $currentBranch = (Invoke-GitCommand 'git rev-parse --abbrev-ref HEAD')
+        Invoke-GitCommand "git checkout $originalHash"
+        Invoke-GitCommand "git commit --amend --author $newAuthor"
+        $newHash = (Invoke-GitCommand 'git show -s --format=%H')
+        Invoke-GitCommand "git replace $originalHash $newHash"
+        Invoke-GitCommand "git replace -d $originalHash"
+        Invoke-GitCommand "git checkout $currentBranch"
+        Write-Warning 'Execute ''git filter-branch -- --all'' once all updates are complete. '
+}
 
 Function New-GitIgnore {
     [CmdletBinding()]
@@ -129,7 +155,7 @@ Function Undo-Git {
         Echo 'test'
     }
 
-    Script:Invoke-GitCommand $command
+    Invoke-GitCommand $command
 }
 
 Function Remove-GitBranch {
@@ -150,7 +176,7 @@ Function Remove-GitBranch {
     }
 
     $command = "git branch $deleteIfNotMergedOption"
-    $branches | ForEach-Object { Script:Invoke-GitCommand "$command $_" }
+    $branches | ForEach-Object { Invoke-GitCommand "$command $_" }
 }
 
 Function Get-GitBranch {
@@ -160,10 +186,10 @@ Function Get-GitBranch {
         [Parameter(ValueFromPipeline)] [string] $Name
     )
     $nameIsNull = [bool]$Name
-    Script:Invoke-GitCommand "git branch" |
+    Invoke-GitCommand "git branch" |
         ForEach-Object {
             $_.TrimStart('* ')
         } | Where-Object {
-            ($nameIsNull) -or ($_ -like $Name)
+            (!$nameIsNull) -or ($_ -like $Name)
     }
 }
