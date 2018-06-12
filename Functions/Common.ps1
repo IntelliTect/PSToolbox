@@ -1,5 +1,5 @@
 
-
+## TODO: Delete once it is no longer referenced and instead use the module IntelliTect.Common
 
 #See http://blogs.technet.com/b/heyscriptingguy/archive/2013/03/25/learn-about-using-powershell-value-binding-by-property-name.aspx
 Function New-ObjectFromHashtable {
@@ -32,9 +32,9 @@ Function Highlight([string]$pattern, [Int32]$Context=10, [Parameter(ValueFromPip
         $items = $item.Split([Environment]::NewLine)
         foreach($line in $items) {
 	        if( $line -like "*$pattern*")
-	        { 
+	        {
 		        write-host  $line -foregroundcolor Yellow
-	        } 
+	        }
 	        else
 	        {
 		        write-host  $line -foregroundcolor white
@@ -51,7 +51,7 @@ function New-Array {
 
 Function Register-AutoDispose {
     [CmdletBinding()] param(
-        [ValidateScript({ 
+        [ValidateScript({
             $_.PSobject.Members.Name -contains "Dispose"})]
         [Parameter(Mandatory)]
         [Object[]]$inputObject,
@@ -76,7 +76,7 @@ Set-Alias Using Register-AutoDispose
 
 
 Function Get-TempDirectory {
-    [CmdletBinding(DefaultParameterSetName='pathSet')][OutputType('System.IO.DirectoryInfo')] 
+    [CmdletBinding(DefaultParameterSetName='pathSet')][OutputType('System.IO.DirectoryInfo')]
     param (
         [Parameter(ParameterSetName='nameSet', Position=0, ValueFromPipelineByPropertyName=$true)]
         [Parameter(ParameterSetName='pathSet', Position=0, ValueFromPipelineByPropertyName=$true)]
@@ -99,13 +99,13 @@ Function Get-TempDirectory {
     }
 
     $directory = New-Item -Path $path -ItemType Directory
-    $directory | Add-Member -MemberType ScriptMethod -Name Dispose -Value { 
+    $directory | Add-Member -MemberType ScriptMethod -Name Dispose -Value {
         Remove-Item $this.FullName -Force -Recurse }
     return $directory
 }
 
 Function Get-TempFile {
-    [CmdletBinding(DefaultParameterSetName='pathSet')][OutputType('System.IO.FileInfo')] 
+    [CmdletBinding(DefaultParameterSetName='pathSet')][OutputType('System.IO.FileInfo')]
     param (
         [Parameter(ParameterSetName='nameSet', Position=0, ValueFromPipelineByPropertyName=$true)]
         [Parameter(ParameterSetName='pathSet', Position=0, ValueFromPipelineByPropertyName=$true)]
@@ -128,7 +128,7 @@ Function Get-TempFile {
     else {
         $file = Get-Item ([IO.Path]::GetTempFileName())
     }
-    $file | Add-Member -MemberType ScriptMethod -Name Dispose -Value { 
+    $file | Add-Member -MemberType ScriptMethod -Name Dispose -Value {
         Remove-Item $this.FullName -Force }
     return $file
 }

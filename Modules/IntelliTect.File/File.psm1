@@ -32,14 +32,14 @@ Set-Alias Open Open-File -Scope Global
         by setting the $Pscx:Preferences['TextEditor'] variable.)
     Consider dynamically editing the PSCX:Edit-File and replacing the definition
         of EditFileImpl with the Edit-File function below.
-#>      
+#>
 if(Test-Path Function:Edit-File) {
     if ( (Test-Path Function:Edit-File) -and ((Get-Item Function:Edit-File).ModuleName -eq "PSCX") -and (!(Test-Path Function:Edit-File_PSCX)) ) {
         #dir function: | ?{$_.ModuleName -eq "pscx" }
         Rename-Item Function:Edit-File Edit-File_PSCX
     }
     else {
-        Remove-Item Function:Edit-File -Force 
+        Remove-Item Function:Edit-File -Force
     }
 }
 
@@ -52,7 +52,7 @@ Deletes the $env:Temp\SampleDirectory directory.
 #>
 Function Remove-Directory {
     param(
-        [ValidateScript({Test-Path $_ -PathType �Container�})] 
+        [ValidateScript({Test-Path $_ -PathType -Container})]
         $directory
     )
 
@@ -84,8 +84,8 @@ Function Edit-File() {
     }
 }
 Set-Alias Edit Edit-File -Scope Global
-Set-Item "Function:Edit-File" -Options "ReadOnly" #Used to prevent the PSCX module from overriding 
-                                                  # this function but causes an error to occur when 
+Set-Item "Function:Edit-File" -Options "ReadOnly" #Used to prevent the PSCX module from overriding
+                                                  # this function but causes an error to occur when
                                                   # PSCX loads.  Use remove-item with -force to remove
                                                   # the function.
 
@@ -135,7 +135,7 @@ Function Set-FileEncoding {
             $message = "Converting $($_.Fullname) from '$currentEncoding' to '$Encoding'"
             Write-Output $PSCmdlet.ShouldProcess($message, $message, "Set-FileEndocing")
         }
-    } | ForEach-Object { 
+    } | ForEach-Object {
         $item = $_.FullName
         (Get-Content -Path $item) |  Set-Content -Encoding $Encoding -Path $item
   }
@@ -157,8 +157,8 @@ This command gets ps1 files in current directory where encoding is not ASCII
 .EXAMPLE
 Get-ChildItem  *.ps1 | select FullName, @{n='Encoding';e={Get-FileEncoding $_.FullName}} | where {$_.Encoding -ne 'ASCII'} | foreach {(get-content $_.FullName) | set-content $_.FullName -Encoding ASCII}
 Same as previous example but fixes encoding using set-content
- 
- 
+
+
 # Modified by F.RICHARD August 2010
 # add comment + more BOM
 # http://unicode.org/faq/utf_bom.html
@@ -169,9 +169,9 @@ Same as previous example but fixes encoding using set-content
 #>
 Function Get-FileEncoding
 {
-  [CmdletBinding()] 
+  [CmdletBinding()]
   Param (
-    [Parameter(Mandatory = $True, ValueFromPipelineByPropertyName = $True)] 
+    [Parameter(Mandatory = $True, ValueFromPipelineByPropertyName = $True)]
     [string]$Path
   )
 
