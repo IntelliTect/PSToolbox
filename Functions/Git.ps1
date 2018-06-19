@@ -19,25 +19,79 @@ $script:gitActionsLookup =@{
     'M'= [GitAction]::Modified;
 };
 
-Function Get-GitStatus {
+
+Function Invoke-GitCommand {
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Parameter(Mandatory)][string]$Command,
+        [string]$Action
+    )
+
+    if($Action) {
+        $Action = " $($Action.Trim())";
+    }
+
+    if($PSBoundParameters['Verbose'] -and ($Commnd -notmatch '.*\s(-v|--verbose)(?:\s.*?|$).*')) {
+        $Command += ' --verbose'
+    }
+
+    if ($PSCmdlet.ShouldProcess("`tExecute$($Action): `n$Command", "`tExecute$($Action): `n$Command", "Executing$Action...")) {
+        try {
+            $foregroundColor = $host.PrivateData.VerboseForegroundColor
+            $backgroundColor = $host.PrivateData.VerboseBackgroundColor
+            Write-Verbose $foregroundColor
+            # TODO: $host.PrivateData.VerboseForegroundColor returns  RBG, not a color name.
+            #       We need to convert to color name of vise-versa to compare.
+            if( <# ("$foregroundColor" -eq "$($Host.ui.RawUI.ForegroundColor)") -and #>
+                    ("$backgroundColor" -ne 'Gray') ) {
+                $foregroundColor = 'Gray'
+            }
+            Write-Host "Executing: `n`t$Command" -ForegroundColor $foregroundColor -BackgroundColor $backgroundColor
+        }
+        catch {
+            Write-Host "Executing: `n`t$Command" -ForegroundColor Gray
+        }
+
+        Invoke-Expression "$Command" -ErrorAction Stop  #Change error handling to use throw instead.
+    }
+}
+
+Function Get-GitStatusObject {
     [CmdletBinding()]
     param(
         [GitAction[]]$action,
         [string[]]$path='*'
     )
 
-    git status --porcelain | ?{ 
-        $_ -match '(?<Action>[AMRDC]|\?\?)\s+(?<Filename>.*)' } | %{ $matches } | %{
+    Invoke-GitCommand 'git status --porcelain' | Where-Object{
+        $_ -match '(?<Action>[AMRDC]|\?\?)\s+(?<Filename>.*)' } | ForEach-Object{
+            $matches
+        } | ForEach-Object{
             [PSCustomObject]@{
                 "Action"="$($script:gitActionsLookup.Item($_.Action))";
                 "FileName"=$_.FileName
             }
         } | Where-Object{
-            (!$PSBoundParameters.ContainsKey('action') -or @($action) -contains $_.Action) -and 
+            (!$PSBoundParameters.ContainsKey('action') -or @($action) -contains $_.Action) -and
                 ($_.FileName -like $path)
         }
 }
 
+Function Update-GitAuthor {
+        [CmdletBinding(SupportsShouldProcess)] param(
+            [string]$originalHash,
+            [string]$newAuthor
+        )
+
+        $currentBranch = (Invoke-GitCommand 'git rev-parse --abbrev-ref HEAD')
+        Invoke-GitCommand "git checkout $originalHash"
+        Invoke-GitCommand "git commit --amend --author $newAuthor"
+        $newHash = (Invoke-GitCommand 'git show -s --format=%H')
+        Invoke-GitCommand "git replace $originalHash $newHash"
+        Invoke-GitCommand "git replace -d $originalHash"
+        Invoke-GitCommand "git checkout $currentBranch"
+        Write-Warning 'Execute ''git filter-branch -- --all'' once all updates are complete. '
+}
 
 Function New-GitIgnore {
     [CmdletBinding()]
@@ -57,11 +111,85 @@ processing","progressabl","puppet-librarian","purescript","pycharmpython","qml",
 "sass","sbt","scala","schemescons","scrivener","sdcc","seamgen","senchatouchserverless","shopware","silverstripe","sketchup","slickeditsmalltalk","sonar","sourcepawn","splunk","statastel
 la","stellar","stylus","sublimetext","sugarcrmsvn","swift","symfony","symphonycms","synologysynopsysvcs","tags","tarmainstallmate","terraform","testtestcomplete","tex","textmate","textpa
 ttern","theos-tweaktortoisegit","tower","turbogears2","typings","typo3umbraco","unity","unrealengine","vagrant","vimvirtualenv","virtuoso","visualstudio","visualstudiocode","vivadovvvv",
-"waf","wakanda","webmethods","webstormwerckercli","windows","wintersmith","wordpress","xamarinstudioxcode","xilinxise","xojo","xtext","yeomanyii","yii2","zendframework","zephir")] 
+"waf","wakanda","webmethods","webstormwerckercli","windows","wintersmith","wordpress","xamarinstudioxcode","xilinxise","xojo","xtext","yeomanyii","yii2","zendframework","zephir")]
          [Parameter(Mandatory)]$projectType = "VisualStudio"
     )
     process {
-        Invoke-WebRequest -Uri "https://www.gitignore.io/api/$projectType" | 
+        Invoke-WebRequest -Uri "https://www.gitignore.io/api/$projectType" |
             Select-Object -ExpandProperty Content | Out-File -FilePath $(Join-Path -path $pwd -ChildPath ".gitignore") -Encoding ascii
+    }
+}
+
+
+Function Undo-Git {
+    [CmdletBinding(DefaultParameterSetName='TrackedAndIgnored',SupportsShouldProcess)]
+    param(
+        [ValidateScript({ Test-Path $_ })]
+        [Parameter(Position=0,ValueFromPipeline,ValueFromPipelineByPropertyName)]
+        [Alias('FullName')][string[]]$Path
+        # Parameter help description
+        ,[switch]$RestoreTrackedFiles
+        ,[Parameter(ParameterSetName='TrackedOnly')]
+        [Parameter(ParameterSetName='TrackedAndIgnored')][switch]$RemoveUntrackedFiles=$false
+        ,[Parameter(ParameterSetName='TrackedAndIgnored')][switch]$RemoveIgnoredFilesToo
+    )
+
+    Write-Host "Parameters: "; $PSBoundParameters | Out-String
+    if($RemoveIgnoredFilesToo -and !$RemoveUntrackedFiles) {
+        Write-Error '-RemoveIgnoredFilesToo only valid if -RemoveUntrackedFiles is set' -ErrorAction Stop
+    }
+    return
+
+    [string]$command = $null
+    if($RemoveUntrackedFiles -and $RemoveIgnoredFilesToo) {
+        $command += "`tgit clean -f -d -X $path `n"
+    }
+    if($RemoveUntrackedFiles) {
+        $command += "`tgit clean -f -d $path `n"
+    }
+    if($RestoreTrackedFiles) {
+        $command += "`tgit reset --hard HEAD `n"
+    }
+
+    if([string]::IsNullOrWhiteSpace($command)) {
+        Echo 'test'
+    }
+
+    Invoke-GitCommand $command
+}
+
+Function Remove-GitBranch {
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param(
+        # The filter, when matched, excludes from the branches to delete
+        [Parameter(Mandatory,ValueFromPipeline)] [string] $Name,
+        [Parameter()] [switch] $Force
+    )
+    $branches = Get-GitBranch $Name
+    if (@($branches).Count -eq 0) {
+        throw "Cannot branches matching name '$Name' because it does not exist."
+    }
+
+    $deleteIfNotMergedOption = '-d'
+    if ($Force.IsPresent) {
+        $deleteIfNotMergedOption = '-D'
+    }
+
+    $command = "git branch $deleteIfNotMergedOption"
+    $branches | ForEach-Object { Invoke-GitCommand "$command $_" }
+}
+
+Function Get-GitBranch {
+    [CmdletBinding()]
+    param(
+        # The filter, when matched, excludes from the branches to delete
+        [Parameter(ValueFromPipeline)] [string] $Name
+    )
+    $nameIsNull = [bool]$Name
+    Invoke-GitCommand "git branch" |
+        ForEach-Object {
+            $_.TrimStart('* ')
+        } | Where-Object {
+            (!$nameIsNull) -or ($_ -like $Name)
     }
 }
