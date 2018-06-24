@@ -1,4 +1,5 @@
 
+
 Function Add-PathToEnvironmentVariable {
     [CmdletBinding(SupportsShouldProcess)]
     param(
@@ -16,16 +17,42 @@ Function Add-PathToEnvironmentVariable {
     }
 }
 
-#TODO: Add Intelligent $PSISE.ShouldProcess wrapper
 <#
-    Function Invoke-ShouldProcess?????{
-        $command = "git mv $oldFileName $newFileName $(if($PSBoundParameters['Verbose']) {`"-v`"})" # The following is not needed as it is handled by "$PSCmdlet.ShouldProcess": -What $(if($PSBoundParameters['WhatIf']) {`"--dry-run`"})"
-        if ($PSCmdlet.ShouldProcess("`tExecuting: $command", "`tExecute git.exe Rename: $command", "Executing Git.exe mv")) {
-            Invoke-Expression "$command" -ErrorAction Stop  #Change error handling to use throw instead.
-        }
+.SYNOPSIS
+Invokes $PSCmdlet.ShouldProcess
+
+.PARAMETER ContinueMessage
+Textual description of the action to be performed. This is what will be displayed to the user for ActionPreference.Continue.
+
+.PARAMETER InquireMessage
+Textual query of whether the action should be performed, usually in the form of a question. This is what will be displayed to the user for ActionPreference.Inquire.
+
+.PARAMETER Caption
+Caption of the window which may be displayed if the user is prompted whether or not to perform the action. (Caption may be displayed by some hosts, but not all.)
+
+.PARAMETER ShouldProcessReason
+Indicates the reason(s) why ShouldProcess returned what it returned. Only the reasons enumerated in System.Management.Automation.ShouldProcessReason are returned.
+
+.PARAMETER script
+The script executed if the $PSCmdlet.ShouldProcess returns true.
+
+#>
+Function Invoke-ShouldProcess{
+    [CmdletBinding()]
+    param(
+        [string]$ContinueMessage,
+        [string]$InquireMessage,
+        [string]$Caption,
+        [ScriptBlock]$Script
+    )
+
+    if ($PSCmdlet.ShouldProcess($ContinueMessage, $InquireMessage, $Caption)) {
+        Write-Debug 'Executing script...'
+        Invoke-Command $Script
+        Write-Debug 'Finished executing script.'
     }
-    Set-Alias ShouldProcess Invoke-ShouldProcess
-    #>
+}
+Set-Alias ShouldProcess Invoke-ShouldProcess
 
 <#
     TODO: Create Set-Alias Wrapper that allows the passing of parameters
@@ -77,27 +104,44 @@ function New-Array {
     $args
 }
 
+Function Add-DisposeScript {
+    [CmdletBinding()]
+    param(
+        [ValidateNotNull()][Parameter(Mandatory,ValueFromPipeline)][object[]]$InputObject,
+        [ValidateNotNull()][Parameter(Mandatory)][ScriptBlock]$DisposeScript
+    )
+
+    $InputObject | Add-Member -MemberType NoteProperty -Name IsDisposed -Value $false
+    # Set the IsDisposed property to true when Dispose() is called.
+    [ScriptBlock]$DisposeScript = [scriptblock]::Create(
+        "$DisposeScript; `n`$this.IsDisposed = `$true; "
+    )
+    $InputObject | Add-Member -MemberType ScriptMethod -Name Dispose -Value $DisposeScript
+}
+
 Function Register-AutoDispose {
     [CmdletBinding()] param(
         [ValidateScript( {
                 $_.PSobject.Members.Name -contains "Dispose"})]
-        [Parameter(Mandatory)]
+        [ValidateNotNull()][Parameter(Mandatory,ValueFromPipeline)]
         [Object[]]$inputObject,
 
         [Parameter(Mandatory)]
-        [ScriptBlock]$script
+        [ScriptBlock]$ScriptBlock
     )
 
     try {
-        Invoke-Command -ScriptBlock $script
+        Invoke-Command -ScriptBlock $ScriptBlock
     }
     finally {
-        $inputObject | % {try {
+        $inputObject | ForEach-Object {
+            try {
                 $_.Dispose()
             }
             catch {
                 Write-Error $_
-            }}
+            }
+        }
     }
 }
 Set-Alias Using Register-AutoDispose
