@@ -37,7 +37,7 @@ Indicates the reason(s) why ShouldProcess returned what it returned. Only the re
 The script executed if the $PSCmdlet.ShouldProcess returns true.
 
 #>
-Function Invoke-ShouldProcess{
+Function Invoke-ShouldProcess {
     [CmdletBinding()]
     param(
         [string]$ContinueMessage,
@@ -69,7 +69,7 @@ Function New-ObjectFromHashtable {
     begin { }
     process {
         $r = new-object System.Management.Automation.PSObject
-        $Hashtable.Keys | % {
+        $Hashtable.Keys | ForEach-Object {
             $key = $_
             $value = $Hashtable[$key]
             $r | Add-Member -MemberType NoteProperty -Name $key -Value $value -Force
@@ -107,7 +107,7 @@ function New-Array {
 Function Add-DisposeScript {
     [CmdletBinding()]
     param(
-        [ValidateNotNull()][Parameter(Mandatory,ValueFromPipeline)][object[]]$InputObject,
+        [ValidateNotNull()][Parameter(Mandatory, ValueFromPipeline)][object[]]$InputObject,
         [ValidateNotNull()][Parameter(Mandatory)][ScriptBlock]$DisposeScript
     )
 
@@ -119,91 +119,173 @@ Function Add-DisposeScript {
     $InputObject | Add-Member -MemberType ScriptMethod -Name Dispose -Value $DisposeScript
 }
 
-Function Register-AutoDispose {
-    [CmdletBinding()] param(
-        [ValidateScript( {
-                $_.PSobject.Members.Name -contains "Dispose"})]
-        [ValidateNotNull()][Parameter(Mandatory,ValueFromPipeline)]
-        [Object[]]$inputObject,
+<#
+.SYNOPSIS
+Registers to invoke the $InputObject's Dispose() method once the $ScriptBlock execution completes.
 
-        [Parameter(Mandatory)]
-        [ScriptBlock]$ScriptBlock
+.DESCRIPTION
+Provides equivalent functionality to C#'using statment, invoking Dispose after
+executing the $ScriptBlock specified.
+
+.PARAMETER inputObject
+The object on which to find and invoke the Dispose method.
+
+.PARAMETER ScriptBlock
+The ScriptBlock to execute before calling the $InputObject's dispose method.
+
+.EXAMPLE
+Register-AutoDispose (Get-TempFile) { Get-ChildItem }
+
+Calls the return from Get-TempFile's Dispose() method upon completion of Get-ChildItem.
+
+.EXAMPLE
+.EXAMPLE
+Register-AutoDispose (Get-TempFile) { param($tempFile) Write-Output $tempFile }
+
+Calls the return from Get-TempFile's Dispose() method upon completion of Write-Output $inputObject.
+In this case, because the $ScriptBlock accepts a parameter, the parameter will be initialized
+with the value of $inputObject
+
+
+.NOTES
+If a $ScriptBlock takes a parameter, the parameter value will be set to the value of $InputObject.
+
+#>
+Function Register-AutoDispose {
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [ValidateScript( {$_.PSobject.Members.Name -contains "Dispose"})]
+            [ValidateNotNull()][Parameter(Mandatory, ValueFromPipeline)]
+            [Object[]]$InputObject,
+
+        [Parameter(Position=1,Mandatory)]
+            [ScriptBlock]$ScriptBlock
     )
 
-    try {
-        Invoke-Command -ScriptBlock $ScriptBlock
-    }
-    finally {
-        $inputObject | ForEach-Object {
-            try {
-                $_.Dispose()
-            }
-            catch {
-                Write-Error $_
+  PROCESS  {
+          try {
+            Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $InputObject
+        }
+        finally {
+            $InputObject | ForEach-Object {
+                try {
+                    $_.Dispose()
+                }
+                catch {
+                    Write-Error $_
+                }
             }
         }
-    }
+  }
 }
 Set-Alias Using Register-AutoDispose
 
 
-Function Get-TempDirectory {
-    [CmdletBinding(DefaultParameterSetName = 'pathSet')][OutputType('System.IO.DirectoryInfo')]
+
+Function Script:Get-FileSystemTempItem {
+    [CmdletBinding()]
+    [OutputType('System.IO.FileSystemInfo')]
     param (
-        [Parameter(ParameterSetName = 'nameSet', Position = 0, ValueFromPipelineByPropertyName = $true)]
-        [Parameter(ParameterSetName = 'pathSet', Position = 0, ValueFromPipelineByPropertyName = $true)]
-        [string[]]
-        ${Path},
-
-        [Parameter(ParameterSetName = 'nameSet', Position = 1, Mandatory, ValueFromPipelineByPropertyName = $true)]
-        [AllowNull()]
-        [AllowEmptyString()]
-        [string]
-        ${Name}
+        [Parameter(ValueFromPipelineByPropertyName)]
+        [string[]]${Path} = [System.IO.Path]::GetTempPath(),
+        [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)]
+        [AllowNull()][AllowEmptyString()][string[]]${Name},
+        [ValidateSet('File', 'Directory')][string]$ItemType = 'File'
     )
-    if ($PSCmdlet.ParameterSetName -eq 'nameSet') {
-        if (!$path) {$path = [System.IO.Path]::GetTempPath() }
-        $path = Join-Path $path $name
-    }
-    if (!$path) {
-        $path = Get-Item ([IO.Path]::GetTempFileName())
-        Remove-Item $path -Force
-    }
 
-    $directory = New-Item -Path $path -ItemType Directory
-    $directory | Add-Member -MemberType ScriptMethod -Name Dispose -Value {
-        Remove-Item $this.FullName -Force -Recurse }
-    return $directory
+    PROCESS {
+        $path | ForEach-Object {
+
+            [string]$fullName = $null
+            # If the directory doesn't exist then Resolve-Path will report an error.
+            $eachPath = Resolve-Path $_ -ErrorAction Stop
+            if ((!$Name) -or ([string]::IsNullOrEmpty($Name))) {
+                $fullName = Get-FileSystemTempItemPath $_
+            }
+            else {
+                $fullName = $Name | ForEach-Object {
+                    if ([string]::IsNullOrEmpty($_)) {
+                        do {
+                            $eachFullName = Join-Path $eachPath ([System.IO.Path]::GetRandomFileName())
+                        } while (Test-Path $eachFullName)
+                        Write-Output $eachFullName
+                    }
+                    else {
+                        Write-Output (Join-Path $eachPath $_)
+                    }
+                }
+            }
+
+            $fullName | ForEach-Object {
+                # If we fail to create the item (for example the name was specified and the the file already exists)
+                # then we stop further execution.
+                $file = New-Item $_ -ItemType $ItemType -ErrorAction Stop
+
+                $file | Add-DisposeScript -DisposeScript {
+                    Remove-Item $this.FullName -Force }
+
+                Write-Output $file
+
+            }
+        }
+    }
+}
+
+
+Function Get-TempDirectory {
+    [CmdletBinding()]
+    [OutputType('System.IO.DirectoryInfo')]
+    param (
+        [Parameter(ValueFromPipelineByPropertyName)]
+        [string[]]${Path} = [System.IO.Path]::GetTempPath(),
+        [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)]
+        [AllowNull()][AllowEmptyString()][string[]]${Name}
+    )
+
+    Get-FileSystemTempItem -Path $Path -Name $Name -ItemType Directory
 }
 
 Function Get-TempFile {
-    [CmdletBinding(DefaultParameterSetName = 'pathSet')][OutputType('System.IO.FileInfo')]
+    [CmdletBinding()]
+    [OutputType('System.IO.FileInfo')]
     param (
-        [Parameter(ParameterSetName = 'nameSet', Position = 0, ValueFromPipelineByPropertyName = $true)]
-        [Parameter(ParameterSetName = 'pathSet', Position = 0, ValueFromPipelineByPropertyName = $true)]
-        [string[]]
-        ${Path},
-
-        [Parameter(ParameterSetName = 'nameSet', Position = 1, Mandatory, ValueFromPipelineByPropertyName = $true)]
-        [AllowNull()]
-        [AllowEmptyString()]
-        [string]
-        ${Name}
+        [Parameter(ValueFromPipelineByPropertyName)]
+        [string[]]${Path} = [System.IO.Path]::GetTempPath(),
+        [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)]
+        [AllowNull()][AllowEmptyString()][string[]]${Name}
     )
-    if ($PSCmdlet.ParameterSetName -eq 'nameSet') {
-        if (!$path) {$path = [System.IO.Path]::GetTempPath() }
-        $path = Join-Path $path $name
-    }
-    if ($path) {
-        $file = New-Item $path -ItemType File
-    }
-    else {
-        $file = Get-Item ([IO.Path]::GetTempFileName())
-    }
-    $file | Add-Member -MemberType ScriptMethod -Name Dispose -Value {
-        Remove-Item $this.FullName -Force }
-    return $file
+
+    Get-FileSystemTempItem -Path $Path -Name $Name -ItemType File
 }
+
+<#
+.SYNOPSIS
+Gets the name of a temporary file or directory that does not exist.
+
+.PARAMETER Path
+An optional path to the parent directory.  If no path is specified,
+the directory defaults to the operating system temporaray directory (System.IO.Path]::GetTempPath())
+
+#>
+Function Get-FileSystemTempItemPath {
+    [CmdletBinding()]
+    [OutputType([String])]
+    param (
+        [Parameter(ValueFromPipeLine, ValueFromPipelineByPropertyName)]
+        [string[]]${Path} = [System.IO.Path]::GetTempPath()
+    )
+
+    $path | ForEach-Object {
+        [string]$eachName = $null
+        [string]$tempItemPath = $null
+        do {
+            $eachName = [System.IO.Path]::GetRandomFileName()
+            $tempItemPath = Join-Path $_ $eachName
+        } while (Test-Path $tempItemPath)
+        Write-Output $tempItemPath
+    }
+}
+Set-Alias -Name Get-TempItemPath -Value Get-FileSystemTempItemPath
 
 Function ConvertTo-Lines {
     [CmdLetBinding()] param(
