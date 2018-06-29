@@ -1,4 +1,7 @@
 #Requires -Version 5.0  # Needed for enum definition.
+#Requires -Modules IntelliTect.Common
+
+#Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.Common
 
 enum GitAction {
     Untracked
@@ -23,23 +26,33 @@ $script:gitActionsLookup =@{
 Function Invoke-GitCommand {
     [CmdletBinding(SupportsShouldProcess)]
     param(
-        [Parameter(Mandatory)][string]$Command,
-        [string]$Action
+        [string]$ActionMessage,
+        [Parameter(Mandatory,ValueFromRemainingArguments)][string[]]$Command
     )
 
-    if($Action) {
-        $Action = " $($Action.Trim())";
+    if(@($command).Count -gt 1) {
+        $command = $command -join ' '
+    }
+
+    if($Command -notmatch '\s*git\s.*') {
+        $Command = "git $Command"
+    }
+
+    if($ActionMessage) {
+        $ActionMessage = " $($ActionMessage.Trim())";
     }
 
     if($PSBoundParameters['Verbose'] -and ($Commnd -notmatch '.*\s(-v|--verbose)(?:\s.*?|$).*')) {
         $Command += ' --verbose'
     }
 
-    if ($PSCmdlet.ShouldProcess("`tExecute$($Action): `n$Command", "`tExecute$($Action): `n$Command", "Executing$Action...")) {
+    Write-Debug "Command: '$Command'"
+
+    Invoke-ShouldProcess "`tExecute$($ActionMessage): `n$Command" "`tExecute$($ActionMessage): `n$Command" "Executing$ActionMessage..." {
         try {
             $foregroundColor = $host.PrivateData.VerboseForegroundColor
             $backgroundColor = $host.PrivateData.VerboseBackgroundColor
-            Write-Verbose $foregroundColor
+
             # TODO: $host.PrivateData.VerboseForegroundColor returns  RBG, not a color name.
             #       We need to convert to color name of vise-versa to compare.
             if( <# ("$foregroundColor" -eq "$($Host.ui.RawUI.ForegroundColor)") -and #>
