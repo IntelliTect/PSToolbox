@@ -154,3 +154,19 @@ Function Test-FileIsLocked {
 
     return $filelocked
 }
+
+
+Describe 'Remove-FileToRecycleBin' {
+    if(($PSVersionTable.PSEdition -eq 'Desktop') -and ($PSVersionTable.Clrversion.Major -ge 4)) {
+        It 'Item is no longe rin original directory' {
+            $sampleFileName = [IO.Path]::GetTempFileName()
+            Test-Path $sampleFileName | Should Be $true
+            Remove-FileToRecycleBin $sampleFileName
+            Test-Path $sampleFileName | Should Be False
+            #TODO: Check that the file is in the recycle bin.
+        }
+    }
+    else {
+        Write-Warning 'Remove-FileToRecycleBin is not currently supported on the this platform.'
+    }
+}
