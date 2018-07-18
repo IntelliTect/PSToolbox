@@ -32,14 +32,14 @@ Set-Alias Open Open-File -Scope Global
         by setting the $Pscx:Preferences['TextEditor'] variable.)
     Consider dynamically editing the PSCX:Edit-File and replacing the definition
         of EditFileImpl with the Edit-File function below.
-#>      
+#>
 if(Test-Path Function:Edit-File) {
     if ( (Test-Path Function:Edit-File) -and ((Get-Item Function:Edit-File).ModuleName -eq "PSCX") -and (!(Test-Path Function:Edit-File_PSCX)) ) {
         #dir function: | ?{$_.ModuleName -eq "pscx" }
         Rename-Item Function:Edit-File Edit-File_PSCX
     }
     else {
-        Remove-Item Function:Edit-File -Force 
+        Remove-Item Function:Edit-File -Force
     }
 }
 
@@ -52,7 +52,7 @@ Deletes the $env:Temp\SampleDirectory directory.
 #>
 Function Remove-Directory {
     param(
-        [ValidateScript({Test-Path $_ -PathType �Container�})] 
+        [ValidateScript({Test-Path $_ -PathType �Container�})]
         $directory
     )
 
@@ -84,8 +84,8 @@ Function Edit-File() {
     }
 }
 Set-Alias Edit Edit-File -Scope Global
-Set-Item "Function:Edit-File" -Options "ReadOnly" #Used to prevent the PSCX module from overriding 
-                                                  # this function but causes an error to occur when 
+Set-Item "Function:Edit-File" -Options "ReadOnly" #Used to prevent the PSCX module from overriding
+                                                  # this function but causes an error to occur when
                                                   # PSCX loads.  Use remove-item with -force to remove
                                                   # the function.
 
@@ -135,7 +135,7 @@ Function Set-FileEncoding {
             $message = "Converting $($_.Fullname) from '$currentEncoding' to '$Encoding'"
             Write-Output $PSCmdlet.ShouldProcess($message, $message, "Set-FileEndocing")
         }
-    } | ForEach-Object { 
+    } | ForEach-Object {
         $item = $_.FullName
         (Get-Content -Path $item) |  Set-Content -Encoding $Encoding -Path $item
   }
@@ -157,8 +157,8 @@ This command gets ps1 files in current directory where encoding is not ASCII
 .EXAMPLE
 Get-ChildItem  *.ps1 | select FullName, @{n='Encoding';e={Get-FileEncoding $_.FullName}} | where {$_.Encoding -ne 'ASCII'} | foreach {(get-content $_.FullName) | set-content $_.FullName -Encoding ASCII}
 Same as previous example but fixes encoding using set-content
- 
- 
+
+
 # Modified by F.RICHARD August 2010
 # add comment + more BOM
 # http://unicode.org/faq/utf_bom.html
@@ -169,9 +169,9 @@ Same as previous example but fixes encoding using set-content
 #>
 Function Get-FileEncoding
 {
-  [CmdletBinding()] 
+  [CmdletBinding()]
   Param (
-    [Parameter(Mandatory = $True, ValueFromPipelineByPropertyName = $True)] 
+    [Parameter(Mandatory = $True, ValueFromPipelineByPropertyName = $True)]
     [string]$Path
   )
 
@@ -224,4 +224,68 @@ Function Get-FileEncoding
 
   else
   { Write-Output 'ASCII' }
+}
+
+if(($PSVersionTable.PSEdition -eq 'Desktop') -and ($PSVersionTable.Clrversion.Major -ge 4)) {
+    <#
+    The current implementation only works with Windows Recycle bin from Full Framework
+    PowerShell (not PowerShell Core).  In the future, Core (MacOs/Linux) support can be
+    added (checking for $home/.Trash directory for example)
+    ($env:OS -like 'Windows*') is anothe potential test (which doesn't work with PowerShell Core)
+    To avoid using the Microsfot.VisualBasic assembly, the recycle bin is located
+    within c:\$Recycle.Bin but it is still necessary to determine the SSID of the user.
+    #>
+Function Remove-FileToRecycleBin {
+[CmdletBinding(SupportsShouldProcess=$true, DefaultParameterSetName='Path')]
+        # The file(s) to be moved to the recyle bin. TODO: Add support for wild cards.
+    param (
+        [ValidateScript({ Test-Path $_ })]
+        [Parameter(ParameterSetName='Path', Mandatory=$true, Position, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
+        [Alias("FullName")]
+        [string[]]
+        $Path,
+
+        [Parameter(ParameterSetName='LiteralPath', Mandatory=$true, ValueFromPipelineByPropertyName=$true)]
+        [Alias('PSPath')]
+        [string[]]
+        $LiteralPath
+    )
+    BEGIN {
+        Add-Type -AssemblyName Microsoft.VisualBasic
+        try {
+            [System.Reflection.Assembly]::GetAssembly([Microsoft.VisualBasic.FileIO.FileSystem])
+        }
+        catch {
+            throw 'Unable to load Microsoft.VisualBasic.FileIO.FileSystem. It is like due to lack of support by the OS/platform.'
+        }
+#        switch($pscmdlet.parametersetname) {
+#            'filesysteminfo' {
+#                $path = $fileinfo.fullname
+#            }
+#            'literalpath' {
+#                $path = $literalpath
+#            }
+#        }
+    }
+    PROCESS {
+
+            $item = Resolve-Path @PSBoundParameters
+            $item | %{
+            if ($PSCmdlet.ShouldProcess(
+                    #TODO: Change to use ShouldProcess from IntelliTect.Common module
+                    "Moving $item to the Recycle Bin'",
+                    "Moving $item to the Recycle Bin'",
+                    "Moving $item to the Recycle Bin'"
+                )) {
+                Write-Verbose "Moving '$item' to the Recycle Bin"
+                if(Test-Path -LiteralPath $item -PathType Container) {
+                    [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteDirectory($item,'OnlyErrorDialogs','SendToRecycleBin')
+                }
+                else {
+                    [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile($item,'OnlyErrorDialogs','SendToRecycleBin')
+                }
+            }
+        }
+    }
+}
 }

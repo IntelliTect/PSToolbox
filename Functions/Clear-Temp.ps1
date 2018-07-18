@@ -1,52 +1,6 @@
 
 $here = $PSScriptRoot
 
-Function Remove-FileToRecycleBin {
-[CmdletBinding(SupportsShouldProcess=$true, DefaultParameterSetName='Path')]
-        # The file(s) to be moved to the recyle bin. TODO: Add support for wild cards.
-    param (
-        [ValidateScript({ Test-Path $_ })]
-        [Parameter(ParameterSetName='Path', Mandatory=$true, Position, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
-        [Alias("FullName")]
-        [string[]]
-        $Path,
-
-        [Parameter(ParameterSetName='LiteralPath', Mandatory=$true, ValueFromPipelineByPropertyName=$true)]
-        [Alias('PSPath')]
-        [string[]]
-        $LiteralPath
-    )
-    BEGIN {
-        Add-Type -AssemblyName Microsoft.VisualBasic
-#        switch($pscmdlet.parametersetname) {
-#            'filesysteminfo' {
-#                $path = $fileinfo.fullname
-#            }
-#            'literalpath' {
-#                $path = $literalpath
-#            }
-#        }
-    }
-    PROCESS {
-
-            $item = Resolve-Path @PSBoundParameters
-            $item | %{
-            if ($PSCmdlet.ShouldProcess(
-                    "Moving $item to the Recycle Bin'",
-                    "Moving $item to the Recycle Bin'",
-                    "Moving $item to the Recycle Bin'"
-                )) {
-                Write-Verbose "Moving '$item' to the Recycle Bin"
-                if(Test-Path -LiteralPath $item -PathType Container) {
-                    [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteDirectory($item,'OnlyErrorDialogs','SendToRecycleBin')
-                }
-                else {
-                    [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile($item,'OnlyErrorDialogs','SendToRecycleBin')
-                }
-            }
-        }
-    }
-}
 
 # Sort by the date on the object that is the newest.
 #get-childitem -directory | %{ ($_.LastAccessTime.ToUniversalTime(),$_.lastwritetime.ToUniversalTime(),$_.CreationTimeUtc | sort-object )[0] } | sort -Descending
@@ -58,7 +12,7 @@ Function Script:Get-LastUsefulDateDebugMessage {
     param($item, $result)
     $item = $_
     $message = "{0,-30}" -f "$($_.Name):"
-    $TimeProperties | %{ 
+    $TimeProperties | %{
         if($item."$_" -eq $result) { $message += "{0,25}" -f ("$($item."$_")*") }
         else {$message += "{0,25}" -f ("$($item."$_")") }
     }
@@ -131,7 +85,7 @@ Function Clear-Temp {
         [int]$MonthsOld = 12
     )
 
-    PROCESS { 
+    PROCESS {
         if(($Path -eq $env:TEMP) -and #the default value
                 (Test-Path env:Data) -and (Test-Path ($dataTemp = Join-Path $env:Data "Temp"))) {
             $items =  $path,$dataTemp | %{ Get-item -literalpath $_ }    # Add $dataTemp to be cleared as well.
@@ -145,7 +99,7 @@ Function Clear-Temp {
             $items = Get-Item @parameters
         }
         $pathsProcessingCounter = 1
-        
+
         $items | %{
             $item = $_
             $itemsProcessedCount = 0;
@@ -162,7 +116,7 @@ Function Clear-Temp {
                             -Status "Phase $pathsProcessingCounter/$($path.Count): Moving '$($_.FullName)' to RecycleBin"
                         Remove-FileToRecycleBin -literalPath $_.FullName
                     }
-                }           
+                }
             }
             $itemsProcessedCount=0
             $pathsProcessingCounter++
