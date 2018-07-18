@@ -23,7 +23,7 @@ Describe "Add-DisposeScript" {
     }
 }
 
-Describe "Regsiter-AutoDispose" {
+Describe "Register-AutoDispose" {
     It "Verify that dispose is called on Add-DisposeScript object" {
         $sampleDisposeObject = New-Object Object
         $sampleDisposeObject | Add-DisposeScript -DisposeScript { Write-Output  "first" }
