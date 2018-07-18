@@ -1,11 +1,14 @@
-$here = $PSScriptRoot
-$sut = $PSCommandPath.Replace('.Tests', '')
-. $sut
+<#Header#>
+Set-StrictMode -Version "Latest"
 
+Get-Module IntelliTect.File | Remove-Module
+Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.File -Force
+
+#EndHeader#>
 
 #TODO: This can surely be done using the Pester functions but I confess, I am not sure how.
 #      Consider moving this to an It statement and possibly getting a handle to the $pester results
-If(Test-Path variable:\psise) { 
+If(Test-Path variable:\psise) {
     $commandLine = (Get-Command PowerShell).Path
     $tempFile = [IO.Path]::ChangeExtension([IO.Path]::GetTempFileName(), '.txt')
     #$process = Start-Process -FilePath $commandLine -ArgumentList "-noprofile -command `"& { Invoke-pester $PSCommandPath}" -PassThru -RedirectStandardOutput $tempFile
@@ -13,15 +16,15 @@ If(Test-Path variable:\psise) {
     #$process.WaitForExit()
     $reachedOutput = $false;
     $outputErrorMessage = $false
-    $output | ?{ 
+    $output | ?{
         if($reachedOutput -or ($_ -like '[\[][-+]]*') ) {
             $reachedOutput = $true
         }
         $reachedOutput
     } | %{
         $line = $_
-        switch -wildcard ($line) 
-        { 
+        switch -wildcard ($line)
+        {
             '[\[][+]]*' {
                 $outputErrorMessage = $false
                 Write-Host -ForegroundColor darkgreen $line
@@ -30,7 +33,7 @@ If(Test-Path variable:\psise) {
                 $outputErrorMessage = $false
                 Write-Host -ForegroundColor red $line
             }
-            default { 
+            default {
                 if($outputErrorMessage -or ($line -like '[\[][-]]*')) {
                     $outputErrorMessage = $true
                     Write-Host -ForegroundColor red $line
@@ -46,11 +49,11 @@ If(Test-Path variable:\psise) {
 
 
 
-Describe 'Remove-DirectoryWithLongName' {
-    It 'Create a new temp file and open it to edit' {
+# Describe 'Remove-DirectoryWithLongName' {
+#     It 'Create a new temp file and open it to edit' {
 
-    }
-}
+#     }
+# }
 
 Describe 'Edit-File' {
     It 'Create a new temp file and open it to edit' {
@@ -77,7 +80,7 @@ Describe 'Edit-File' {
             $tempFile = [IO.Path]::ChangeExtension([IO.Path]::GetTempFileName(), '.txt')
             $notepadProcesses = Get-Process #Only needed when not in ISE
             try {
-                $tempFile | Edit-File 
+                $tempFile | Edit-File
                 $openedFileProcess = @(Get-Process | ?{ $notepadProcesses.id -notcontains $_.id })
                 $openedFileProcess.Length | Should Be 1;
             }
@@ -122,7 +125,7 @@ Describe 'Test-FileIsLocked' {
                 if($fileStream) {
                     $fileStream.Close()
                 }
-            }                
+            }
         }
         finally {
             if(Test-Path $tempFile) {
@@ -130,7 +133,7 @@ Describe 'Test-FileIsLocked' {
             }
         }
     }
-    
+
 }
 
 Function Test-FileIsLocked {
