@@ -1,9 +1,8 @@
 <#Header#>
 Set-StrictMode -Version "Latest"
 
-#Get-Module IntelliTect.Common | Remove-Module
-#Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.Common -Force
-
+Get-Module IntelliTect.Common | Remove-Module
+Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.Common -Force
 
 #EndHeader#>
 
