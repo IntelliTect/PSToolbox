@@ -1,6 +1,9 @@
 <#Header#>
 Set-StrictMode -Version "Latest"
 
+# Import IntelliTect.Commonn for suppot of Get-Temp stuff.
+Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.Common
+
 Get-Module IntelliTect.File | Remove-Module
 Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.File -Force
 
@@ -158,8 +161,8 @@ Function Test-FileIsLocked {
 
 Describe 'Remove-FileToRecycleBin' {
     if(($PSVersionTable.PSEdition -eq 'Desktop') -and ($PSVersionTable.Clrversion.Major -ge 4)) {
-        It 'Item is no longe rin original directory' {
-            $sampleFileName = [IO.Path]::GetTempFileName()
+        It 'Item is no longer in original directory' {
+            $sampleFileName = Get-TempFile
             Test-Path $sampleFileName | Should Be $true
             Remove-FileToRecycleBin $sampleFileName
             Test-Path $sampleFileName | Should Be False
