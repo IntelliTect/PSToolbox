@@ -1,8 +1,8 @@
 
 
-Import-Module –Name $PSScriptRoot\..\Modules\IntelliTect.Google
-Import-Module –Name $PSScriptRoot\..\Modules\IntelliTect.CredentialManager
-
+Import-Module $Name $PSScriptRoot\..\Modules\IntelliTect.Google
+Import-Module $Name $PSScriptRoot\..\Modules\IntelliTect.CredentialManager
+Import-Module $Name $PSScriptRoot\..\Modules\IntelliTect.Common
 
 
 Function Get-TestCredential {
@@ -35,10 +35,10 @@ Describe "Get-GoogleLocationHistoryKmlFile" {
         $credential = Get-TestCredential
 
         $session = Get-GoogleSession $credential
-        
-        $outFile = (Join-Path $env:temp 'test.kml')
+
+        $outFile = Get-TempItemPath
         $request = Get-GoogleLocationHistoryKmlFile $session 2016-05-01 -outFile $outFile
-        
+
         $outFile | Should Contain "http://www.opengis.net/kml/"
 
         # cleanup

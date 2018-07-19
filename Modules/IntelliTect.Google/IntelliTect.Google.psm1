@@ -36,14 +36,14 @@ Function Search-Google
         {
             "Args had value, using them instead"
         }
-        
+
         Write-Host $args.Count, "Arguments detected"
         "Parsing out Arguments: $args"
         for ($i=0;$i -le $args.Count;$i++){
         $args | % {"Arg $i `t $_ `t Length `t" + $_.Length, " characters"} }
-        
+
     $args | % {$query = $query + "$_+"}
-    
+
     }
     End
     {
@@ -126,7 +126,7 @@ $webRequestResult3 = Invoke-WebRequest -Uri $locationHistoryUrl -Method Get  -Bo
 Function Get-GoogleLocationHistoryKmlFile {
     [CmdletBinding()] param(
         [Microsoft.PowerShell.Commands.WebRequestSession] $session = (Get-GoogleSession),
-        [DateTime] $DateTime = [DateTime]::Now,
+        [parameter(ValueFromPipeline)][DateTime] $DateTime = [DateTime]::Now.AddDays(-1),
         [System.IO.FileInfo] $outFile = $null
     )
 
@@ -145,5 +145,5 @@ Function Get-GoogleLocationHistoryKmlFile {
     else {
         Invoke-WebRequest -Uri $uri -OutFile $outFile -WebSession $session
     }
-    
+
 }
