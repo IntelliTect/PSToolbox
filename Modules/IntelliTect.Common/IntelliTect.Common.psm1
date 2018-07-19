@@ -155,14 +155,15 @@ Function Register-AutoDispose {
     [CmdletBinding(SupportsShouldProcess)]
     param(
         [ValidateScript( {$_.PSobject.Members.Name -contains "Dispose"})]
-            [ValidateNotNull()][Parameter(Mandatory, ValueFromPipeline)]
+            [ValidateNotNull()][Parameter(Position=0,Mandatory, ValueFromPipeline)]
             [Object[]]$InputObject,
 
         [Parameter(Position=1,Mandatory)]
             [ScriptBlock]$ScriptBlock
     )
-
-  PROCESS  {
+    BEGIN {
+    }
+    PROCESS  {
           try {
             Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $InputObject
         }

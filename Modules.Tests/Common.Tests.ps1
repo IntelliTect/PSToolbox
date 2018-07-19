@@ -35,6 +35,14 @@ Describe "Register-AutoDispose" {
         Register-AutoDispose $sampleDisposeObject { Write-Output $true } | Should Be $true
         $sampleDisposeObject.DisposeCalled | Should Be $true
     }
+    It "Verify that InputObject can be passed via pipeline" {
+        # NOTE: Parameter $ScriptBlock must be named when passing $InputObject via the pipeline.
+        #       If you remove the position from $ScriptBlock then you can't invoke
+        #       Register-AutoDispose with unnamed parameters because the scriptblock
+        #       is infered as a member of the $InputObject array
+        $sampleDisposeObject = Get-SampleDisposeObject
+        $sampleDisposeObject | Register-AutoDispose -ScriptBlock { Write-Output $true } | Should Be $true
+    }
     It "Verify that the disposed object is passed as a parameter to the `$ScriptBlock" {
         $sampleDisposeObject = Get-SampleDisposeObject
         Register-AutoDispose $sampleDisposeObject {
@@ -98,53 +106,35 @@ Describe "Get-TempDirectory/Get-TempFile" {
 
 Describe "Get-TempFile" {
     It "Provide the full path (no `$Name parameter)" {
-        Register-AutoDispose ($tempDirectory = Get-TempDirectory) {} #Get the file but let is dispose automatically
-        Test-Path $tempDirectory.FullName | Should Be $false
-        Register-AutoDispose ($tempFile = Get-TempFile -path $tempDirectory.FullName) {
-            Test-Path $tempFile.FullName | Should Be $true
-            Split-Path $tempFile -Parent | Should Be $tempDirectory.FullName
+        $tempDirectory = Get-TempDirectory
+        # Create a temporary directory to place the file into.
+        Register-AutoDispose $tempDirectory {
+            Register-AutoDispose ($tempFile=Get-TempFile -path $tempDirectory.FullName) {
+                Test-Path $tempFile.FullName | Should Be $true
+                Split-Path $tempFile -Parent | Should Be $tempDirectory.FullName
+            }
         }
     }
     It "Provide the name but no path" {
-        Register-AutoDispose ($tempFile = Get-TempFile) {} #Get the file but let is dispose automatically
-        Test-Path $tempFile.FullName | Should Be $false
-        Register-AutoDispose (Get-TempFile -name $tempFile.Name) {
+        $fileName = Split-Path (Get-TempItemPath) -Leaf
+        Register-AutoDispose ($tempFile = Get-TempFile -name $fileName) {
             Test-Path $tempFile.FullName | Should Be $true
+            $tempFile.Name | Should Be $fileName
         }
     }
     It "Provide the path and the name" {
-        Register-AutoDispose ($tempFile = Get-TempFile) {} #Get the file but let is dispose automatically
-        Test-Path $tempFile.FullName | Should Be $false
-        Register-AutoDispose (Get-TempFile $tempFile.Directory.FullName $tempFile.Name) {
-            Test-Path $tempFile.FullName | Should Be $true
+        # Create a temporary working directory
+        Register-AutoDispose ($tempDirectory = Get-TempDirectory) {
+            $tempFileName = Split-Path (Get-TempItemPath) -Leaf
+            Register-AutoDispose ($tempFile = Get-TempFile $tempDirectory $tempFileName) {
+                Test-Path $tempFile.FullName | Should Be $true
+                $tempFile.FullName | Should Be (Join-Path $tempDirectory $tempFileName)
+            }
+            Test-Path $tempFile.FullName | Should Be $false
         }
     }
 }
 
-Describe "Get-TempFile" {
-    It "Provide the full path (no `$Name parameter)" {
-        Register-AutoDispose ($tempDirectory = Get-TempDirectory) {} #Get the file but let is dispose automatically
-        Test-Path $tempDirectory.FullName | Should Be $false
-        Register-AutoDispose ($tempFile = Get-TempFile -path $tempDirectory.FullName) {
-            Test-Path $tempFile.FullName | Should Be $true
-            Split-Path $tempFile -Parent | Should Be $tempDirectory.FullName
-        }
-    }
-    It "Provide the name but no path" {
-        Register-AutoDispose ($tempFile = Get-TempFile) {} #Get the file but let is dispose automatically
-        Test-Path $tempFile.FullName | Should Be $false
-        Register-AutoDispose (Get-TempFile -name $tempFile.Name) {
-            Test-Path $tempFile.FullName | Should Be $true
-        }
-    }
-    It "Provide the path and the name" {
-        Register-AutoDispose ($tempFile = Get-TempFile) {} #Get the file but let is dispose automatically
-        Test-Path $tempFile.FullName | Should Be $false
-        Register-AutoDispose (Get-TempFile $tempFile.Directory.FullName $tempFile.Name) {
-            Test-Path $tempFile.FullName | Should Be $true
-        }
-    }
-}
 
 Describe "Get-TempItemPath" {
     It "No file exists for the given name" {
@@ -156,7 +146,7 @@ Describe "Get-TempItemPath" {
                 Test-Path $_ | Should Be $false
             }
             It "The root path is the directory specified." {
-                Split-Path $_ -Parent | Should Be $evironmentTemporaryDirectory
+                Split-Path $_ -Parent | Should Be $evironmentTemporaryDirectory.FullName
             }
         }
     }
