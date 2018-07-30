@@ -91,20 +91,6 @@ Describe "Register-AutoDispose" {
 }
 
 Describe "Get-Tempdirectory" {
-    It 'Verify error handling when the directory is in use.' {
-        $tempItem = $null
-        try {
-            $tempItem = Get-TempDirectory
-            push-location $tempItem
-            { $tempItem.Dispose()} | Should Throw
-        }
-        finally {
-            if (Test-Path $tempItem) {
-                Pop-Location
-                Remove-Item $tempItem -Force -Recurse
-            }
-        }
-    }
     It 'Verify the temp directory created is in the %TEMP% (temporary) directory' {
         try {
             $tempItem = Get-TempDirectory
@@ -137,30 +123,16 @@ Describe "Get-TempDirectory/Get-TempFile" {
     }
     ($tempDirectory = Get-TempDirectory) |
         Register-AutoDispose -ScriptBlock {
-        $path = $tempDirectory.FullName
-        # Now that a temporary directory exists, call Get-TempDirectory and Get-TempFile
-        # and specify the above directory in which to place the temp directory/file.
-        (Get-TempDirectory -Path $path), (Get-TempFile $path) | ForEach-Object {
-            It "Verify item is created with the correct path" {
-                Register-AutoDispose $_ {}
-                Test-Path $_ | Should Be $false
+            $path = $tempDirectory.FullName
+            # Now that a temporary directory exists, call Get-TempDirectory and Get-TempFile
+            # and specify the above directory in which to place the temp directory/file.
+            (Get-TempDirectory -Path $path), (Get-TempFile $path) | ForEach-Object {
+                It "Verify item is created with the correct path" {
+                    Register-AutoDispose $_ {}
+                    Test-Path $_ | Should Be $false
+                }
             }
         }
-    }
-    It 'Verify that the Dispose method removes the directory even if it contains files.' {
-        $tempItem = $null
-        try {
-            $tempItem = Get-TempDirectory
-            Get-TempFile -Path $tempItem
-            $tempItem.Dispose()
-            Test-Path $tempItem | Should Be $false
-        }
-        finally {
-            if (Test-Path $tempItem) {
-                Remove-Item $tempItem -Force -Recurse
-            }
-        }
-    }
 }
 
 Describe "Get-TempFile" {
