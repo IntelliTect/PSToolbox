@@ -63,7 +63,7 @@ Describe "Register-AutoDispose" {
 }
 
 Describe "Get-Tempdirectory" {
-    It 'Verify the item is in the %TEMP% (temporary) directory' {
+    It 'Verify the temp directory created is in the %TEMP% (temporary) directory' {
         try {
             $tempItem = Get-TempDirectory
             $tempItem.Parent.FullName |Should Be ([IO.Path]::GetTempPath().TrimEnd([IO.Path]::DirectorySeparatorChar).TrimEnd([IO.Path]::AltDirectorySeparatorChar))
@@ -91,16 +91,18 @@ Describe "Get-TempDirectory/Get-TempFile" {
             Test-Path $_ | Should Be $false
        }
     }
-    Register-AutoDispose (Get-TempDirectory) {
-        param($inputObject)
-        $path = $inputObject.FullName
-        (Get-TempDirectory -Path $path), (Get-TempFile $path) | ForEach-Object {
-            It "Verify item is created with the correct path" {
-                Register-AutoDispose $_ {}
-                Test-Path $_ | Should Be $false
+    ($tempDirectory = Get-TempDirectory) |
+        Register-AutoDispose -ScriptBlock {
+            $path = $tempDirectory.FullName
+            # Now that a temporary directory exists, call Get-TempDirectory and Get-TempFile
+            # and specify the above directory in which to place the temp directory/file.
+            (Get-TempDirectory -Path $path), (Get-TempFile $path) | ForEach-Object {
+                It "Verify item is created with the correct path" {
+                    Register-AutoDispose $_ {}
+                    Test-Path $_ | Should Be $false
+                }
+            }
         }
-        }
-    }
 }
 
 Describe "Get-TempFile" {
