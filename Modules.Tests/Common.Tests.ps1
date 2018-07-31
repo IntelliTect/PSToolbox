@@ -73,6 +73,7 @@ Describe "Get-Tempdirectory" {
             Test-Path $tempItem | Should Be $false
         }
     }
+
 }
 
 Describe "Get-TempDirectory/Get-TempFile" {
@@ -103,6 +104,20 @@ Describe "Get-TempDirectory/Get-TempFile" {
                 }
             }
         }
+    It 'Verify that the Dispose method removes the directory even if it contains files.' {
+        $tempItem = $null
+        try {
+            $tempItem = Get-TempDirectory
+            Get-TempFile -Path $tempItem
+            $tempItem.Dispose()
+            Test-Path $tempItem | Should Be $false
+        }
+        finally {
+            if(Test-Path $tempItem) {
+                Remove-Item $tempItem -Force -Recurse
+            }
+        }
+    }
 }
 
 Describe "Get-TempFile" {
