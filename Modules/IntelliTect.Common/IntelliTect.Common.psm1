@@ -254,9 +254,14 @@ Function Script:Get-FileSystemTempItem {
                 $file = New-Item $_ -ItemType $ItemType -ErrorAction Stop
 
                 $file | Add-DisposeScript -DisposeScript {
+<<<<<<< HEAD
                     Remove-Item $this.FullName -Force -Recurse -ErrorVariable failed # Recurse is allowed on both files and directoriese
                     if($failed) { throw $failed }
                 }
+=======
+                    Remove-Item $this.FullName -Force -Recurse } # Recurse is allowed on both files and directories
+
+>>>>>>> Added support for Get-TempDirectory to correctly dispose (remove) the directory even if it contains items.
                 Write-Output $file
 
             }
