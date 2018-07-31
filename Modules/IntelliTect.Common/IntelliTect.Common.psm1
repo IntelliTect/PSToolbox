@@ -254,9 +254,8 @@ Function Script:Get-FileSystemTempItem {
                 $file = New-Item $_ -ItemType $ItemType -ErrorAction Stop
 
                 $file | Add-DisposeScript -DisposeScript {
-                    Remove-Item $this.FullName -Force -Recurse -ErrorVariable failed # Recurse is allowed on both files and directoriese
-                    if($failed) { throw $failed }
-                }
+                    Remove-Item $this.FullName -Force -Recurse } # Recurse is allowed on both files and directories
+
                 Write-Output $file
 
             }
