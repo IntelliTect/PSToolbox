@@ -280,6 +280,7 @@ Function Remove-FileSystemItemForcibly {
         [Alias('FullName')][string[]]$path,
       [string[]]$filter='*'
   )
+  PROCESS {
   $path | ForEach-Object{
       $deleteTarget = Resolve-Path $_.TrimEnd([System.IO.Path]::DirectorySeparatorChar).TrimEnd([System.IO.Path]::AltDirectorySeparatorChar)
       [string]$tempDirectory = "$env:temp\ForceDelete"
@@ -308,6 +309,7 @@ Function Remove-FileSystemItemForcibly {
               }
           }
       }
+  }
   }
 }    
 }
