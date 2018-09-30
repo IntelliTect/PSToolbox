@@ -43,26 +43,6 @@ if(Test-Path Function:Edit-File) {
     }
 }
 
-<#
-.SYNOPSIS
-Removes a directory including one with a path exceeding 260 characters.
-.EXAMPLE
-PS C:\> Remove-Item $env:Temp\SampleDirectory
-Deletes the $env:Temp\SampleDirectory directory.
-#>
-Function Remove-Directory {
-    param(
-        [ValidateScript({Test-Path $_ -PathType �Container�})]
-        $directory
-    )
-
-    $tempDir = [System.IO.Path]::GetTempPath()
-    New-Item $tempDir -ItemType Directory
-
-    robocopy $tempDir $directory /MIR;
-    Remove-Item $directory -Recurse -Force
-}
-
 
 <#
 .SYNOPSIS
@@ -331,3 +311,13 @@ Function Remove-FileSystemItemForcibly {
   }
 }    
 }
+
+
+# TODO: Add functions below
+# See https://github.com/MarkMichaelis/Private/blob/InitialMachineSetup/Install-Dropbox.ps1 for
+#   Function Set-ItemShortName 
+#   Function Close-OpenFileHandle
+#   Function Get-ShortName
+#   Function Compare-Path
+#   Function Move-ItemWithOpenHandles
+#   Function Copy-Acl 
