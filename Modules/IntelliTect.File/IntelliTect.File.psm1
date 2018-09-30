@@ -290,6 +290,7 @@ Function Remove-FileSystemItemForcibly {
           if ($PSCmdlet.ShouldProcess($activity)) {
               Write-Progress -Activity 'Enumerating items to be deleted...'
               $totalItemCount = Get-ChildItem $deleteTarget $eachFilter -Recurse -ErrorAction Ignore | measure | % Count
+              if($totalItemCount -gt 0) {
               try {
                   New-Item -ItemType Directory $tempDirectory | Out-Null
                   [long]$removedItemCount=0
@@ -303,6 +304,7 @@ Function Remove-FileSystemItemForcibly {
               }
               finally {
                   Get-Item $tempDirectory | Remove-Item -Force -Recurse
+              }
               }
               if(Test-ItemIsEmpty $deleteTarget) {
                   Remove-Item $deleteTarget -Force
