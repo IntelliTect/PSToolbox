@@ -270,22 +270,6 @@ Function Remove-FileToRecycleBin {
 }
 }
 
-#ToDo: Move to IntelliTect.Item module
-Filter Test-ItemIsEmpty{
-    [CmdletBinding()]
-    param(
-        [ValidateScript({Test-Path $_ -PathType Container})][Parameter(Mandatory,ValueFromPipeLine)]
-        [string[]]$path
-    )
-    
-    PROCESS {
-        $path | Foreach-Object {
-            Write-Output ((Get-ChildItem $path -Force | Measure | % Count) -eq 0)
-        }
-    }
-}
-
-
 if(($PSVersionTable.PSEdition -eq 'Desktop') -and ($PSVersionTable.Clrversion.Major -ge 4)) {
     # Using robocopy so execution is only supported on Windows
 Function Remove-FileSystemItemForcibly {
@@ -305,16 +289,14 @@ Function Remove-FileSystemItemForcibly {
                 [string]$activity = "'$(Join-Path $deleteTarget $eachFilter)'"
                 if ($PSCmdlet.ShouldProcess($activity)) {
                     Write-Progress -Activity 'Enumerating items to be deleted...'
-                    $totalItemCount = Get-ChildItem $deleteTarget $eachFilter -Force -Recurse -ErrorAction SilentlyContinue | measure | % Count
+                    $totalItemCount = Get-ChildItem $deleteTarget $eachFilter -Recurse -ErrorAction Ignore | measure | % Count
                     if($totalItemCount -gt 0) {
                         try {
                             New-Item -ItemType Directory $tempDirectory | Out-Null
                             [long]$removedItemCount=0
                             robocopy /MT /MIR /NS /NC $tempDirectory $deleteTarget $filter  | ForEach-Object {
                                 if($_[-1] -in [System.IO.Path]::DirectorySeparatorChar,[System.IO.Path]::AltDirectorySeparatorChar) {
-                                    # Use Math.Min() because Robocopy might find more items then Get-ChildItem -Recurse which
-                                    # has ErrorAction of SilentlyContinue (so as not to show security/long file errors) so items might have been missed.
-                                    Write-Progress  -Activity "Removing $activity ($totalItemCount items)" -Status  "Removing sub-directory '$($_.Trim())'... (item $removedItemCount)" -PercentComplete ([System.Math]::Min($removedItemCount,$totalItemCount)/$totalItemCount)
+                                    Write-Progress  -Activity "Removing $activity ($totalItemCount items)" -Status  "Removing sub-directory '$($_.Trim())'... (item $removedItemCount)" -PercentComplete ($removedItemCount/$totalItemCount)
                                 }
                                 Write-Verbose "Deleting '$($_.Trim())'..."
                                 ($removedItemCount++) | Out-Null
@@ -331,9 +313,8 @@ Function Remove-FileSystemItemForcibly {
             }
         }
     }
-}
-}
- 
+}}
+
 
 # TODO: Add functions below
 # See https://github.com/MarkMichaelis/Private/blob/InitialMachineSetup/Install-Dropbox.ps1 for
