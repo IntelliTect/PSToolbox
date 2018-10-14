@@ -18,16 +18,31 @@ If(!(get-module Pester -ListAvailable)) {
     }
 }
 
-$PSToolboxPath = Join-path $PSScriptRoot Modules
+if(-not (Test-Path Function:Set-EnvironmentVariable)) {
+Function Set-EnvironmentVariable {
+     [CmdletBinding(SupportsShouldProcess)]
+     param(
+          [ValidateScript({-not [string]::IsNullOrWhiteSpace($_)})][Parameter(Mandatory)][string]$Name,
+          [Parameter(Mandatory)][string]$Value,
+          [ValidateSet('User','Machine')][string]$Scope='User'
+     )
+
+     [string]$scopeArgs = $null
+     if($Scope -eq 'Machine') {
+         $scopeArgs = '/M'
+     }
+     setx.exe $Name $Value $scopeArgs | Out-Null
+     Set-Item -Name Env:$Name -Value $Value
+ }
+}
+
+ $PSToolboxPath=Join-Path $PSScriptRoot Modules
 if(!($env:PSModulePath -like "*$PSToolboxPath*")) {
-    [System.Environment]::SetEnvironmentVariable( "PSModulePath", "$PSToolboxPath;$env:PSModulePath", [EnvironmentVariableTarget]::User );
-    $PSToolboxPath="$PSToolboxPath;$env:PSModulePath"
+    Set-EnvironmentVariable -Name PSModulePath -Value "$PSToolboxPath;$env:PSModulePath" 
     if(!($env:PSModulePath -like "*$PSToolboxPath*")) {
         throw "PSModulePath not set with $PSToolboxPath"  #NOTE: This does not test the change from [System.Environment]::SetEnvironmentVariable is permanent.
     }
 }
-
-
 
 If(Test-Path variable:\psise) {
     Function Test-CurrentFile {
