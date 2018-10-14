@@ -26,7 +26,7 @@ Describe "Register-AutoDispose" {
     It "Verify that dispose is called on Add-DisposeScript object" {
         $sampleDisposeObject = New-Object Object
         $sampleDisposeObject | Add-DisposeScript -DisposeScript { Write-Output  "first" }
-        Register-AutoDispose $sampleDisposeObject { Write-Output 42 } | Should Be "first",42
+        Register-AutoDispose $sampleDisposeObject { Write-Output 42 } | Should Be 42,"first"
         $sampleDisposeObject.IsDisposed | Should Be $true
     }
     It "Verify that dispose is called" {
@@ -78,18 +78,20 @@ Describe "Get-Tempdirectory" {
 
 Describe "Get-TempDirectory/Get-TempFile" {
     (Get-TempDirectory), (Get-TempFile) | ForEach-Object {
-        It "Verify that the item has a Dispose member" {
-            $_.PSobject.Members.Name -match "Dispose" | Should Be $true
+        It "Verify that the item has a Dispose and IsDisposed member" {
+            $_.PSobject.Members.Name -match "Dispose" | Should Be 'IsDisposed','Dispose'
         }
         It "Verify that Dispose removes the item" {
             $_.Dispose()
-            Test-Path $$_ | Should Be $false
+            Test-Path $_ | Should Be $false
+            $_.IsDisposed | Should Be $true
         }
     }
     (Get-TempDirectory), (Get-TempFile) | ForEach-Object {
         It "Verify dispose member is called by Register-AutoDispose" {
             Register-AutoDispose $_ {}
             Test-Path $_ | Should Be $false
+            $_.IsDisposed | Should Be $true
        }
     }
     ($tempDirectory = Get-TempDirectory) |
