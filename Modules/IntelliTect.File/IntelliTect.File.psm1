@@ -302,6 +302,7 @@ Function Remove-FileSystemItemForcibly {
                         try {
                             New-Item -ItemType Directory $tempDirectory | Out-Null
                             [long]$removedItemCount=0
+                            Write-Verbose "Executing: robocopy /MT /MIR /NS /NC '$tempDirectory' '$deleteTarget' '$filter'"
                             robocopy /MT /MIR /NS /NC $tempDirectory $deleteTarget $filter  | ForEach-Object {
                                 if($_[-1] -in [System.IO.Path]::DirectorySeparatorChar,[System.IO.Path]::AltDirectorySeparatorChar) {
                                     # Use Math.Min() because Robocopy might find more items then Get-ChildItem -Recurse which
