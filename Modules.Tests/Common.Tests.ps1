@@ -169,3 +169,13 @@ Describe "Get-TempItemPath" {
         }
     }
 }
+
+
+Describe "Test-Command" {
+    It "If command doesn't exist returns false" {
+        Test-Command 'Command-Does-Not-Exist' | Should Be $false
+    }
+    It 'Valid command returns true' {
+        Test-Command 'Get-Item' | Should Be $true
+    }
+}

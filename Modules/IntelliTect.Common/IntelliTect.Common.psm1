@@ -297,3 +297,14 @@ Function ConvertTo-Lines {
 
     $inputObject -split [Environment]::NewLine
 }
+
+Filter Test-Command {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory, ValueFromPipeline)][string[]]$command
+
+    )
+    $command | Foreach-Object {
+        Write-Output ([bool](get-command $_ -ErrorAction Ignore))
+    }
+}
