@@ -144,97 +144,162 @@ Function Uninstall-Program{
 
     
 
-
-Function Install-WebDownload {
-[CmdletBinding()] param(
-    [Parameter(Mandatory)][alias("Uri")][string] $url, 
-    [Parameter(Mandatory)][string] $PackageName, 
-    [Parameter(ParameterSetName="CommandLine")] [string] $arguments = $null, 
-    [Parameter(ParameterSetName="ScriptBlock")][ScriptBlock] $postDownloadScriptBlock, 
-    [Parameter(ParameterSetName="UnattendedSilentSwitchFinder",
-        HelpMessage="Lookup the unattended silent switch for the setup program.")][switch]$ussf,
-    [string] $installFileName = [System.Management.Automation.WildcardPattern]::Escape((Split-Path $url -Leaf)),
-    [switch]$forceDownload ) 
-
-# Function Install-WebDownloadFromZipWithoutChocolatey {
-#         [CmdletBinding()] param(
-#             [Parameter(Mandatory)][string] $url,  
-#             [string]$exeFileName, 
-#             [string] $zipFileName = (Split-Path $url -Leaf), 
-#             [switch]$forceDownload ) 
-
-#         # Install PureText but it failed because the version was old. #TODO
-#         #Add-Type -As System.IO.Compression.FileSystem;
-
-#         Install-WebDownload -url $url -installFileName $zipFileName  -postDownloadScriptBlock {
-#                 [string]$tempDirectory = [IO.Path]::GetTempFileName() + ".$zipFileName"
-#                 $extractDirectory = Expand-ZipFile -Path "$(Join-Path (Get-TempPath) $zipFileName)" $tempDirectory
-
-#                 If(!(Test-Path (Join-Path $extractDirectory $exeFileName))) {
-#                     Throw "Unable to find file '$exeFileName' within $zipFileName (see $extractDirectory)."
-#                 }
-#                 [string] $targetPath = Join-Path ${env:ProgramFiles(x86)} "$([io.path]::GetFileNameWithoutExtension($exeFileName))\$exeFileName"
-#                 New-Item (Split-Path $targetPath) -ItemType Directory -Force > $null
-#                 Move-Item (Join-Path $tempDirectory $exeFileName) $targetPath -Force
-#                 [string] $startupDirectory = [Environment]::GetFolderPath("CommonStartup")
-#                 New-WindowsShortcut (Join-Path $startupDirectory "$exeFileName.lnk") $targetPath
-#                 & (Join-Path $startupDirectory "$exeFileName.lnk")
-#             }
-#     }
-
-    Function Install-WebDownloadOfZip {
-        [CmdletBinding()]
+if(Get-Command 'choco' -ErrorAction Ignore) {
+    Function Install-WebDownload {
+        [CmdletBinding(SupportsShouldProcess)]
         param(
-            [Parameter(Mandatory)][string] $PackageName, 
-            [Parameter(Mandatory)][alias("Uri")][string] $url, 
-            $UnzipLocation = "$env:ChocolateyInstall\lib\$PackageName"
+            [parameter(Mandatory=$true, Position=0)][string] $packageName,
+            [parameter(Mandatory=$false, Position=1)]
+            [alias("installerType","installType")][string] $fileType = 'exe',
+            [parameter(Mandatory=$false, Position=2)][string[]] $silentArgs = '',
+            [parameter(Mandatory=$false, Position=3)][string] $url = '',
+            [parameter(Mandatory=$false, Position=4)]
+            [alias("url64")][string] $url64bit = '',
+            [parameter(Mandatory=$false)] $validExitCodes = @(0),
+            [parameter(Mandatory=$false)][string] $checksum = '',
+            [parameter(Mandatory=$false)][string] $checksumType = '',
+            [parameter(Mandatory=$false)][string] $checksum64 = '',
+            [parameter(Mandatory=$false)][string] $checksumType64 = '',
+            [parameter(Mandatory=$false)][hashtable] $options = @{Headers=@{}},
+            [alias("fileFullPath")][parameter(Mandatory=$false)][string] $file = '',
+            [alias("fileFullPath64")][parameter(Mandatory=$false)][string] $file64 = '',
+            [parameter(Mandatory=$false)]
+            [alias("useOnlyPackageSilentArgs")][switch] $useOnlyPackageSilentArguments = $false,
+            [parameter(Mandatory=$false)][switch]$useOriginalLocation,
+            [parameter(ValueFromRemainingArguments = $true)][Object[]] $ignoredArguments
         )
 
-        Import-ChocolateyModule
-
-        try {
-            # Needed because Chocolatey is not setting up context.
-            if(!(test-path variable:\helpersPath)) {
-                $setHelpersPath = $true
-                $global:helpersPath = $env:ChocolateyInstall
-            }
-            Install-ChocolateyZipPackage -packageName $PackageName -url $url -unzipLocation $UnzipLocation -specificFolder ''
-            Get-ChildItem $UnzipLocation *.exe | %{ Install-BinFile -name TrayIt -path $_.FullName  }
+        
+        
+        if($PSCmdlet.ShouldProcess('Install-ChocolateyPackage')) {    
+            Set-WindowsDefaultSecurityProtocol
+            Set-ChocolateyAllowEmptyChecksum -Value Disable
+            ChocolateyInstaller\Install-ChocolateyPackage @PSBoundParameters
         }
-        finally {
-            if($setHelpersPath) {
-                remove-item variable:\global:helpersPath
+    }
+
+    Function Set-WindowsDefaultSecurityProtocol {
+        [CmdletBinding()]
+        param(
+            [switch]$Persist=$false
+        )
+        
+        if($Persist) {
+            new-itemproperty -path "HKLM:\SOFTWARE\Microsoft\.NETFramework\v4.0.30319" -name "SchUseStrongCrypto" -Value 1 -PropertyType "DWord";
+            new-itemproperty -path "HKLM:\SOFTWARE\Wow6432Node\Microsoft\.NETFramework\v4.0.30319" -name "SchUseStrongCrypto" -Value 1 -PropertyType "DWord"
+        }
+
+        # Sets the protocol temporarily (for the life of the PowerShell Session.)
+        # To address the issue:"Invoke-WebRequest : The request was aborted: Could not create SSL/TLS secure channel."
+        # https://stackoverflow.com/questions/28286086/default-securityprotocol-in-net-4-5/28502562#28502562
+        # https://stackoverflow.com/questions/41618766/powershell-invoke-webrequest-fails-with-ssl-tls-secure-channel
+        [Net.ServicePointManager]::SecurityProtocol =
+        [Net.SecurityProtocolType]::Tls12 -bor `
+        [Net.SecurityProtocolType]::Tls11 -bor `
+        [Net.SecurityProtocolType]::Tls
+    }
+
+
+    Function Set-ChocolateyFeature {
+        [CmdletBinding(SupportsShouldProcess)]
+        param(
+            [Parameter(Mandatory,ValueFromPipeline)][string[]]$Feature,
+            [ValidateSet('Enable','Disable')][Parameter(Mandatory)][string]$Value,
+            [switch]$Persist
+        )
+
+    PROCESS {
+            $Feature | ForEach-Object {
+                if($PSCmdlet.ShouldProcess("$Value Chocolatey Feature $Feature")) {
+                    Write-Progress -Activity 'Installing and Configuring Chocolatey' -Status "Configuring $_"
+                    if($Persist) {
+                        Write-Host "Configuring chocolatey with option $_"
+                        choco feature enable -n $_
+                    }
+                    #Set environment variables so the above options are true when directly calling Chocolatey functions/commands:
+                    [Environment]::SetEnvironmentVariable("Chocolatey$_", $true)
+                }
             }
         }
     }
 
-#TODO Switch to Get-ChocolateyWebFile and use Invoke-WebRequest as fallback.
-$tempPath = Get-TempPath
-
-if([IO.Path]::GetExtension($InstallFileName) -eq ".zip") {
-    Install-WebDownloadOfZip -Uri $url -packageName $PackageName
+    Function Set-ChocolateyAllowEmptyChecksum {
+        [CmdletBinding()]
+        param(
+            [ValidateSet('Enable','Disable')][Parameter(Mandatory)]$Value='Disable',
+            [switch]$Persist=$false
+        )
+        
+        'AllowEmptyChecksums', 'AllowEmptyChecksumsSecure' | Set-ChocolateyFeature -Value $Value -Persist:$Persist
+    }
 }
 else {
-    $installFileName = Join-Path $tempPath $installFileName
+    Function Install-WebDownload {
+    [CmdletBinding()] param(
+        [Parameter(Mandatory)][alias("Uri")][string] $url, 
+        [Parameter(Mandatory)][string] $PackageName, 
+        [Parameter(ParameterSetName="CommandLine")] [string] $arguments = $null, 
+        [Parameter(ParameterSetName="ScriptBlock")][ScriptBlock] $postDownloadScriptBlock, 
+        [Parameter(ParameterSetName="UnattendedSilentSwitchFinder",
+            HelpMessage="Lookup the unattended silent switch for the setup program.")][switch]$ussf,
+        [string] $installFileName = [System.Management.Automation.WildcardPattern]::Escape((Split-Path $url -Leaf)),
+        [switch]$forceDownload ) 
 
-    if($forceDownload -OR ($installFileName -eq "Setup.exe") -OR !(Test-Path $installFileName) ) {
-        Invoke-WebRequest $url -OutFile $installFileName
-    }
+        Function Install-WebDownloadOfZip {
+            [CmdletBinding()]
+            param(
+                [Parameter(Mandatory)][string] $PackageName, 
+                [Parameter(Mandatory)][alias("Uri")][string] $url, 
+                $UnzipLocation = "$env:ChocolateyInstall\lib\$PackageName"
+            )
 
-    if($ussf) {
-        ussf $installFileName
-    }
-    else {
-        If( ([string]::IsNullOrWhiteSpace($PsCmdlet.ParameterSetName)) -or ($PsCmdlet.ParameterSetName -eq "CommandLine") ) {
-            $postDownloadScriptBlock = [ScriptBlock] {
-                $process = Start-Process $installFileName $arguments -PassThru -wait  
-                return $process.ExitCode
+            Import-ChocolateyModule
+
+            try {
+                # Needed because Chocolatey is not setting up context.
+                if(!(test-path variable:\helpersPath)) {
+                    $setHelpersPath = $true
+                    $global:helpersPath = $env:ChocolateyInstall
+                }
+                Install-ChocolateyZipPackage -packageName $PackageName -url $url -unzipLocation $UnzipLocation -specificFolder ''
+                Get-ChildItem $UnzipLocation *.exe | %{ Install-BinFile -name TrayIt -path $_.FullName  }
+            }
+            finally {
+                if($setHelpersPath) {
+                    remove-item variable:\global:helpersPath
+                }
             }
         }
+
+        #TODO Switch to Get-ChocolateyWebFile and use Invoke-WebRequest as fallback.
+        $tempPath = Get-TempPath
+
+        if([IO.Path]::GetExtension($InstallFileName) -eq ".zip") {
+            Install-WebDownloadOfZip -Uri $url -packageName $PackageName
+        }
+        else {
+            $installFileName = Join-Path $tempPath $installFileName
+
+            if($forceDownload -OR ($installFileName -eq "Setup.exe") -OR !(Test-Path $installFileName) ) {
+                Invoke-WebRequest $url -OutFile $installFileName
+            }
+
+            if($ussf) {
+                ussf $installFileName
+            }
+            else {
+                If( ([string]::IsNullOrWhiteSpace($PsCmdlet.ParameterSetName)) -or ($PsCmdlet.ParameterSetName -eq "CommandLine") ) {
+                    $postDownloadScriptBlock = [ScriptBlock] {
+                        $process = Start-Process $installFileName $arguments -PassThru -wait  
+                        return $process.ExitCode
+                    }
+                }
+            }
+            Write-Output (Invoke-Command $postDownloadScriptBlock)
+        }
     }
-    Write-Output (Invoke-Command $postDownloadScriptBlock)
 }
-}
+
 
 Function InfInstall([Parameter(Mandatory)][string] $InfFilePath)
 {
