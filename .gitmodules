@@ -1,3 +1,6 @@
 [submodule "Modules/IntelliTect.PSDropbin"]
 	path = Modules/IntelliTect.PSDropbin
 	url = https://github.com/IntelliTect/PSDropbin.git
+[submodule ".\\Modules\\IntelliTect.PSDropbin"]
+	path = .\\Modules\\IntelliTect.PSDropbin
+	url = https://github.com/IntelliTect/PSDropbin.git
