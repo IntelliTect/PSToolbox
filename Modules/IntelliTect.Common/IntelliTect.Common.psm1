@@ -308,3 +308,29 @@ Filter Test-Command {
         Write-Output ([bool](get-command $_ -ErrorAction Ignore))
     }
 }
+
+<#
+.SYNOPSIS
+Test is a property of the specified name exists on the object.
+
+.DESCRIPTION
+Given an input object, check to see whether a property of the specified name exists.
+
+.PARAMETER InputObject
+The input object on which to look for the property.
+
+.PARAMETER Name
+The name of the property to look for.
+
+#>
+Function Test-Property {
+    [CmdLetBinding()]
+    param(
+        [Parameter(ValueFromPipeline,Mandatory)] $InputObject,
+        [Parameter(Mandatory)][string[]]$Name
+    )
+    # TODO: Add support so you don't need to specifically provide the parameter name for -Name.
+    $Name | ForEach-Object{
+        $_ -in $InputObject.PSobject.Properties.Name | Write-Output
+    }
+}

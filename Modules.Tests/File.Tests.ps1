@@ -158,17 +158,9 @@ Function Test-FileIsLocked {
     return $filelocked
 }
 
-Function Test-Property {
-    [CmdLetBinding()]
-    param(
-        [Parameter(ValueFromPipeline,Mandatory)] $InputObject,
-        [Parameter(Mandatory)][string]$Name
-    )
-    return $name -in $InputObject.PSobject.Properties.Name
-}
-
 Describe 'Remove-FileToRecycleBin' {
-    if((Test-Property $PSVersionTable 'PSEdition') -and ($PSVersionTable.PSEdition -eq 'Desktop') -and ($PSVersionTable.Clrversion.Major -ge 4)) {
+    if((Test-Property -InputObject $PSVersionTable -Name 'PSEdition') -and 
+            ($PSVersionTable.PSEdition -eq 'Desktop') -and ($PSVersionTable.Clrversion.Major -ge 4)) {
         It 'Item is no longer in original directory' {
             $sampleFileName = Get-TempFile
             Test-Path $sampleFileName | Should Be $true

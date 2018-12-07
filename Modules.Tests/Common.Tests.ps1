@@ -1,7 +1,7 @@
 <#Header#>
 Set-StrictMode -Version "Latest"
 
-Get-Module IntelliTect.Common | Remove-Module
+Get-Module IntelliTect.Common | Remove-Module -Force
 Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.Common -Force
 
 #EndHeader#>
@@ -177,5 +177,29 @@ Describe "Test-Command" {
     }
     It 'Valid command returns true' {
         Test-Command 'Get-Item' | Should Be $true
+    }
+}
+
+Describe "Test-Property" {
+    It 'Verify that an existing property on [string] returns true.' {
+        Test-Property -InputObject 'Test' -Name 'Length' | Should Be $true
+    }
+    It 'Verify that an non-existent property on [string] returns false.' {
+        Test-Property -InputObject 'Test' -Name 'DoesNotExist' | Should Be $false
+    }
+    It 'Verify that an non-existent property on [string] returns false.' {
+        Test-Property 'Test' 'DoesNotExist' | Should Be $false
+    }
+    It 'Verify that an existing property on [string] passed via pipeline returns true.' {
+        'Test' | Test-Property -Name 'Length' | Should Be $true
+    }
+    It 'Verify with two input objects.' {
+        'Test1','Test2' | Test-Property -Name 'Length' | Should Be $true
+    }
+    It 'Verify that you can pass an array of property names.' {
+        'Test' | Test-Property  -Name 'Length','DoesNotExist' | Should Be $true,$false
+    }
+    It 'Verify that you can pass an array of property names without a naming the parameter.' {
+        'Test' | Test-Property -Name 'Length','DoesNotExist' | Should Be $true,$false
     }
 }
