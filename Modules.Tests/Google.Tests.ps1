@@ -11,7 +11,7 @@ Function Get-TestCredential {
     if($credential -eq $null) {
         # Future versions (post 3.0) of Pester include 'Set-TestInconclusive' that should be used here.
         # For now, we just throw an error to discontinue the test while providing instructions on how to correctly configure the test.
-        throw "Couldn't find a credential named $credentialName. Add it using 'Set-CredentialManagerCredential $credentialName'. You will be prompted for a Google email account and password, which will be stored in the Windows credential manager."
+        Set-TestInconclusive -Message "Couldn't find a credential named $credentialName. Add it using 'Set-CredentialManagerCredential $credentialName'. You will be prompted for a Google email account and password, which will be stored in the Windows credential manager."
     }
     return $credential
 }
