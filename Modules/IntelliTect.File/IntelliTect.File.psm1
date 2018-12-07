@@ -277,8 +277,16 @@ Filter Test-ItemIsEmpty{
     }
 }
 
+Function Test-Property {
+    [CmdLetBinding()]
+    param(
+        [Parameter(ValueFromPipeline,Mandatory)] $InputObject,
+        [Parameter(Mandatory)][string]$Name
+    )
+    return $name -in $InputObject.PSobject.Properties.Name
+}
 
-if(($PSVersionTable.PSEdition -eq 'Desktop') -and ($PSVersionTable.Clrversion.Major -ge 4)) {
+if((Test-Property $PSVersionTable 'PSEdition') -and ($PSVersionTable.PSEdition -eq 'Desktop') -and ($PSVersionTable.Clrversion.Major -ge 4)) {
     # Using robocopy so execution is only supported on Windows
 Function Remove-FileSystemItemForcibly {
     [CmdletBinding(SupportsShouldProcess,ConfirmImpact='High')]
