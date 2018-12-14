@@ -14,7 +14,7 @@ Function Script:Get-SampleDisposeObject {
 }
 
 Describe "Add-DisposeScript" {
-    It "Verify that a dispose metthod is added." {
+    It "Verify that a dispose method is added." {
         $object = New-Object Object
         $object | Add-DisposeScript -DisposeScript { Write-Output  $true }
         $object.Dispose() | Should Be $true
@@ -26,7 +26,7 @@ Describe "Register-AutoDispose" {
     It "Verify that dispose is called on Add-DisposeScript object" {
         $sampleDisposeObject = New-Object Object
         $sampleDisposeObject | Add-DisposeScript -DisposeScript { Write-Output  "first" }
-        Register-AutoDispose $sampleDisposeObject { Write-Output 42 } | Should Be 42,"first"
+        Register-AutoDispose $sampleDisposeObject { Write-Output 42 } | Should Be 42, "first"
         $sampleDisposeObject.IsDisposed | Should Be $true
     }
     It "Verify that dispose is called" {
@@ -79,7 +79,7 @@ Describe "Get-Tempdirectory" {
 Describe "Get-TempDirectory/Get-TempFile" {
     (Get-TempDirectory), (Get-TempFile) | ForEach-Object {
         It "Verify that the item has a Dispose and IsDisposed member" {
-            $_.PSobject.Members.Name -match "Dispose" | Should Be 'IsDisposed','Dispose'
+            $_.PSobject.Members.Name -match "Dispose" | Should Be 'IsDisposed', 'Dispose'
         }
         It "Verify that Dispose removes the item" {
             $_.Dispose()
@@ -92,20 +92,20 @@ Describe "Get-TempDirectory/Get-TempFile" {
             Register-AutoDispose $_ {}
             Test-Path $_ | Should Be $false
             $_.IsDisposed | Should Be $true
-       }
+        }
     }
     ($tempDirectory = Get-TempDirectory) |
         Register-AutoDispose -ScriptBlock {
-            $path = $tempDirectory.FullName
-            # Now that a temporary directory exists, call Get-TempDirectory and Get-TempFile
-            # and specify the above directory in which to place the temp directory/file.
-            (Get-TempDirectory -Path $path), (Get-TempFile $path) | ForEach-Object {
-                It "Verify item is created with the correct path" {
-                    Register-AutoDispose $_ {}
-                    Test-Path $_ | Should Be $false
-                }
+        $path = $tempDirectory.FullName
+        # Now that a temporary directory exists, call Get-TempDirectory and Get-TempFile
+        # and specify the above directory in which to place the temp directory/file.
+        (Get-TempDirectory -Path $path), (Get-TempFile $path) | ForEach-Object {
+            It "Verify item is created with the correct path" {
+                Register-AutoDispose $_ {}
+                Test-Path $_ | Should Be $false
             }
         }
+    }
     It 'Verify that the Dispose method removes the directory even if it contains files.' {
         $tempItem = $null
         try {
@@ -115,7 +115,7 @@ Describe "Get-TempDirectory/Get-TempFile" {
             Test-Path $tempItem | Should Be $false
         }
         finally {
-            if(Test-Path $tempItem) {
+            if (Test-Path $tempItem) {
                 Remove-Item $tempItem -Force -Recurse
             }
         }
@@ -127,7 +127,7 @@ Describe "Get-TempFile" {
         $tempDirectory = Get-TempDirectory
         # Create a temporary directory to place the file into.
         Register-AutoDispose $tempDirectory {
-            Register-AutoDispose ($tempFile=Get-TempFile -path $tempDirectory.FullName) {
+            Register-AutoDispose ($tempFile = Get-TempFile -path $tempDirectory.FullName) {
                 Test-Path $tempFile.FullName | Should Be $true
                 Split-Path $tempFile -Parent | Should Be $tempDirectory.FullName
             }
@@ -177,5 +177,16 @@ Describe "Test-Command" {
     }
     It 'Valid command returns true' {
         Test-Command 'Get-Item' | Should Be $true
+    }
+}
+
+Describe "Set-IsWindows" {
+    if (-not $IsWindows) {
+        It "When `$IsWindows exists, it does nothing" {
+            Set-IsWindows 
+            $IsWindows | Should Be (Test-Path env:\SystemRoot)
+
+
+        }
     }
 }

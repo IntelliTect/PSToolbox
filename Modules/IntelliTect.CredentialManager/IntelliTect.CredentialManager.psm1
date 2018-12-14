@@ -30,6 +30,10 @@ function Set-CredentialManagerCredential {
             [string]$userName
     )
 
+    if (-not $IsWindows){
+        throw "This cmdlet is not supported on non-Windows operating systems."
+    }
+
     switch ($PsCmdlet.ParameterSetName) 
     { 
         "PSCredentialObject"  { 
@@ -120,6 +124,10 @@ function Get-CredentialManagerCredential {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingConvertToSecureStringWithPlainText", "")]
     [CmdletBinding()]
     param([Parameter(Mandatory=$true)][string]$TargetName)
+    
+    if (-not $IsWindows){
+        throw "This cmdlet is not supported on non-Windows operating systems."
+    }
 
     $sig = @"
 
