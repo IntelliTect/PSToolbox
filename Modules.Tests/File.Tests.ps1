@@ -178,6 +178,6 @@ Describe 'Remove-FileToRecycleBin' {
         }
     }
     else {
-        Write-Warning 'Remove-FileToRecycleBin is not currently supported on the this platform.'
+        Write-Warning 'Remove-FileToRecycleBin is not currently supported on this platform.'
     }
 }
