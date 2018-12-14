@@ -62,14 +62,15 @@ Describe 'Edit-File' {
     It 'Create a new temp file and open it to edit' {
         try {
             $tempFile = [IO.Path]::ChangeExtension([IO.Path]::GetTempFileName(), '.txt')
-            $notepadProcesses = Get-Process #Only needed when not in ISE
+            $processes = Get-Process #Only needed when not in ISE
             try {
                 Edit-File $tempFile
-                $openedFileProcess = @(Get-Process | ?{ $notepadProcesses.id -notcontains $_.id })
+                Start-Sleep -Seconds 2
+                $openedFileProcess = @(Get-Process | ?{ $processes.id -notcontains $_.id })
                 $openedFileProcess.Length | Should Be 1;
             }
             finally {
-                Get-Process | ?{ $notepadProcesses.id -notcontains $_.id } | Stop-Process
+                Get-Process | ?{ $processes.id -notcontains $_.id } | Stop-Process
             }
         }
         finally {
@@ -81,14 +82,15 @@ Describe 'Edit-File' {
     It 'Create a new temp file and open from the pipeline' {
         try {
             $tempFile = [IO.Path]::ChangeExtension([IO.Path]::GetTempFileName(), '.txt')
-            $notepadProcesses = Get-Process #Only needed when not in ISE
+            $processes = Get-Process #Only needed when not in ISE
             try {
                 $tempFile | Edit-File
-                $openedFileProcess = @(Get-Process | ?{ $notepadProcesses.id -notcontains $_.id })
+                Start-Sleep -Seconds 2
+                $openedFileProcess = @(Get-Process | ?{ $processes.id -notcontains $_.id })
                 $openedFileProcess.Length | Should Be 1;
             }
             finally {
-                Get-Process | ?{ $notepadProcesses.id -notcontains $_.id } | Stop-Process
+                Get-Process | ?{ $processes.id -notcontains $_.id } | Stop-Process
             }
         }
         finally {

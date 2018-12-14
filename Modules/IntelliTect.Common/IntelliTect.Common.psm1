@@ -308,3 +308,19 @@ Filter Test-Command {
         Write-Output ([bool](get-command $_ -ErrorAction Ignore))
     }
 }
+
+Function Test-VariableExists {
+    [CmdletBinding()]
+    param([Parameter(Mandatory, ValueFromPipeline)][string[]]$name)
+
+    $name | ForEach-Object { Test-Path Variable:\$_ }
+}
+
+Function Set-IsWindows {
+    if (-not (Test-VariableExists "IsWindows")) {
+        Set-Variable -Name "IsWindows" -Value `
+            ((Test-Property $PSVersionTable 'PSEdition') `
+            -and ($PSVersionTable.PSEdition -eq 'Desktop') `
+            -and ($PSVersionTable.Clrversion.Major -ge 4)) -Option AllScope
+    }
+}
