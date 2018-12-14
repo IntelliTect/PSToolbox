@@ -1,26 +1,5 @@
-<#
-.SYNOPSIS
-Open the file specified, creating a new file if it doesn't exist.
-.EXAMPLE
-PS C:\> Open-File $env:Temp\temp.txt
-Create the temp.txt file in the temp directory (if it doesn't exist) and then open the file using the default editor for a txt file.
-#>
-Function Open-File() {
-    [CmdletBinding()] param(
-        # The path to the file to edit.
-        [Parameter(ValueFromPipeline=$true,Mandatory)][ValidateNotNull()][string[]]$path
-    )
-    PROCESS {
-        foreach($item in $path) {
-            #Support wildcards
-            $files = Get-Item $item
-            foreach($file in $files) {
-                & $file
-            }
-        }
-    }
-}
-Set-Alias Open Open-File -Scope Global
+Set-Alias Open Invoke-Item -Scope Global
+Set-Alias Open-File Invoke-Item -Scope Global
 
 # TODO: Publish the fact that a string path implicitly converts to a FileInfo/DirectoryInfo so functions needing files should use [IO.FileInfo]/[IO.DirectoryInfo]
 
