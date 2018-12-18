@@ -332,5 +332,18 @@ Function Test-Property {
     # TODO: Add support so you don't need to specifically provide the parameter name for -Name.
     $Name | ForEach-Object{
         $_ -in $InputObject.PSobject.Properties.Name | Write-Output
+Function Test-VariableExists {
+    [CmdletBinding()]
+    param([Parameter(Mandatory, ValueFromPipeline)][string[]]$name)
+
+    $name | ForEach-Object { Test-Path Variable:\$_ }
+}
+
+Function Set-IsWindows {
+    if (-not (Test-VariableExists "IsWindows")) {
+        Set-Variable -Name "IsWindows" -Value `
+            ((Test-Property $PSVersionTable 'PSEdition') `
+            -and ($PSVersionTable.PSEdition -eq 'Desktop') `
+            -and ($PSVersionTable.Clrversion.Major -ge 4)) -Option AllScope
     }
 }

@@ -11,7 +11,7 @@ Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.File -Force
 
 #TODO: This can surely be done using the Pester functions but I confess, I am not sure how.
 #      Consider moving this to an It statement and possibly getting a handle to the $pester results
-If(Test-Path variable:\psise) {
+If (Test-Path variable:\psise) {
     $commandLine = (Get-Command PowerShell).Path
     $tempFile = [IO.Path]::ChangeExtension([IO.Path]::GetTempFileName(), '.txt')
     #$process = Start-Process -FilePath $commandLine -ArgumentList "-noprofile -command `"& { Invoke-pester $PSCommandPath}" -PassThru -RedirectStandardOutput $tempFile
@@ -19,15 +19,14 @@ If(Test-Path variable:\psise) {
     #$process.WaitForExit()
     $reachedOutput = $false;
     $outputErrorMessage = $false
-    $output | ?{
-        if($reachedOutput -or ($_ -like '[\[][-+]]*') ) {
+    $output | ? {
+        if ($reachedOutput -or ($_ -like '[\[][-+]]*') ) {
             $reachedOutput = $true
         }
         $reachedOutput
-    } | %{
+    } | % {
         $line = $_
-        switch -wildcard ($line)
-        {
+        switch -wildcard ($line) {
             '[\[][+]]*' {
                 $outputErrorMessage = $false
                 Write-Host -ForegroundColor darkgreen $line
@@ -37,7 +36,7 @@ If(Test-Path variable:\psise) {
                 Write-Host -ForegroundColor red $line
             }
             default {
-                if($outputErrorMessage -or ($line -like '[\[][-]]*')) {
+                if ($outputErrorMessage -or ($line -like '[\[][-]]*')) {
                     $outputErrorMessage = $true
                     Write-Host -ForegroundColor red $line
                 }
@@ -62,18 +61,22 @@ Describe 'Edit-File' {
     It 'Create a new temp file and open it to edit' {
         try {
             $tempFile = [IO.Path]::ChangeExtension([IO.Path]::GetTempFileName(), '.txt')
-            $notepadProcesses = Get-Process #Only needed when not in ISE
+            $processes = Get-Process #Only needed when not in ISE
             try {
                 Edit-File $tempFile
-                $openedFileProcess = @(Get-Process | ?{ $notepadProcesses.id -notcontains $_.id })
+                $openedFileProcess = @(Get-Process | ? { $processes.id -notcontains $_.id })
+                if ($openedFileProcess.Length -ne 1) {
+                    Start-Sleep -Seconds 2
+                    $openedFileProcess = @(Get-Process | ? { $processes.id -notcontains $_.id })
+                }
                 $openedFileProcess.Length | Should Be 1;
             }
             finally {
-                Get-Process | ?{ $notepadProcesses.id -notcontains $_.id } | Stop-Process
+                Get-Process | ? { $processes.id -notcontains $_.id } | Stop-Process
             }
         }
         finally {
-            if(Test-Path $tempFile) {
+            if (Test-Path $tempFile) {
                 Remove-Item $tempFile;
             }
         }
@@ -81,18 +84,22 @@ Describe 'Edit-File' {
     It 'Create a new temp file and open from the pipeline' {
         try {
             $tempFile = [IO.Path]::ChangeExtension([IO.Path]::GetTempFileName(), '.txt')
-            $notepadProcesses = Get-Process #Only needed when not in ISE
+            $processes = Get-Process #Only needed when not in ISE
             try {
                 $tempFile | Edit-File
-                $openedFileProcess = @(Get-Process | ?{ $notepadProcesses.id -notcontains $_.id })
+                $openedFileProcess = @(Get-Process | ? { $processes.id -notcontains $_.id })
+                if ($openedFileProcess.Length -ne 1) {
+                    Start-Sleep -Seconds 2
+                    $openedFileProcess = @(Get-Process | ? { $processes.id -notcontains $_.id })
+                }
                 $openedFileProcess.Length | Should Be 1;
             }
             finally {
-                Get-Process | ?{ $notepadProcesses.id -notcontains $_.id } | Stop-Process
+                Get-Process | ? { $processes.id -notcontains $_.id } | Stop-Process
             }
         }
         finally {
-            if(Test-Path $tempFile) {
+            if (Test-Path $tempFile) {
                 Remove-Item $tempFile;
             }
         }
@@ -108,7 +115,7 @@ Describe 'Test-FileIsLocked' {
             Test-FileIsLocked $tempFile | Should Be $false
         }
         finally {
-            if(Test-Path $tempFile) {
+            if (Test-Path $tempFile) {
                 Remove-Item $tempFile;
             }
         }
@@ -120,18 +127,18 @@ Describe 'Test-FileIsLocked' {
             Test-Path $tempFile | Should Be $true
             try {
                 $fileInfo = New-Object System.IO.FileInfo $tempFile
-                $fileStream = $fileInfo.Open( [System.IO.FileMode]::OpenOrCreate,[System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::None )
+                $fileStream = $fileInfo.Open( [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::None )
 
                 Test-FileIsLocked $tempFile | Should Be $true
             }
             finally {
-                if($fileStream) {
+                if ($fileStream) {
                     $fileStream.Close()
                 }
             }
         }
         finally {
-            if(Test-Path $tempFile) {
+            if (Test-Path $tempFile) {
                 Remove-Item $tempFile;
             }
         }
@@ -146,7 +153,7 @@ Function Test-FileIsLocked {
     $filelocked = $false
     try {
         $fileInfo = New-Object System.IO.FileInfo $filePath
-        $fileStream = $fileInfo.Open( [System.IO.FileMode]::OpenOrCreate,[System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::None )
+        $fileStream = $fileInfo.Open( [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::None )
     }
     catch {
         $filelocked = $true
@@ -158,9 +165,17 @@ Function Test-FileIsLocked {
     return $filelocked
 }
 
+Function Test-Property {
+    [CmdLetBinding()]
+    param(
+        [Parameter(ValueFromPipeline, Mandatory)] $InputObject,
+        [Parameter(Mandatory)][string]$Name
+    )
+    return $name -in $InputObject.PSobject.Properties.Name
+}
+
 Describe 'Remove-FileToRecycleBin' {
-    if((Test-Property -InputObject $PSVersionTable -Name 'PSEdition') -and 
-            ($PSVersionTable.PSEdition -eq 'Desktop') -and ($PSVersionTable.Clrversion.Major -ge 4)) {
+    if ((Test-Property $PSVersionTable 'PSEdition') -and ($PSVersionTable.PSEdition -eq 'Desktop') -and ($PSVersionTable.Clrversion.Major -ge 4)) {
         It 'Item is no longer in original directory' {
             $sampleFileName = Get-TempFile
             Test-Path $sampleFileName | Should Be $true
@@ -170,6 +185,6 @@ Describe 'Remove-FileToRecycleBin' {
         }
     }
     else {
-        Write-Warning 'Remove-FileToRecycleBin is not currently supported on the this platform.'
+        Write-Warning 'Remove-FileToRecycleBin is not currently supported on this platform.'
     }
 }
