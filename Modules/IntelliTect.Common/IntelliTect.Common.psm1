@@ -155,16 +155,16 @@ Function Register-AutoDispose {
     [CmdletBinding(SupportsShouldProcess)]
     param(
         [ValidateScript( {$_.PSobject.Members.Name -contains "Dispose"})]
-            [ValidateNotNull()][Parameter(Position=0,Mandatory, ValueFromPipeline)]
-            [Object[]]$InputObject,
+        [ValidateNotNull()][Parameter(Position = 0, Mandatory, ValueFromPipeline)]
+        [Object[]]$InputObject,
 
-        [Parameter(Position=1,Mandatory)]
-            [ScriptBlock]$ScriptBlock
+        [Parameter(Position = 1, Mandatory)]
+        [ScriptBlock]$ScriptBlock
     )
     BEGIN {
     }
-    PROCESS  {
-          try {
+    PROCESS {
+        try {
             Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $InputObject
         }
         finally {
@@ -177,7 +177,7 @@ Function Register-AutoDispose {
                 }
             }
         }
-  }
+    }
 }
 Set-Alias Using Register-AutoDispose
 
@@ -326,12 +326,15 @@ The name of the property to look for.
 Function Test-Property {
     [CmdLetBinding()]
     param(
-        [Parameter(ValueFromPipeline,Mandatory)] $InputObject,
+        [Parameter(ValueFromPipeline, Mandatory)] $InputObject,
         [Parameter(Mandatory)][string[]]$Name
     )
     # TODO: Add support so you don't need to specifically provide the parameter name for -Name.
-    $Name | ForEach-Object{
+    $Name | ForEach-Object {
         $_ -in $InputObject.PSobject.Properties.Name | Write-Output
+    }
+}   
+
 Function Test-VariableExists {
     [CmdletBinding()]
     param([Parameter(Mandatory, ValueFromPipeline)][string[]]$name)
@@ -342,8 +345,8 @@ Function Test-VariableExists {
 Function Set-IsWindows {
     if (-not (Test-VariableExists "IsWindows")) {
         Set-Variable -Name "IsWindows" -Value `
-            ((Test-Property $PSVersionTable 'PSEdition') `
-            -and ($PSVersionTable.PSEdition -eq 'Desktop') `
-            -and ($PSVersionTable.Clrversion.Major -ge 4)) -Option AllScope
+        ((Test-Property $PSVersionTable 'PSEdition') `
+                -and ($PSVersionTable.PSEdition -eq 'Desktop') `
+                -and ($PSVersionTable.Clrversion.Major -ge 4)) -Option AllScope
     }
 }
