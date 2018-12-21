@@ -329,6 +329,7 @@ Function Test-Property {
         [Parameter(ValueFromPipeline, Mandatory)] $InputObject,
         [Parameter(Mandatory)][string[]]$Name
     )
+    # TODO: Add support for hashtable name checks as well
     # TODO: Add support so you don't need to specifically provide the parameter name for -Name.
     $Name | ForEach-Object {
         $_ -in $InputObject.PSobject.Properties.Name | Write-Output
@@ -345,8 +346,11 @@ Function Test-VariableExists {
 Function Set-IsWindows {
     if (-not (Test-VariableExists "IsWindows")) {
         Set-Variable -Name "IsWindows" -Value `
-        ((Test-Property $PSVersionTable 'PSEdition') `
+       (('PSEdition' -in $PSVersionTable.Keys) `
                 -and ($PSVersionTable.PSEdition -eq 'Desktop') `
-                -and ($PSVersionTable.Clrversion.Major -ge 4)) -Option AllScope
+                -and ($PSVersionTable.Clrversion.Major -ge 4)) -Scope global
     }
 }
+
+
+Set-IsWindows   

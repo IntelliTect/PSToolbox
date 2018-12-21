@@ -197,10 +197,10 @@ Describe "Test-Property" {
         'Test1','Test2' | Test-Property -Name 'Length' | Should Be $true
     }
     It 'Verify that you can pass an array of property names.' {
-        'Test' | Test-Property  -Name 'Length','DoesNotExist' | Should Be $true,$false
-    }
-    It 'Verify that you can pass an array of property names without a naming the parameter.' {
         'Test' | Test-Property -Name 'Length','DoesNotExist' | Should Be $true,$false
+    }
+    It 'Verify that you can pass an array of property names without a naming the parameter.' -Skip {
+        'Test' | Test-Property 'Length','DoesNotExist' | Should Be $true,$false
     }
 }
 
