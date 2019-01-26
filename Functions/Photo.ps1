@@ -228,7 +228,8 @@ function GetFileNameWithCameraTag(
             "NIKON D70" = "NikonD70_";
             "Canon EOS 30D" = "EOS30D_";
             "Canon EOS 20D" = "EOS20D_";
-            "Canon EOS 70D" = "EOS70D_"
+            "Canon EOS 70D" = "EOS70D_";
+            "Canon EOS 5D Mark IV" = "EOS5DMarkIV_";
             "BlackBerry 9650" = "BB9650_";
             "Canon IXY DIGITAL 800 IS" = "800IS_";
             "SQ908 MEGA-Cam" = "SQ908_";
@@ -256,6 +257,9 @@ function GetFileNameWithCameraTag(
     }
 
     [string]$targetFileName = $null
+    if(!($replaceLookup.ContainsKey($photo.Model))) {
+        throw "Model '$($photo.Model)' is not recognized."
+    }
     $replacement = $replaceLookup[$photo.Model]
     Write-Debug "`$replacement = $replacement"
     $prefix = $prefixLookup[$photo.Model]
