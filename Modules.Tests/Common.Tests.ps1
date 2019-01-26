@@ -208,10 +208,10 @@ Describe "Set-IsWindows" {
     if (-not $IsWindows) {
         It "When `$IsWindows exists, it does nothing" {
             Test-VariableExists "IsWindows" | Should Be $false
-            $PSVersionTable
-            $PSVersionTable.Keys
-            $PSVersionTable.PSEdition 
-            $PSVersionTable.Clrversion.Major 
+            $PSVersionTable | Out-Host
+            $PSVersionTable.Keys | Out-Host
+            $PSVersionTable.PSEdition | Out-Host 
+            $PSVersionTable.Clrversion.Major | Out-Host 
             dir env: | Out-Host
             Set-IsWindows 
             $IsWindows | Should Be (Test-Path env:\SystemRoot)
