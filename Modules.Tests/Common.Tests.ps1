@@ -207,7 +207,7 @@ Describe "Test-Property" {
 Describe "Set-IsWindows" {
     if (-not $IsWindows) {
         It "When `$IsWindows exists, it does nothing" {
-            Test-VariableExists "IsWindows" | Should Be $fals
+            Test-VariableExists "IsWindows" | Should Be $false
             $PSVersionTable
             $PSVersionTable.Keys
             $PSVersionTable.PSEdition 
