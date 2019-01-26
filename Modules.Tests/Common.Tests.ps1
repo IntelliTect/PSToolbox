@@ -207,7 +207,7 @@ Describe "Test-Property" {
 Describe "Set-IsWindows" {
     if (-not $IsWindows) {
         It "When `$IsWindows exists, it does nothing" {
-            dir env: | Write-Verbose
+            dir env: | Out-Host
             Set-IsWindows 
             $IsWindows | Should Be (Test-Path env:\SystemRoot)
 
