@@ -325,7 +325,24 @@ Function Remove-FileSystemItemForcibly {
     }
 }
 }
- 
+
+try {
+    Microsoft.PowerShell.Management\Join-Path 'first' 'second' 'third' -ErrorAction ignore
+} 
+catch [System.Management.Automation.ParameterBindingException] { 
+    # Only create this function if it isn't build into the framework.
+    Function Join-Path {
+        [CmdletBinding()]
+        [OutputType([string])]
+        param (
+            [Parameter(Mandatory)][string]$BeginPath,
+            [Parameter(Mandatory,ValueFromRemainingArguments)]$ChildPathLet
+        )
+            [string]$pathSuffix=$BeginPath
+            $ChildPathLet | ForEach-Object{ $pathSuffix = Microsoft.PowerShell.Management\Join-Path $pathSuffix $_}
+            Write-Output $pathSuffix
+    }
+}
 
 # TODO: Add functions below
 # See https://github.com/MarkMichaelis/Private/blob/InitialMachineSetup/Install-Dropbox.ps1 for

@@ -188,3 +188,14 @@ Describe 'Remove-FileToRecycleBin' {
         Write-Warning 'Remove-FileToRecycleBin is not currently supported on this platform.'
     }
 }
+
+Describe 'Join-Path' {
+    It 'Provide valid paramaters' {
+        Join-Path 'first' 'second' | Should Be ([string]::Join([System.IO.Path]::DirectorySeparatorChar, 'first', 'second' ))
+        Join-Path 'first' 'second' 'third' | Should Be ([string]::Join([System.IO.Path]::DirectorySeparatorChar, 'first', 'second', 'third' ))
+    }
+    try {
+        Microsoft.PowerShell.Management\Join-Path 'first' 'second' 'third' -ErrorAction ignore
+        Write-Warning 'Microsoft.PowerShell.Management\Join-Path has built in support for multiple parameters.' 
+    } catch [System.Management.Automation.ParameterBindingException] { <# Ignore #>}
+}
