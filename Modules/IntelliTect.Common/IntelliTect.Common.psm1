@@ -1,4 +1,21 @@
 
+if((Get-Command Join-Path).Version -lt '6.0') {
+    Function Join-Path {
+        switch ($args.Count) {
+            0 { Join-Path @args }
+            1 { $args[0] | Write-Output }
+            2 { Microsoft.PowerShell.Management\Join-Path @args }
+            default {
+                $result = $args[0]
+                $args | Select-Object -Skip 1 | ForEach-Object{
+                    $result = Join-Path $result $_
+                }
+                Write-Output $result
+             }
+        }
+    } 
+}
+
 
 Function Add-PathToEnvironmentVariable {
     [CmdletBinding(SupportsShouldProcess)]
@@ -99,9 +116,10 @@ Function Highlight([string]$pattern, [Int32]$Context = 10, [Parameter(ValueFromP
 }
 set-alias HL highlight
 
-function New-Array {
-    [CmdletBinding()][OutputType('System.Array')]
-    $args
+function Initialize-Array {
+    [CmdletBinding()]
+    [OutputType('System.Array')]
+    [System.Array]$args | Write-Output
 }
 
 Function Add-DisposeScript {
