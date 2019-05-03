@@ -1,5 +1,11 @@
 
 if((Get-Command Join-Path).Version -lt '6.0') {
+# An alternative approach is to trap the error but this causes a code analysis warning that can't be 
+# turned of with a block.
+# try {
+#     Microsoft.PowerShell.Management\Join-Path 'first' 'second' 'third' -ErrorAction ignore
+# }
+# catch [System.Management.Automation.ParameterBindingException] {
     Function Join-Path {
         switch ($args.Count) {
             0 { Join-Path @args }
@@ -13,7 +19,7 @@ if((Get-Command Join-Path).Version -lt '6.0') {
                 Write-Output $result
              }
         }
-    } 
+    }
 }
 
 
