@@ -11,6 +11,9 @@ Describe 'Join-Path' {
         # Set directory to use FileSystem PSProvider
         $originalPath = Get-Location
         Set-Location $env:HOMEDRIVE
+        It '0 parameters' {
+            Join-Path | Should Be ''
+        }
         It '1 parameters' {
             Join-Path 'test' | Should Be 'test'
         }

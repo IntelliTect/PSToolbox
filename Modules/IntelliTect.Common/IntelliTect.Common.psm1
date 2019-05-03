@@ -8,7 +8,7 @@ if((Get-Command Join-Path).Version -lt '6.0') {
 # catch [System.Management.Automation.ParameterBindingException] {
     Function Join-Path {
         switch ($args.Count) {
-            0 { Join-Path @args }
+            0 { Join-Path @args '' }
             1 { $args[0] | Write-Output }
             2 { Microsoft.PowerShell.Management\Join-Path @args }
             default {
