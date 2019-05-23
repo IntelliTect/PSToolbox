@@ -229,19 +229,55 @@ Describe "Test-Property" {
     }
 }
 
-Describe "Set-IsWindows" {
-    if (-not $IsWindows) {
-        It "When `$IsWindows exists, it does nothing" {
-            Test-VariableExists "IsWindows" | Should Be $false
-            $PSVersionTable | Out-Host
-            $PSVersionTable.Keys | Out-Host
-            $PSVersionTable.PSEdition | Out-Host 
-            $PSVersionTable.Clrversion.Major | Out-Host 
-            dir env: | Out-Host
-            Set-IsWindows 
-            $IsWindows | Should Be (Test-Path env:\SystemRoot)
+Describe "Get-IsWindowsPlatform" {
+    It "Get-IsWindowsPlatform verifiction using existence of env:SystemRoot" {
+        Get-IsWindowsPlatform | Should Be (Test-Path env:\SystemRoot)
+    }
+}
 
 
+Describe 'Wait-ForCondition' {
+    It 'Wait for 100 random even numbers to be generated.' {
+        [int]$script:falseCount=0
+        1..100 | Wait-ForCondition -Condition {
+            [bool]$even=((Get-Random -Minimum 1 -Maximum 11)%2) -eq 0
+            if(-not $even) {
+                $script:falseCount++
+            }
+            return $even
         }
+        $script:falseCount | Should BeGreaterThan 0
+    }
+    It 'Timeout cannot be less than 0' {
+        {1 | Wait-ForCondition -TimeoutInMilliseconds -1 -Condition {}} | Should Throw
+    }
+    It 'TimeSpan cannot be 0.0.0 (checking TotalMilliseconds = 0).  Note that .5 seconds registers as 0 milliseconds  ' {
+        {1 | Wait-ForCondition -TimeSpan (New-TimeSpan -seconds (.5)) -Condition {}} | Should Throw
+    }
+    It 'Check for timeout of 5 milliseconds' {
+        $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+        $exception=$null
+        [int]$timeout = 5
+        try {
+            1..100 | Wait-ForCondition -TimeoutInMilliseconds $timeout -Condition { Start-Sleep 1;$false }
+        }
+        catch [TimeoutException] {
+            $exception = $_.Exception
+        }
+        $stopwatch.ElapsedMilliseconds | Should BeGreaterThan $timeout
+        $exception | Should BeOfType [TimeoutException]
+    }
+    It 'Check for timeout of .54 milliseconds using TimeSpan' {
+        $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+        $exception=$null
+        [int]$timeout = .54
+        try {
+            1..100 | Wait-ForCondition -TimeSpan (New-TimeSpan -Seconds ($timeout)) -Condition { Start-Sleep 1;$false }
+        }
+        catch [TimeoutException] {
+            $exception = $_.Exception
+        }
+        $stopwatch.ElapsedMilliseconds | Should BeGreaterThan $timeout
+        $exception | Should BeOfType [TimeoutException]
     }
 }

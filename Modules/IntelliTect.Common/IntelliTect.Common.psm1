@@ -61,7 +61,7 @@ The script executed if the $PSCmdlet.ShouldProcess returns true.
 
 #>
 Function Invoke-ShouldProcess {
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param(
         [string]$ContinueMessage,
         [string]$InquireMessage,
@@ -83,10 +83,10 @@ Set-Alias ShouldProcess Invoke-ShouldProcess
     #>
 
 #See http://blogs.technet.com/b/heyscriptingguy/archive/2013/03/25/learn-about-using-powershell-value-binding-by-property-name.aspx
-Function New-ObjectFromHashtable {
+Function ConvertFrom-Hashtable {
     [CmdletBinding()]
     param(
-        [parameter(Mandatory = $true, Position = 1, ValueFromPipeline = $true)]
+        [parameter(Mandatory, Position = 1, ValueFromPipeline)]
         [Hashtable] $Hashtable
     )
     begin { }
@@ -360,6 +360,7 @@ Function Test-Property {
     }
 }   
 
+#[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "")]
 Function Test-VariableExists {
     [CmdletBinding()]
     param([Parameter(Mandatory, ValueFromPipeline)][string[]]$name)
@@ -367,14 +368,62 @@ Function Test-VariableExists {
     $name | ForEach-Object { Test-Path Variable:\$_ }
 }
 
-Function Set-IsWindows {
-    if (-not (Test-VariableExists "IsWindows")) {
-        Set-Variable -Name "IsWindows" -Value `
-       (('PSEdition' -in $PSVersionTable.Keys) `
-                -and ($PSVersionTable.PSEdition -eq 'Desktop') `
-                -and ($PSVersionTable.Clrversion.Major -ge 4)) -Scope global
-    }
+Function Get-IsWindowsPlatform {
+    [OutputType([bool])]
+    [CmdletBinding()]param()
+    return (('PSEdition' -in $PSVersionTable.Keys) `
+        -and ($PSVersionTable.PSEdition -eq 'Desktop') `
+        -and ($PSVersionTable.Clrversion.Major -ge 4)) 
 }
 
+Function Set-IsWindowsVariable {
+    [CmdletBinding(SupportsShouldProcess)]param()
+    if (-not (Test-VariableExists "IsWindows")) {
+        Invoke-ShouldProcess -ContinueMessage 'Seting global:IsWindows variable' -InquireMessage 'Set global:IsWindows variable?' `
+                 -Caption 'Set global:IsWindows variable' {
+            Set-Variable -Name "IsWindows" -Value `
+                (('PSEdition' -in $PSVersionTable.Keys) `
+                            -and ($PSVersionTable.PSEdition -eq 'Desktop') `
+                            -and ($PSVersionTable.Clrversion.Major -ge 4)) -Scope global
+        }
+    }
+}
+Set-IsWindowsVariable
 
-Set-IsWindows   
+Function Wait-ForCondition {
+    [CmdletBinding(DefaultParametersetname='TimeoutInMilliseconds')] param(
+        [Parameter(Mandatory,ValueFromPipeline)][object[]]$InputObject,
+        [Parameter(Mandatory)][ScriptBlock]$Condition,
+        [ValidateScript({$_.TotalMilliseconds -ne 0})][Parameter(ParameterSetName = "TimeSpan")][TimeSpan]$TimeSpan,
+        [ValidateScript({$_ -ge 0})][Parameter(ParameterSetName = "TimeoutInMilliseconds")][long]$TimeoutInMilliseconds=0
+    )
+    BEGIN {
+         $items=@()
+         if ($PSBoundParameters.ContainsKey('TimeSpan')) {
+            $TimeoutInMilliseconds = $TimeSpan.TotalMilliseconds
+         }
+         [System.Diagnostics.Stopwatch]$stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+     }
+    PROCESS {
+        # Accumulate the response output from Start-Stuff here
+        $items += $InputObject
+    }
+    END {
+        # Iterate over all the items, waiting for them to complete here
+        $moreItems = @($items)
+        [int]$iterationCount = 0
+        while ($moreItems -and ($moreItems.Count -gt 0)) {
+            $iterationCount++
+            Write-Progress "Checking condition on remaining $($moreItems.Count) items for the $iterationCount time"
+            $moreItems = $moreItems | ForEach-Object {
+                    if(($TimeoutInMilliseconds -gt 0) -and ($stopwatch.ElapsedMilliseconds -gt $TimeoutInMilliseconds)) {
+                        throw [TimeoutException]::new("Execution time exceeded $TimeoutInMilliseconds milliseconds.")
+                    }
+                    Write-Output $_
+                } | Group-Object $condition | `
+                    Where-Object -Property Name -eq -Value 'False' | Select-Object -ExpandProperty Group
+        }
+        $items | Write-Output
+        Write-Debug "Number of times the list was polled for a true condition was $iterationCount"
+    }
+}
