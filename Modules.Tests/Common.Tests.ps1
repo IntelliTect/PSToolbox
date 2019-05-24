@@ -238,7 +238,7 @@ Describe 'Wait-ForCondition' {
         $exception=$null
         [int]$timeout = 5
         try {
-            1..1000 | Wait-ForCondition -TimeSpan (New-TimeSpan -Seconds 1) -Condition { ((Get-Random -Minimum 1 -Maximum 11)%2) -eq 0 } > $null
+            1..10000 | Wait-ForCondition -TimeSpan (New-TimeSpan -Seconds 1) -Condition { ((Get-Random -Minimum 1 -Maximum 11)%2) -eq 0 } > $null
         }
         catch [TimeoutException] {
             $exception = $_.Exception
