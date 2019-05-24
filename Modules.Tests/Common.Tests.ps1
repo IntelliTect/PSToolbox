@@ -3,8 +3,7 @@ Set-StrictMode -Version "Latest"
 
 Get-Module IntelliTect.Common | Remove-Module -Force
 Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.Common -Force
-
-#EndHeader#>
+<#EndHeader#>
 
 Describe 'Join-Path' {
     try {
@@ -29,7 +28,6 @@ Describe 'Join-Path' {
         Set-Location $originalPath
     }
 }
-
 
 Function Script:Get-SampleDisposeObject {
     $object = New-Object object
@@ -178,7 +176,6 @@ Describe "Get-TempFile" {
     }
 }
 
-
 Describe "Get-TempItemPath" {
     It "No file exists for the given name" {
         Get-TempItemPath | Test-Path | Should Be $false
@@ -194,7 +191,6 @@ Describe "Get-TempItemPath" {
         }
     }
 }
-
 
 Describe "Test-Command" {
     It "If command doesn't exist returns false" {
@@ -237,10 +233,23 @@ Describe "Get-IsWindowsPlatform" {
 
 
 Describe 'Wait-ForCondition' {
+    It 'Check for timeout when wiating for even numbers 1000 times' {
+        $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+        $exception=$null
+        [int]$timeout = 5
+        try {
+            1..1000 | Wait-ForCondition -TimeSpan (New-TimeSpan -Seconds 1) -Condition { ((Get-Random -Minimum 1 -Maximum 11)%2) -eq 0 } > $null
+        }
+        catch [TimeoutException] {
+            $exception = $_.Exception
+        }
+        $stopwatch.ElapsedMilliseconds | Should BeGreaterThan $timeout
+        $exception | Should BeOfType [TimeoutException]
+    }
     It 'Wait for 100 random even numbers to be generated.' {
         [int]$script:falseCount=0
-        1..100 | Wait-ForCondition -Condition {
-            [bool]$even=((Get-Random -Minimum 1 -Maximum 11)%2) -eq 0
+            1..100 | Wait-ForCondition -Condition {
+                [bool]$even=((Get-Random -Minimum 1 -Maximum 11)%2) -eq 0
             if(-not $even) {
                 $script:falseCount++
             }
@@ -259,7 +268,7 @@ Describe 'Wait-ForCondition' {
         $exception=$null
         [int]$timeout = 5
         try {
-            1..100 | Wait-ForCondition -TimeoutInMilliseconds $timeout -Condition { Start-Sleep 1;$false }
+            1..100 | Wait-ForCondition -TimeoutInMilliseconds $timeout -Condition { Start-Sleep 1;$false } > $null
         }
         catch [TimeoutException] {
             $exception = $_.Exception
@@ -272,7 +281,7 @@ Describe 'Wait-ForCondition' {
         $exception=$null
         [int]$timeout = .54
         try {
-            1..100 | Wait-ForCondition -TimeSpan (New-TimeSpan -Seconds ($timeout)) -Condition { Start-Sleep 1;$false }
+            1..100 | Wait-ForCondition -TimeSpan (New-TimeSpan -Seconds ($timeout)) -Condition { Start-Sleep 1;$false } > $null
         }
         catch [TimeoutException] {
             $exception = $_.Exception
