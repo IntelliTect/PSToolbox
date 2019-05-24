@@ -390,6 +390,34 @@ Function Set-IsWindowsVariable {
 }
 Set-IsWindowsVariable
 
+<#
+.SYNOPSIS
+Wait for the condition to be true on all inputObject items.
+
+.DESCRIPTION
+Given a set inputObjects, iterate over each of them until they all meet the condition specified or the timeout expires.
+
+.PARAMETER InputObject
+The object on which to check the condition.
+
+.PARAMETER Condition
+A predicate that takes the input object and returns true or false regarding whether the condition is met.
+
+.PARAMETER TimeSpan
+A timeout specified as a TimeSpan.  Note that TotalMilliseconds on the timeot must be more than 0 or else
+the parameter will fail validation.
+
+.PARAMETER TimeoutInMilliseconds
+The timeout specified in milliseconds.
+
+.EXAMPLE
+PS>1..1000 | Wait-ForCondition -TimeSpan (New-TimeSpan -Seconds 1) -Condition { ((Get-Random -Minimum 1 -Maximum 11)%2) -eq 0 }
+Attempt to generated even numbers 1000 times using Get-Random but timeout.
+
+.NOTES
+General notes
+#>
+
 Function Wait-ForCondition {
     [CmdletBinding(DefaultParametersetname='TimeoutInMilliseconds')] param(
         [Parameter(Mandatory,ValueFromPipeline)][object[]]$InputObject,
