@@ -20,7 +20,7 @@ function Set-CredentialManagerCredential {
         .LINK
         Get-Credential
     #>
-    [CmdletBinding(DefaultParametersetName="SplitCredentialValues")] 
+    [CmdletBinding(SupportsShouldProcess,DefaultParametersetName="SplitCredentialValues")] 
     param(
         [Parameter(Mandatory=$true, Position=0)]
             [string]$TargetName
@@ -30,7 +30,7 @@ function Set-CredentialManagerCredential {
             [string]$userName
     )
 
-    if (-not $IsWindows){
+    if (-not (Get-IsWindowsPlatform)){
         throw "This cmdlet is not supported on non-Windows operating systems."
     }
 
@@ -50,7 +50,11 @@ function Set-CredentialManagerCredential {
         } 
     } 
 
-    $output = cmdkey /generic:$TargetName /user:$($credential.UserName) /pass:$($credential.GetNetworkCredential().password)
+    Invoke-ShouldProcess -ContinueMessage "Storing credential within Manager Credential named ''$TargetName'" `
+            -InquireMessage "Store credential within Credential Manager named '$TargetName'" `
+            -Caption 'Store credential in Credential Manager' {
+        $output = cmdkey /generic:$TargetName /user:$($credential.UserName) /pass:$($credential.GetNetworkCredential().password)
+    }
 
     if("$output".Trim() -notlike "*successfully*") {
         throw $output;
@@ -125,7 +129,7 @@ function Get-CredentialManagerCredential {
     [CmdletBinding()]
     param([Parameter(Mandatory=$true)][string]$TargetName)
     
-    if (-not $IsWindows){
+    if (-not (Get-IsWindowsPlatform)) {
         throw "This cmdlet is not supported on non-Windows operating systems."
     }
 
@@ -264,6 +268,40 @@ function Get-CredentialManagerCredential {
     }
 
 }
+
+function Remove-CredentialManagerCredential {
+    <#
+        .SYNOPSIS
+        Removes a PowerShell Credential (PSCredential) from the Windows Credential Manager
+
+        .DESCRIPTION
+        Adapted from: http://stackoverflow.com/questions/7162604/get-cached-credentials-in-powershell-from-windows-7-credential-manager
+
+        .PARAMETER TargetName
+        The name of the target login informations in the Windows Credential Manager
+
+        .EXAMPLE
+        Remove-CredentialFromWindowsCredentialManager gmail.com
+
+        UserName                             Password
+        --------                             --------
+        Inigo.Montoya@gmail.com              System.Security.SecureString
+
+        .LINK
+        Set-Credential
+        Get-Credential
+    #>
+
+    [CmdletBinding(SupportsShouldProcess)]
+    param([Parameter(Mandatory)][string]$TargetName)
+
+    Invoke-ShouldProcess -ContinueMessage "Removing credential from Credential Manager named ''$TargetName'" `
+            -InquireMessage "Remove credential from Credential Manager named '$TargetName'?" `
+            -Caption 'Remove credential from Credential Manager' {
+        cmdkey  /delete:$TargetName
+    }
+}
+
 
 Function Get-CredentialPassword {
     [CmdletBinding()]
