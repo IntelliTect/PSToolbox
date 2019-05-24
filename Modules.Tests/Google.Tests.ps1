@@ -17,7 +17,7 @@ Function Get-TestCredential {
 }
 
 Describe "Get-GoogleSessionVariable" {
-    if ($IsWindows) {
+    if (Get-IsWindowsPlatform) {
         It "Gets a WebRequestSession with Google session cookies" {
             $credential = Get-TestCredential
 
@@ -37,7 +37,7 @@ Describe "Get-GoogleSessionVariable" {
 }
 
 Describe "Get-GoogleLocationHistoryKmlFile" {
-    if ($IsWindows) {
+    if (Get-IsWindowsPlatform) {
         It "Gets a kml file" {
             $credential = Get-TestCredential
 
