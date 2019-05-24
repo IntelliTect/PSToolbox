@@ -32,7 +32,7 @@ Function Set-EnvironmentVariable {
          $scopeArgs = '/M'
      }
      setx.exe $Name $Value $scopeArgs | Out-Null
-     Set-Item -Name Env:$Name -Value $Value
+     Set-Item -Path Env:$Name -Value $Value
  }
 }
 

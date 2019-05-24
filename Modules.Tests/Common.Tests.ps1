@@ -227,7 +227,7 @@ Describe "Test-Property" {
 
 Describe "Get-IsWindowsPlatform" {
     It "Get-IsWindowsPlatform verifiction using existence of env:SystemRoot" {
-        Get-IsWindowsPlatform | Should Be (Test-Path env:\SystemRoot)
+        Get-IsWindowsPlatform | Should Be $(Get-Variable IsWindows).Value
     }
 }
 
