@@ -119,6 +119,7 @@ Describe "Get-TempDirectory/Get-TempFile" {
     }
     ($tempDirectory = Get-TempDirectory) |
         Register-AutoDispose -ScriptBlock {
+<<<<<<< HEAD
         $path = $tempDirectory.FullName
         # Now that a temporary directory exists, call Get-TempDirectory and Get-TempFile
         # and specify the above directory in which to place the temp directory/file.
