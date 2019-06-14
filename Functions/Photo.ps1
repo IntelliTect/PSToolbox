@@ -591,3 +591,37 @@ if($PSBoundParameters.Count -ne 0) {
 ##$photos | sort DateTimeOriginal -desc | ?{ ($_.Model -eq "Canon EOS 20D") -or ($_.Model -eq "Canon IXY DIGITAL 800 IS")} |  ft -property DateTimeOriginal,  DateTimeDigitized, DateTime
 ##$photos | sort DateTimeOriginal -desc | ?{ ($_.Model -eq "Canon EOS 20D") -or ($_.Model -eq "Canon IXY DIGITAL 800 IS")} |  %{ $_.DateTimeOriginal=$_.DateTimeOriginal.AddHours(2);  $_.DateTimeDigitized=$_.DateTimeDigitized.AddHours(2); $_DateTime=$_.DateTime.AddHours(2)}
 ##$photos | sort DateTimeOriginal -desc | ?{ ($_.Model -eq "Canon EOS 20D") -or ($_.Model -eq "Canon IXY DIGITAL 800 IS")} |  %{new-object IO.FileInfo($_.getfullpath()) } | %{$_.LastWriteTime=$_.LastWriteTime.AddHours(2)}
+
+Function Get-PhotoExifData {
+    [CmdletBinding()]
+    param(
+        [ValidateScript({Test-Path $_})][Parameter(ValueFromPipeline)][sting[]]$path,
+        [switch]$recurse
+    )
+    PROCESS {
+        Get-ChildITem $path *.jpg -Recurse:$recurse  | Where-Object{
+            $photo=@{}
+            exiftool $_.fullname  | ConvertFrom-string -Delimiter ':' -PropertyNames 'Name','Value' | Foreach-Object{$photo."$($_.Name.ToString().Trim())"
+            ="$($_.Value.ToString().Trim())" }
+            [pscustomobject]$photo
+        }
+    }
+}
+
+
+Filter Select-PhotosTagged {
+    [CmdletBinding()]
+    param(
+        [ValidateScript({Test-Path $_})][Parameter(ValueFromPipeline)][sting[]]$path,
+        [switch]$recurse
+    )
+
+    PROCESS {
+        Get-ChildITem $path *.jpg -Recurse:$recurse  | Where-Object{
+            $photo=@{}
+            exiftool $_.fullname  | ConvertFrom-string -Delimiter ':' -PropertyNames 'Name','Value' | Foreach-Object{$photo."$($_.Name.ToString().Trim())"
+            ="$($_.Value.ToString().Trim())" }
+            [pscustomobject]$photo
+            }  | Where-Object {(Test-Property -InputObject $_ -Name 'Region Person Display Name') }
+    }
+ }
