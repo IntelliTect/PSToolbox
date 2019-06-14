@@ -9,7 +9,7 @@ Function Script:Initialize-TestGitRepo {
     $tempDirectory = Get-TempDirectory
     try {
         Push-Location $tempDirectory
-        Invoke-GitCommand -ActionMessage "Initialize a temporary repository in '$tempDirectory'." -Command 'git init'
+        Invoke-GitCommand -ActionMessage "Initialize a temporary repository in '$tempDirectory'." -Command 'git' -  
     }
     finally {
         Pop-Location
@@ -20,8 +20,8 @@ Function Script:Initialize-TestGitRepo {
 
 Describe "Get-GitStatusObject" {
     (Script:Initialize-TestGitRepo) | Register-AutoDispose -ScriptBlock {
-        It "No file exists for the given name" {
-
+        It "Determine status in brand new repo" {
+           Get-GitStatusObject | should be ""
         }
     }
 }
