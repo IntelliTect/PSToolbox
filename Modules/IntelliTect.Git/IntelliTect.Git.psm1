@@ -27,7 +27,7 @@ Function Invoke-GitCommand {
     param(
         [Parameter(Mandatory)][string]$ActionMessage
         ,[Parameter(Mandatory,ValueFromRemainingArguments)][string[]]$Command
-        #,[Parameter(ParameterSetName='OutputAsObject')][string[]]$GitProperty
+        ,[Parameter(ParameterSetName='OutputAsObject')][string[]]$GitProperty
         ,[Parameter(ParameterSetName='OutputAsText')][string]$Format = $null
     )
     DynamicParam {
