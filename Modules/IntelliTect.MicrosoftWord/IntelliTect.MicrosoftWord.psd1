@@ -26,7 +26,7 @@ Author = 'Mark Michaelis, Kelly Adams'
 CompanyName = 'IntelliTect'
 
 # Copyright statement for this module
-# Copyright = ''
+Copyright = '(c) 2019 IntelliTect. All rights reserved.'
 
 # Description of the functionality provided by this module
 Description = 'Provides an easy-to-use interface to Microsoft Word via PowerShell.'
