@@ -95,7 +95,8 @@ Function Open-WordDocument {
             [Parameter(Mandatory, ValueFromPipeLine, ValueFromPipelineByPropertyName, Position)]
             [Alias("FullName","InputObject")]
             [string[]]$Path,
-        [switch]$ReadWrite
+        [switch]$ReadWrite,
+        $WordApplication # An already open instance of the Microsoft Word application.
     )
     PROCESS {
         $Path | ForEach-Object {
@@ -103,13 +104,15 @@ Function Open-WordDocument {
             [bool]$readOnly = ![bool]$ReadWrite.IsPresent  # TODO: Blog: switch and bool are not the same
             [bool]$ConfirmConversions = $false  # Optional Object. True to display the Convert File dialog box if the file isn't in Microsoft Word format.
 
-            $wordApplication = Open-MicrosoftWord
+            if(!$WordApplication) {
+                $WordApplication = Open-MicrosoftWord
+            }
 
             if(Test-FileIsLocked $eachDocumentPath) {
                 throw "The $eachDocumentPath document is already opened."
             }
 
-            $document = $wordApplication.Documents.Open($eachDocumentPath, $confirmConversions, $ReadOnly) #For additional parameters see https://msdn.microsoft.com/en-us/library/microsoft.office.interop.word.documents.open.aspx
+            $document = $WordApplication.Documents.Open($eachDocumentPath, $confirmConversions, $ReadOnly) #For additional parameters see https://msdn.microsoft.com/en-us/library/microsoft.office.interop.word.documents.open.aspx
             if($readOnly) {
                 # Used to avoid the error, "This method or property is not available because this command is not available for reading."
                 # when using Find.Execute on the document
@@ -147,7 +150,7 @@ Function Get-WordDocumentComment {
 }
 
 Function Update-WordDocumentAcceptAllChanges {
-    [CmdletBinding(SupportsShouldProcess=$true)] param(
+    [CmdletBinding(SupportsShouldProcess)] param(
         [ValidateScript({Test-Path $_ -PathType Leaf})]
             [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position)]
             [Alias("FullName","InputObject")]
@@ -189,7 +192,7 @@ Function Update-WordDocumentAcceptAllChanges {
 }
 
 Function Set-WordDocumentTrackChanges {
-    [CmdletBinding(SupportsShouldProcess=$true)] 
+    [CmdletBinding(SupportsShouldProcess)] 
     param(
         [ValidateScript({Test-Path $_ -PathType Leaf})]
             [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position)]
@@ -202,9 +205,9 @@ Function Set-WordDocumentTrackChanges {
     PROCESS {
         $Path | ForEach-Object{
             try {
-
+                $eachPath = $_
                 # TODO: Change to not re-open the document
-                if((Get-WordDocumentTrackChanges -Path $Path) -ne $Active) {
+                if((Get-WordDocumentTrackChanges -Path $eachPath) -ne $Active) {
                     $document = Open-WordDocument $_ -ReadWrite:(!$WhatIfPreference)
                     $document.Application.Visible = $leaveOpen -or $PSCmdlet.MyInvocation.BoundParameters["Debug"]
                     
@@ -215,7 +218,7 @@ Function Set-WordDocumentTrackChanges {
                 if((Test-Path variable:document) -and ($document -ne $null) -and (!$LeaveOpen)) {
                     $application = $document.Application
                     try {
-                        if($PSCmdlet.ShouldProcess("Set TrackChanges to $Active in '$Path'")) {
+                        if($PSCmdlet.ShouldProcess("Set TrackChanges to $Active in '$eachPath'")) {
                             $document.Close() > $null
                         }
                         else {
@@ -232,7 +235,7 @@ Function Set-WordDocumentTrackChanges {
     }        
 }
 Function Get-WordDocumentTrackChanges {
-    [CmdletBinding(SupportsShouldProcess=$true)] 
+    [CmdletBinding()] 
     param(
         [ValidateScript({Test-Path $_ -PathType Leaf})][Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position)][Alias("FullName","InputObject")][string[]]$Path
     )
@@ -266,7 +269,7 @@ Function Get-WordDocumentTrackChanges {
 }
 
 Function Set-WordDocumentProtection {
-    [CmdletBinding(SupportsShouldProcess=$true)] 
+    [CmdletBinding(SupportsShouldProcess)] 
     param(
         [ValidateScript({Test-Path $_ -PathType Leaf})][Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position)][Alias("FullName","InputObject")][string[]]$Path,
         [ValidateSet("NoProtection","AllowOnlyRevisions","AllowOnlyComments","AllowOnlyFormFields","AllowOnlyReading")] $ProtectionType, #TODO: Restrict to possible values for Microsoft.Office.Interop.Word.WdProtectionType with Intellisense
@@ -276,7 +279,8 @@ Function Set-WordDocumentProtection {
     PROCESS {
         $Path | ForEach-Object{
             try {
-                $document = Open-WordDocument $_ -ReadWrite:(!$WhatIfPreference)
+                $eachPath = $_
+                $document = Open-WordDocument $eachPath -ReadWrite:(!$WhatIfPreference)
                 $document.Application.Visible = $leaveOpen -or $PSCmdlet.MyInvocation.BoundParameters["Debug"]
 
                 $protectionType = [Microsoft.Office.Interop.Word.WdProtectionType] "wd$protectionType"  #Add on wd to successfully convert.
@@ -288,7 +292,7 @@ Function Set-WordDocumentProtection {
                     $application = $document.Application
                     try {
                         if($PSCmdlet.ShouldProcess(
-                            "Set the document protect to $ProtectionType on document '$Path'")) {
+                            "Set the document protect to $ProtectionType on document '$eachPath'")) {
                             $document.Close() > $null
                         }
                         else {
@@ -320,7 +324,7 @@ Update-TypeData @resultTypeData -Force
 #TODO: Change to use parameter separate parameter set for Find.
 Function script:Invoke-WordDocumentInternalFindReplace {
     [OutputType('WordDocument.FindReplaceResult')]
-    [CmdletBinding(SupportsShouldProcess=$true)] 
+    [CmdletBinding(SupportsShouldProcess)] 
     param(
         [Parameter(Mandatory, ValueFromPipeline)]$Document,
         # The Microsoft Word Seach string - see https://support.office.com/en-us/article/Find-and-replace-text-and-other-data-in-a-Word-document-c6728c16-469e-43cd-afe4-7708c6c779b7
@@ -576,7 +580,7 @@ Function script:Invoke-WordDocumentInternalFindReplace {
 #>
 Function Invoke-WordDocumentFindReplace {
     [OutputType('WordDocument.FindReplaceResult')]
-    [CmdletBinding(SupportsShouldProcess=$true, DefaultParameterSetName='MicrosoftWordReplace')] 
+    [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName='MicrosoftWordReplace')] 
     param(
         [ValidateScript({Test-Path $_ -PathType Leaf})]
             [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)]
@@ -846,6 +850,47 @@ Function Script:Get-InternalWordDocumentProperty {
   }
 }
 
+Function Get-WordDocumentProperty {
+    [CmdletBinding()]
+    param(
+        [ValidateScript({ Test-Path $_ })][Parameter(Mandatory,ValueFromPipeline,ValueFromPipelineByPropertyName)][string[]]$path,
+        $name
+    )
+    PROCESS {
+        [object[]]$properties = $null;
+        Get-Item $path | ForEach-Object {
+            try {
+                $document = Open-WordDocument $_.FullName -ReadWrite:(!$WhatIfPreference)
+                $properties = Script:Get-InternalWordDocumentProperty $document.BuiltInDocumentProperties
+                $properties += Script:Get-InternalWordDocumentProperty $document.CustomDocumentProperties
+                $result = @{}
+                $properties | ForEach-Object {
+                    $result."$($_.Name)" = $_.Value
+                }
+                if($name) {
+                    $result."$name"
+                }
+                else {
+                    Write-Output $result
+                }
+            }
+            finally {
+                if((Test-Path variable:document) -and ($document -ne $null) ) {
+                    $application = $document.Application
+                    try {
+                        #TODO: Add support to close only if the document wasn't open prior to calling this method.
+                        $document.Close()
+                    }
+                    finally {
+                        $application.Quit()
+                    }
+                    
+                }
+            }
+        }
+    }
+}
+
 Function Set-WordDocumentProperty {
     [CmdletBinding(SupportsShouldProcess)]
     param (
@@ -861,7 +906,7 @@ Function Set-WordDocumentProperty {
     PROCESS {
         Get-Item $path | ForEach-Object {
             try {
-                $document = Open-WordDocument $_.FullName -ReadWrite
+                $document = Open-WordDocument $eachPath -ReadWrite
                 $property = $null
                 $property = Script:Get-InternalWordDocumentProperty $document.BuiltInDocumentProperties $name -ErrorAction Ignore
                 if(!$property) {
@@ -904,50 +949,85 @@ Function Set-WordDocumentProperty {
     }
 }
 
-
-Function Get-WordDocumentProperty {
-    [CmdletBinding()]
+Function Get-WordDocumentTemplate {
+    [CmdletBinding()] 
     param(
-        [ValidateScript({ Test-Path $_ })][Parameter(Mandatory,ValueFromPipeline,ValueFromPipelineByPropertyName)][string[]]$path,
-        $name
+        [ValidateScript({Test-Path $_ -PathType Leaf})][Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position)][Alias("FullName","InputObject")][string[]]$Path
     )
+
     PROCESS {
-        [object[]]$properties = $null;
-        Get-Item $path | ForEach-Object {
+        $Path | ForEach-Object{
             try {
-                $document = Open-WordDocument $_.FullName -ReadWrite:(!$WhatIfPreference)
-                $properties = Script:Get-InternalWordDocumentProperty $document.BuiltInDocumentProperties
-                $properties += Script:Get-InternalWordDocumentProperty $document.CustomDocumentProperties
-                $result = @{}
-                $properties | ForEach-Object {
-                    $result."$($_.Name)" = $_.Value
-                }
-                if($name) {
-                    $result."$name"
-                }
-                else {
-                    Write-Output $result
-                }
+                $document = Open-WordDocument $_ -ReadWrite:$false
+
+                Write-Output $document.AttachedTemplate.FullName
             }
             finally {
-                if((Test-Path variable:document) -and ($document -ne $null) ) {
+                if( (Test-Path variable:document) -and ($document -ne $null) ) {
                     $application = $document.Application
                     try {
-                        #TODO: Add support to close only if the document wasn't open prior to calling this method.
-                        $document.Close()
+                        $document.Close() > $null
                     }
                     finally {
                         $application.Quit()
                     }
-                    
                 }
             }
         }
-    }
+    }    
 }
+    
 
 
+Function Set-WordDocumentTemplate {
+    [CmdletBinding(SupportsShouldProcess)] 
+    param(
+        [ValidateScript({Test-Path $_ -PathType Leaf})]
+            [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position)]
+            [Alias("FullName","InputObject")]
+            [string[]]$Path,
+        [ValidateScript({Test-Path $_ -PathType Leaf})]
+            [Parameter(Mandatory, Position)][string]$TemplatePath,
+        [switch]$LeaveOpen
+    )
 
+    PROCESS {
+        $Path | ForEach-Object{
+            try {
+                $eachPath = $_
+                # TODO: Change to not re-open the document
+                if((Get-WordDocumentTemplate -Path $eachPath).AttachedTemplate.FullName -ne $templatePath) {
+                    $document = Open-WordDocument $_ -ReadWrite:(!$WhatIfPreference)
+                    $document.Application.Visible = $leaveOpen -or $PSCmdlet.MyInvocation.BoundParameters["Debug"]
+                    
+                    $template= Open-WordDocument -Path $TemplatePath -ReadWrite:$false -WordApplication $document.Application
+
+                    if($document.AttachedTemplate) {
+                        Write-Verbose "Previous template was '$($document.AttachedTemplate.FullName)'."
+                    }
+                    $document.AttachedTemplate = $template
+                }
+            }
+            finally {
+                if((Test-Path variable:document) -and ($document -ne $null) -and (!$LeaveOpen)) {
+                    $application = $document.Application
+                    try {
+                        if($PSCmdlet.ShouldProcess("Set Template on '$eachPath' to '$TemplatePath'")) {
+                            $document.Close() > $null
+                        }
+                        else {
+                            # -WhatIf specified 
+                            $document.Close([Microsoft.Office.Interop.Word.WdSaveOptions]::wdDoNotSaveChanges) > $null
+                        }
+                    }
+                    finally {
+                        $application.Quit()
+                    }
+                }
+            }
+        }
+    }        
+}
 <# 
 
 Enums we may need:
