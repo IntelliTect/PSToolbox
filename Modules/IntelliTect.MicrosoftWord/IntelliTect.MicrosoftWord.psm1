@@ -14,7 +14,7 @@ Function Test-FileIsLocked {
     $filelocked = $false
     try {
         $fileInfo = New-Object System.IO.FileInfo $filePath
-        $fileStream = $fileInfo.Open( [System.IO.FileMode]::OpenOrCreate,[System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::None )
+        $fileStream = $fileInfo.Open( [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::None )
     }
     catch {
         $filelocked = $true
@@ -56,8 +56,8 @@ See additional enums at the bottom.
 #>
 Function script:Invoke-ComUsing {
     [CmdletBinding()] param (
-        [ValidateScript({[System.Runtime.InteropServices.Marshal]::IsComObject( $_)})][Parameter(Mandatory,ValueFromPipeline)][System.IDisposable] $inputObject,
-        [Parameter(Mandatory,ValueFromPipeline)][ScriptBlock] $scriptBlock
+        [ValidateScript( { [System.Runtime.InteropServices.Marshal]::IsComObject( $_) })][Parameter(Mandatory, ValueFromPipeline)][System.IDisposable] $inputObject,
+        [Parameter(Mandatory, ValueFromPipeline)][ScriptBlock] $scriptBlock
     )
     # See http://weblogs.asp.net/adweigert/powershell-adding-the-using-statement
     # for original implementation
@@ -75,7 +75,8 @@ Function script:Invoke-ComUsing {
 
             if ($inputObject.psbase -eq $null) {
                 $inputObject.Dispose()
-            } else {
+            }
+            else {
                 $inputObject.psbase.Dispose()
             }
         }
@@ -86,15 +87,15 @@ Function script:Invoke-ComUsing {
 Function Open-MicrosoftWord {
     [CmdletBinding()] param(
     )
-        return new-object -ComObject Word.Application
+    return new-object -ComObject Word.Application
 }
 
 Function Open-WordDocument {
     [CmdletBinding()] param(
-        [ValidateScript({Test-Path $_ -PathType Leaf})]
-            [Parameter(Mandatory, ValueFromPipeLine, ValueFromPipelineByPropertyName, Position)]
-            [Alias("FullName","InputObject")]
-            [string[]]$Path,
+        [ValidateScript( { Test-Path $_ -PathType Leaf })]
+        [Parameter(Mandatory, ValueFromPipeLine, ValueFromPipelineByPropertyName, Position)]
+        [Alias("FullName", "InputObject")]
+        [string[]]$Path,
         [switch]$ReadWrite,
         $WordApplication # An already open instance of the Microsoft Word application.
     )
@@ -104,16 +105,16 @@ Function Open-WordDocument {
             [bool]$readOnly = ![bool]$ReadWrite.IsPresent  # TODO: Blog: switch and bool are not the same
             [bool]$ConfirmConversions = $false  # Optional Object. True to display the Convert File dialog box if the file isn't in Microsoft Word format.
 
-            if(!$WordApplication) {
+            if (!$WordApplication) {
                 $WordApplication = Open-MicrosoftWord
             }
 
-            if(Test-FileIsLocked $eachDocumentPath) {
+            if (Test-FileIsLocked $eachDocumentPath) {
                 throw "The $eachDocumentPath document is already opened."
             }
 
             $document = $WordApplication.Documents.Open($eachDocumentPath, $confirmConversions, $ReadOnly) #For additional parameters see https://msdn.microsoft.com/en-us/library/microsoft.office.interop.word.documents.open.aspx
-            if($readOnly) {
+            if ($readOnly) {
                 # Used to avoid the error, "This method or property is not available because this command is not available for reading."
                 # when using Find.Execute on the document
                 # see http://blogs.msmvps.com/wordmeister/2013/02/22/word2013bug-not-available-for-reading/
@@ -121,7 +122,7 @@ Function Open-WordDocument {
             }
 
             #Add Text Property to Comment where the comment text is the Range.Text property on a comment.
-            $comments = $document.Comments | ForEach-Object{ Add-Member -InputObject $_ -MemberType ScriptProperty -Name Text -Value { $this.Range.Text} -PassThru } 
+            $comments = $document.Comments | ForEach-Object { Add-Member -InputObject $_ -MemberType ScriptProperty -Name Text -Value { $this.Range.Text } -PassThru } 
             Add-Member -InputObject $document -MemberType ScriptProperty -Name CommentsEx -Value { $comments } -Force
 
             return $document
@@ -131,8 +132,8 @@ Function Open-WordDocument {
 
 Function Get-WordDocumentComment {
     [CmdletBinding()] param(
-        [ValidateScript({Test-Path $_ -PathType Leaf})][Parameter(Mandatory, ValueFromPipelineByPropertyName, Position)][Alias("FullName","InputObject")]
-        [string[]]$Path,  #FullName alias added to support pipeline from Get-ChildItem
+        [ValidateScript( { Test-Path $_ -PathType Leaf })][Parameter(Mandatory, ValueFromPipelineByPropertyName, Position)][Alias("FullName", "InputObject")]
+        [string[]]$Path, #FullName alias added to support pipeline from Get-ChildItem
 
         [switch]$ReadWrite
     )
@@ -140,9 +141,9 @@ Function Get-WordDocumentComment {
     PROCESS {
         [bool]$readOnly = ![bool]$ReadWrite.IsPresent  # TODO: Blog: switch and bool are not the same
 
-        $Path | ForEach-Object{
+        $Path | ForEach-Object {
             $document = Open-WordDocument -Path $_ -ReadWrite:(!$readOnly)
-            $comments = $document.Comments | ForEach-Object{ Add-Member -InputObject $_ -MemberType ScriptProperty -Name Text -Value { $this.Range.Text} -PassThru } 
+            $comments = $document.Comments | ForEach-Object { Add-Member -InputObject $_ -MemberType ScriptProperty -Name Text -Value { $this.Range.Text } -PassThru } 
             return $comments
         }
     }
@@ -151,17 +152,17 @@ Function Get-WordDocumentComment {
 
 Function Update-WordDocumentAcceptAllChanges {
     [CmdletBinding(SupportsShouldProcess)] param(
-        [ValidateScript({Test-Path $_ -PathType Leaf})]
-            [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position)]
-            [Alias("FullName","InputObject")]
-            [string[]]$Path,
+        [ValidateScript( { Test-Path $_ -PathType Leaf })]
+        [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position)]
+        [Alias("FullName", "InputObject")]
+        [string[]]$Path,
         [switch]$LeaveOpen
     )
     PROCESS {
         Write-Debug "Starting: Update-WordDocumentAcceptAllChanges '$path'"
-        $Path | ForEach-Object{
+        $Path | ForEach-Object {
             try {
-                
+
                 $eachDocumentPath = (Resolve-Path $_).Path
                 $document = Open-WordDocument $eachDocumentPath -ReadWrite:(!$WhatIfPreference)
                 $document.Application.Visible = $leaveOpen -or $PSCmdlet.MyInvocation.BoundParameters["Debug"]
@@ -170,10 +171,10 @@ Function Update-WordDocumentAcceptAllChanges {
 
             }
             finally {
-                if((Test-Path variable:document) -and ($document -ne $null) -and (!$LeaveOpen)) {
+                if ((Test-Path variable:document) -and ($document -ne $null) -and (!$LeaveOpen)) {
                     $application = $document.Application
                     try {
-                        if($PSCmdlet.ShouldProcess("Accept all changes in the document: $eachDocumentPath")) {
+                        if ($PSCmdlet.ShouldProcess("Accept all changes in the document: $eachDocumentPath")) {
                             $document.Close() > $null
                         }
                         else {
@@ -192,33 +193,33 @@ Function Update-WordDocumentAcceptAllChanges {
 }
 
 Function Set-WordDocumentTrackChanges {
-    [CmdletBinding(SupportsShouldProcess)] 
+    [CmdletBinding(SupportsShouldProcess)]
     param(
-        [ValidateScript({Test-Path $_ -PathType Leaf})]
-            [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position)]
-            [Alias("FullName","InputObject")]
-            [string[]]$Path,
+        [ValidateScript( { Test-Path $_ -PathType Leaf })]
+        [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position)]
+        [Alias("FullName", "InputObject")]
+        [string[]]$Path,
         [Parameter(Mandatory, Position)][bool]$Active,
         [switch]$LeaveOpen
     )
 
     PROCESS {
-        $Path | ForEach-Object{
+        $Path | ForEach-Object {
             try {
                 $eachPath = $_
                 # TODO: Change to not re-open the document
-                if((Get-WordDocumentTrackChanges -Path $eachPath) -ne $Active) {
+                if ((Get-WordDocumentTrackChanges -Path $eachPath) -ne $Active) {
                     $document = Open-WordDocument $_ -ReadWrite:(!$WhatIfPreference)
                     $document.Application.Visible = $leaveOpen -or $PSCmdlet.MyInvocation.BoundParameters["Debug"]
-                    
+
                     $document.TrackRevisions = $Active
                 }
             }
             finally {
-                if((Test-Path variable:document) -and ($document -ne $null) -and (!$LeaveOpen)) {
+                if ((Test-Path variable:document) -and ($document -ne $null) -and (!$LeaveOpen)) {
                     $application = $document.Application
                     try {
-                        if($PSCmdlet.ShouldProcess("Set TrackChanges to $Active in '$eachPath'")) {
+                        if ($PSCmdlet.ShouldProcess("Set TrackChanges to $Active in '$eachPath'")) {
                             $document.Close() > $null
                         }
                         else {
@@ -232,16 +233,16 @@ Function Set-WordDocumentTrackChanges {
                 }
             }
         }
-    }        
+    }
 }
 Function Get-WordDocumentTrackChanges {
     [CmdletBinding()] 
     param(
-        [ValidateScript({Test-Path $_ -PathType Leaf})][Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position)][Alias("FullName","InputObject")][string[]]$Path
+        [ValidateScript( { Test-Path $_ -PathType Leaf })][Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position)][Alias("FullName", "InputObject")][string[]]$Path
     )
 
     PROCESS {
-        $Path | ForEach-Object{
+        $Path | ForEach-Object {
             try {
                 $document = Open-WordDocument $_ -ReadWrite:$false
 
@@ -254,7 +255,7 @@ Function Get-WordDocumentTrackChanges {
                 #>
             }
             finally {
-                if( (Test-Path variable:document) -and ($document -ne $null) ) {
+                if ( (Test-Path variable:document) -and ($document -ne $null) ) {
                     $application = $document.Application
                     try {
                         $document.Close() > $null
@@ -271,13 +272,13 @@ Function Get-WordDocumentTrackChanges {
 Function Set-WordDocumentProtection {
     [CmdletBinding(SupportsShouldProcess)] 
     param(
-        [ValidateScript({Test-Path $_ -PathType Leaf})][Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position)][Alias("FullName","InputObject")][string[]]$Path,
-        [ValidateSet("NoProtection","AllowOnlyRevisions","AllowOnlyComments","AllowOnlyFormFields","AllowOnlyReading")] $ProtectionType, #TODO: Restrict to possible values for Microsoft.Office.Interop.Word.WdProtectionType with Intellisense
+        [ValidateScript( { Test-Path $_ -PathType Leaf })][Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position)][Alias("FullName", "InputObject")][string[]]$Path,
+        [ValidateSet("NoProtection", "AllowOnlyRevisions", "AllowOnlyComments", "AllowOnlyFormFields", "AllowOnlyReading")] $ProtectionType, #TODO: Restrict to possible values for Microsoft.Office.Interop.Word.WdProtectionType with Intellisense
         $Password,
         [switch]$LeaveOpen
     )
     PROCESS {
-        $Path | ForEach-Object{
+        $Path | ForEach-Object {
             try {
                 $eachPath = $_
                 $document = Open-WordDocument $eachPath -ReadWrite:(!$WhatIfPreference)
@@ -288,11 +289,11 @@ Function Set-WordDocumentProtection {
                 $document.Protect( $ProtectionType, [ref]$false, [ref]$Password, [ref]$false, [ref]$false)
             }
             finally {
-                if((Test-Path variable:document) -and ($document -ne $null) -and (!$LeaveOpen)) {
+                if ((Test-Path variable:document) -and ($document -ne $null) -and (!$LeaveOpen)) {
                     $application = $document.Application
                     try {
-                        if($PSCmdlet.ShouldProcess(
-                            "Set the document protect to $ProtectionType on document '$eachPath'")) {
+                        if ($PSCmdlet.ShouldProcess(
+                                "Set the document protect to $ProtectionType on document '$eachPath'")) {
                             $document.Close() > $null
                         }
                         else {
@@ -300,7 +301,7 @@ Function Set-WordDocumentProtection {
                             $document.Close([Microsoft.Office.Interop.Word.WdSaveOptions]::wdDoNotSaveChanges) > $null
                         }
                     }
-                   finally {
+                    finally {
                         $application.Quit()
                     }
                 }
@@ -310,14 +311,14 @@ Function Set-WordDocumentProtection {
 }
 
 $resultTypeData = @{
-        TypeName = "WordDocument.FindReplaceResult"
-        DefaultDisplayPropertySet = 'FindResult','ReplaceResult','BeforeSnippet','AfterSnippet'
+    TypeName                  = "WordDocument.FindReplaceResult"
+    DefaultDisplayPropertySet = 'FindResult', 'ReplaceResult', 'BeforeSnippet', 'AfterSnippet'
 }
          
 Update-TypeData @resultTypeData -Force
 $resultTypeData = @{
-    TypeName = "WordDocument.FindResult"
-    DefaultDisplayPropertySet = 'FindResult','FindSnippet'
+    TypeName                  = "WordDocument.FindResult"
+    DefaultDisplayPropertySet = 'FindResult', 'FindSnippet'
 }
 Update-TypeData @resultTypeData -Force
 
@@ -330,11 +331,11 @@ Function script:Invoke-WordDocumentInternalFindReplace {
         # The Microsoft Word Seach string - see https://support.office.com/en-us/article/Find-and-replace-text-and-other-data-in-a-Word-document-c6728c16-469e-43cd-afe4-7708c6c779b7
         [Parameter(Mandatory)][string[]]$FindValue,
         # Not strongly typed to string to avoid automatic coersion of $null to empty string (Arghhh!)
-        [Parameter(ParameterSetName='MicrosoftWordReplace')]$ReplaceValue,
+        [Parameter(ParameterSetName = 'MicrosoftWordReplace')]$ReplaceValue,
         # The regular expression to use to search after the $FindVaue is located
-        [Parameter(Mandatory,ParameterSetName='RegExReplace')][string[]]$RegExFindValue,
+        [Parameter(Mandatory, ParameterSetName = 'RegExReplace')][string[]]$RegExFindValue,
         # The regular expression to replace with after the $FindValue is located
-        [Parameter(ParameterSetName='RegExReplace')][string[]]$RegExReplaceValue,
+        [Parameter(ParameterSetName = 'RegExReplace')][string[]]$RegExReplaceValue,
         [bool]$MatchCase = $false,
         [bool]$MatchWholeWord = $false,
         [bool]$MatchWildcards = $false,
@@ -343,24 +344,24 @@ Function script:Invoke-WordDocumentInternalFindReplace {
     )
 
     [string] $whatIfMessage = $null
-    [bool]$isActionReplacing = (($PSCmdlet.ParameterSetName -in 'MicrosoftWordReplace','RegExReplace') -and ((('ReplaceValue' -in $PSBoundParameters.Keys) -or ('RegExFindValue' -in $PSBoundParameters.Keys))) )
+    [bool]$isActionReplacing = (($PSCmdlet.ParameterSetName -in 'MicrosoftWordReplace', 'RegExReplace') -and ((('ReplaceValue' -in $PSBoundParameters.Keys) -or ('RegExFindValue' -in $PSBoundParameters.Keys))) )
     $findValues = @($FindValue)
     $searchRegEx = 'RegExFindValue' -in $PSBoundParameters.Keys
-    if($searchRegEx) {
+    if ($searchRegEx) {
         $regExFindValues = @($RegExFindValue)
-        if($findValues.Length -ne $regExFindValues.Length) {
+        if ($findValues.Length -ne $regExFindValues.Length) {
             throw "The number of items in FindValue is different from the number of items in RegExFindValue"
         }
     }
     
-    if($isActionReplacing) {
+    if ($isActionReplacing) {
         $replaceValues = @($ReplaceValue)
-        if($FindValues.Length -ne $replaceValues.Length) {
+        if ($FindValues.Length -ne $replaceValues.Length) {
             throw "The number of items in FindValue is different from the number of items in ReplaceValue"
         }
-        if($searchRegEx) {
+        if ($searchRegEx) {
             $regexReplaceValues = @($RegExReplaceValue)
-            if($replaceValues.Length -ne $regexReplaceValues.Length) {
+            if ($replaceValues.Length -ne $regexReplaceValues.Length) {
                 throw "The number of items in ReplaceValue is different from the number of items in RegExReplaceValue"
             }            
         }
@@ -371,37 +372,37 @@ Function script:Invoke-WordDocumentInternalFindReplace {
     }
 
     # Set the Find not to wrap back to the beginning of the document with wdFindStop
-    $wdFindWrap =  [Microsoft.Office.Interop.Word.WdFindWrap]::wdFindStop  # Other potential valudes: wdFindContinue, wdFindAsk, wdFindStop
+    $wdFindWrap = [Microsoft.Office.Interop.Word.WdFindWrap]::wdFindStop  # Other potential valudes: wdFindContinue, wdFindAsk, wdFindStop
 
     $forward = $True
     $format = $False
 
     $selection = $Document.Application.Selection
 
-    for($count=0; $count -le $findValues.Length; $count++) {
+    for ($count = 0; $count -le $findValues.Length; $count++) {
         
         $eachFindValue = $findValues[$count]
-        if($searchRegEx) {
+        if ($searchRegEx) {
             $eachRegExFindValue = $regExFindValues[$count]
         }
         $eachReplaceValue = $null
-        if($isActionReplacing) {
+        if ($isActionReplacing) {
             $eachReplaceValue = $replaceValues[$count]
-            if($searchRegEx) {
+            if ($searchRegEx) {
                 $eachRegExReplaceValue = $regExReplaceValues[$count]
             }
             $whatIfMessage += "`n`t$eachFindValue => $eachReplaceValue"
         }
 
-        $selection.SetRange(0,0)
+        $selection.SetRange(0, 0)
         Write-Debug -Message "Location $($Document.$BaseFileName): $($selection.Start)-$($selection.End)"
         # TODO: Change to use "Simple" for the display of track changes
         #       so that items that have been modified but changes tracked do not show
         #       up in search.
-        while($selection.Find.Execute($eachFindValue,$MatchCase,
-                $MatchWholeWord,$MatchWildcards,$MatchSoundsLike,
-                $MatchAllWordForms,$forward,$wdFindWrap,$format,
-                $eachReplaceValue,[Microsoft.Office.Interop.Word.wdReplace]::wdReplaceNone)) {
+        while ($selection.Find.Execute($eachFindValue, $MatchCase,
+                $MatchWholeWord, $MatchWildcards, $MatchSoundsLike,
+                $MatchAllWordForms, $forward, $wdFindWrap, $format,
+                $eachReplaceValue, [Microsoft.Office.Interop.Word.wdReplace]::wdReplaceNone)) {
 
             Write-Debug -Message "Location $($Document.$BaseFileName): $($selection.Start)-$($selection.End)"
             # Retrieve a snippet that contains the found text.
@@ -412,34 +413,34 @@ Function script:Invoke-WordDocumentInternalFindReplace {
                     [int]$paragraphStart = $foundSelection.Paragraphs.First.Range.start                                                                                                                                                                                                   
                     [int]$paragraphEnd = $foundSelection.Paragraphs.First.Range.End    
                     $foundSelection.SetRange(
-                        [Math]::Max($paragraphStart, $start-100), 
-                        [Math]::Min($paragraphEnd, $end+100)
-                        )
+                        [Math]::Max($paragraphStart, $start - 100), 
+                        [Math]::Min($paragraphEnd, $end + 100)
+                    )
                     $foundSelection.SetRange(
                         $selection.Words.First.Start, 
                         $selection.Words.Last.End
-                        )
+                    )
 
                     $text = $foundSelection.Text
-                    if($paragraphStart -lt $foundSelection.Start) {
+                    if ($paragraphStart -lt $foundSelection.Start) {
                         $text = "...$text"
                     }
-                    if($paragraphEnd -gt $foundSelection.End) {
+                    if ($paragraphEnd -gt $foundSelection.End) {
                         $text = "$text..."
                     }
                 }
                 finally {
                     #Reselect the found text
-                    $selection.SetRange($start,$end)                    
+                    $selection.SetRange($start, $end)                    
                 }
                 return $text
             }
 
-            [string]$findResult=$null;
+            [string]$findResult = $null;
 
-            if($searchRegEx) {
+            if ($searchRegEx) {
                 $findResult = $selection.Text
-                if($findResult -match $eachRegExFindValue) {
+                if ($findResult -match $eachRegExFindValue) {
                     $findResult = $Matches.0
                 }
                 else {
@@ -450,23 +451,22 @@ Function script:Invoke-WordDocumentInternalFindReplace {
                 $findResult = $selection.Text
             }
             [string]$before = Get-TextSnippet $selection
-            [string]$after=$null
-            if($isActionReplacing) {
+            [string]$after = $null
+            if ($isActionReplacing) {
                 
-                if($searchRegEx) {
-                    if($matchCase) {
-                        $selection.Text = $selection.Text -replace "$eachRegExFindValue","$eachRegExReplaceValue"
+                if ($searchRegEx) {
+                    if ($matchCase) {
+                        $selection.Text = $selection.Text -replace "$eachRegExFindValue", "$eachRegExReplaceValue"
                     }
                     else {
-                        $selection.Text = $selection.Text -creplace "$eachRegExFindValue","$eachRegExReplaceValue"
+                        $selection.Text = $selection.Text -creplace "$eachRegExFindValue", "$eachRegExReplaceValue"
                     }
                 }
                 else {
-                    if(!$selection.Find.Execute($eachFindValue,$MatchCase,
-                        $MatchWholeWord,$MatchWildcards,$MatchSoundsLike,
-                        $MatchAllWordForms,$forward,$wdFindWrap,$format,
-                        $eachReplaceValue,([Microsoft.Office.Interop.Word.wdReplace]::wdReplaceOne)))
-                    {
+                    if (!$selection.Find.Execute($eachFindValue, $MatchCase,
+                            $MatchWholeWord, $MatchWildcards, $MatchSoundsLike,
+                            $MatchAllWordForms, $forward, $wdFindWrap, $format,
+                            $eachReplaceValue, ([Microsoft.Office.Interop.Word.wdReplace]::wdReplaceOne))) {
                         throw "Search failed unexpectedly - since we already found the text in the previous search and now have it selected."
                     }
                 }
@@ -477,13 +477,13 @@ Function script:Invoke-WordDocumentInternalFindReplace {
             
                     $result = [pscustomobject]@{
                         BeforeSnippet = $before.Trim(); 
-                        AfterSnippet = $after.Trim(); 
-                        FindValue = $eachFindValue; 
-                        ReplaceValue = $eachReplaceValue;  
-                        FindResult = $findResult;
+                        AfterSnippet  = $after.Trim(); 
+                        FindValue     = $eachFindValue; 
+                        ReplaceValue  = $eachReplaceValue;  
+                        FindResult    = $findResult;
                         ReplaceResult = $replaceResult;
-                        PSTypeName="WordDocument.FindReplaceResult";
-                        Path = (Get-Item $Document.FullName)
+                        PSTypeName    = "WordDocument.FindReplaceResult";
+                        Path          = (Get-Item $Document.FullName)
                     }
 
                     Write-Output $result
@@ -514,15 +514,15 @@ Function script:Invoke-WordDocumentInternalFindReplace {
             else { 
                 # Find Only
                 $result = [pscustomobject]@{
-                            FindSnippet = $before.Trim();
-                            FindValue = $eachFindValue;  
-                            FindResult = $findResult;
-                            PSTypeName="WordDocument.FindResult";
-                            Path = (Get-Item $Document.FullName)
+                    FindSnippet = $before.Trim();
+                    FindValue   = $eachFindValue;  
+                    FindResult  = $findResult;
+                    PSTypeName  = "WordDocument.FindResult";
+                    Path        = (Get-Item $Document.FullName)
                 }                
 
                 Write-Output $result
-                if(Test-Path Variable:PSDebugContext) {
+                if (Test-Path Variable:PSDebugContext) {
                     # If we are debugging, display the updated text in word and pause
                     pause
                 }
@@ -532,10 +532,10 @@ Function script:Invoke-WordDocumentInternalFindReplace {
         }
     }
 
-#    if($isActionReplacing) {
-#        # Display What If Message
-#        $PSCmdlet.ShouldProcess($whatIfMessage) > $null
-#    }
+    #    if($isActionReplacing) {
+    #        # Display What If Message
+    #        $PSCmdlet.ShouldProcess($whatIfMessage) > $null
+    #    }
 }
 
 <#
@@ -580,20 +580,20 @@ Function script:Invoke-WordDocumentInternalFindReplace {
 #>
 Function Invoke-WordDocumentFindReplace {
     [OutputType('WordDocument.FindReplaceResult')]
-    [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName='MicrosoftWordReplace')] 
+    [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'MicrosoftWordReplace')] 
     param(
-        [ValidateScript({Test-Path $_ -PathType Leaf})]
-            [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)]
-            [Alias("FullName","InputObject")]
-            [string[]]$Path, #FullName alias added to support pipeline from Get-ChildItem
+        [ValidateScript( { Test-Path $_ -PathType Leaf })]
+        [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)]
+        [Alias("FullName", "InputObject")]
+        [string[]]$Path, #FullName alias added to support pipeline from Get-ChildItem
         # The Microsoft Word Seach string - see https://support.office.com/en-us/article/Find-and-replace-text-and-other-data-in-a-Word-document-c6728c16-469e-43cd-afe4-7708c6c779b7
         [Parameter(Mandatory)][string[]]$FindValue,
         # Not strongly typed to string to avoid automatic coersion of $null to empty string (Arghhh!)
-        [Parameter(ParameterSetName='MicrosoftWordReplace')]$ReplaceValue,
+        [Parameter(ParameterSetName = 'MicrosoftWordReplace')]$ReplaceValue,
         # The regular expression to use to search after the $FindVaue is located
-        [Parameter(ParameterSetName='RegExReplace')][string[]]$RegExFindValue,
+        [Parameter(ParameterSetName = 'RegExReplace')][string[]]$RegExFindValue,
         # The regular expression to replace with after the $FindValue is located
-        [Parameter(ParameterSetName='RegExReplace')][string[]]$RegExReplaceValue,
+        [Parameter(ParameterSetName = 'RegExReplace')][string[]]$RegExReplaceValue,
         [switch]$LeaveOpen,
         [switch]$MatchCase = $false,
         [switch]$MatchWholeWord = $false,
@@ -608,18 +608,17 @@ Function Invoke-WordDocumentFindReplace {
         Write-Debug "Starting: Invoke-WordDocumentFindReplace '$Path': $FindValue => $ReplaceValue"
         Write-Progress -Activity "Invoke-WordDocumentFindReplace" -PercentComplete 0
  
-        $Path | ForEach-Object{
+        $Path | ForEach-Object {
 
             Write-Progress -Activity "Invoke-WordDocumentFindReplace" -Status $_
             Write-Progress -Activity "Invoke-WordDocumentFindReplace" -Status $_ -CurrentOperation "$FindValue => $ReplaceValue"
  
-            [bool]$fileChanged=$false
-            try
-            {
+            [bool]$fileChanged = $false
+            try {
                 $document = Open-WordDocument $Path -ReadWrite:(!$WhatIfPreference)
                 $document.Application.Visible = $leaveOpen -or $PSCmdlet.MyInvocation.BoundParameters["Debug"]
 
-                if($PSCmdlet.ParameterSetName -eq 'MicrosoftWordReplace') {
+                if ($PSCmdlet.ParameterSetName -eq 'MicrosoftWordReplace') {
                     $findReplaceResult = script:Invoke-WordDocumentInternalFindReplace -document $document -FindValue $FindValue -ReplaceValue $ReplaceValue `
                         -matchCase $matchCase -matchWholeWord $matchWholeWord -matchWildcards $matchWildcards `
                         -matchSoundsLike $matchSoundsLike -matchAllWordForms $matchAllWordForms
@@ -631,22 +630,22 @@ Function Invoke-WordDocumentFindReplace {
                         -matchSoundsLike $matchSoundsLike -matchAllWordForms $matchAllWordForms                    
                 }
 
-                if(@($findReplaceResult).Count -gt 0) {
+                if (@($findReplaceResult).Count -gt 0) {
                     $fileChanged = $true                    
                     $findReplaceResult | Write-Output
                 } 
             }
             finally {
-                if( (Test-Path variable:document) -and ($document -ne $null) -and (!$LeaveOpen) ) {
+                if ( (Test-Path variable:document) -and ($document -ne $null) -and (!$LeaveOpen) ) {
                     $application = $document.Application
                     try {
-                            if($fileChanged -and $PSCmdlet.ShouldProcess("Save changes to Word Document: $Path")) {
-                                $document.Close() > $null
-                            }
-                            else {
-                                # -WhatIf specified 
-                                $document.Close([Microsoft.Office.Interop.Word.WdSaveOptions]::wdDoNotSaveChanges)
-                            }
+                        if ($fileChanged -and $PSCmdlet.ShouldProcess("Save changes to Word Document: $Path")) {
+                            $document.Close() > $null
+                        }
+                        else {
+                            # -WhatIf specified 
+                            $document.Close([Microsoft.Office.Interop.Word.WdSaveOptions]::wdDoNotSaveChanges)
+                        }
                     }
                     finally {
                         $application.Quit()
@@ -710,10 +709,10 @@ Function Invoke-WordDocumentFindReplace {
 Function Invoke-WordDocumentFind {
     [OutputType('WordDocument.FindResult')]
     [CmdletBinding()] param(
-        [ValidateScript({Test-Path $_ -PathType Leaf})]
-            [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName,Position)]
-            [Alias("FullName","InputObject")]
-            [string[]]$Path,  #FullName alias added to support pipeline from Get-ChildItem
+        [ValidateScript( { Test-Path $_ -PathType Leaf })]
+        [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position)]
+        [Alias("FullName", "InputObject")]
+        [string[]]$Path, #FullName alias added to support pipeline from Get-ChildItem
         [Parameter(Mandatory)][string]$value,
         [switch]$LeaveOpen,
         [switch]$matchCase = $false,
@@ -723,10 +722,10 @@ Function Invoke-WordDocumentFind {
         [switch]$matchAllWordForms = $false
     )
 
-PROCESS {
+    PROCESS {
 
         Write-Progress -Activity "Invoke-WordDocumentFind" -PercentComplete 0
-        $Path | ForEach-Object{
+        $Path | ForEach-Object {
 
             Write-Progress -Activity "Invoke-WordDocumentFind" -Status $_
             Write-Progress -Activity "Invoke-WordDocumentFind" -Status $_ -CurrentOperation "Find: $Value"
@@ -758,14 +757,14 @@ PROCESS {
                 $findResults = script:Invoke-WordDocumentInternalFindReplace -document $document -findValue $value `
                     -matchCase $matchCase -matchWholeWord $matchWholeWord -matchWildcards $matchWildcards -matchSoundsLike $matchSoundsLike -matchAllWordForms $matchAllWordForms
 
-                if(@($findResults).Count -gt 0) {
+                if (@($findResults).Count -gt 0) {
                     #$result = ([pscustomobject]@{Document = Get-Item $documentPath; Snippets = $textSnippets.Before})
                     #$textSnippets | Get-Member
                     $findResults | Write-Output
                 }
             }
             finally {
-                if((Test-Path variable:document) -and ($document -ne $null) -and (!$leaveOpen) ) {
+                if ((Test-Path variable:document) -and ($document -ne $null) -and (!$leaveOpen) ) {
 
                     $application = $document.Application
                     try {
@@ -815,45 +814,45 @@ Function Compare-WordDocument {
 }
 
 Function Script:Get-InternalWordDocumentProperty {
-  [CmdletBinding()]
-  param(
-    $property,  # A collection of one or more document properties
-    [string]$name
-  )
-  PROCESS {
-    if($name) {
-        # Retrieve the single item requested by name.
-        try {
-            $propertyItem = [System.__ComObject].Invokemember("Item",
-                [System.Reflection.BindingFlags]::GetProperty,$null,$property,$name)
-            Script:Get-InternalWordDocumentProperty $propertyItem
-        }
-        catch {
-            throw "The property, `'$name`', does not exist or was not found'"
-        }
-    }
-    else {
-        # Retrieve the names and values for all the properties specified.
-        $property | ForEach-Object {
+    [CmdletBinding()]
+    param(
+        $property, # A collection of one or more document properties
+        [string]$name
+    )
+    PROCESS {
+        if ($name) {
+            # Retrieve the single item requested by name.
             try {
-                $name = [System.__ComObject].Invokemember("Name",
-                    [System.Reflection.BindingFlags]::GetProperty,$null,$_,$null)
-                $value = [System.__ComObject].Invokemember("Value",
-                    [System.Reflection.BindingFlags]::GetProperty,$null,$_,$null)
-                [PSCustomObject] @{ Name=$name; Value=$value; Property = $_}
+                $propertyItem = [System.__ComObject].Invokemember("Item",
+                    [System.Reflection.BindingFlags]::GetProperty, $null, $property, $name)
+                Script:Get-InternalWordDocumentProperty $propertyItem
             }
-            catch{
-                Write-Verbose "Value note found for $name"
+            catch {
+                throw "The property, `'$name`', does not exist or was not found'"
+            }
+        }
+        else {
+            # Retrieve the names and values for all the properties specified.
+            $property | ForEach-Object {
+                try {
+                    $name = [System.__ComObject].Invokemember("Name",
+                        [System.Reflection.BindingFlags]::GetProperty, $null, $_, $null)
+                    $value = [System.__ComObject].Invokemember("Value",
+                        [System.Reflection.BindingFlags]::GetProperty, $null, $_, $null)
+                    [PSCustomObject] @{ Name = $name; Value = $value; Property = $_ }
+                }
+                catch {
+                    Write-Verbose "Value note found for $name"
+                }
             }
         }
     }
-  }
 }
 
 Function Get-WordDocumentProperty {
     [CmdletBinding()]
     param(
-        [ValidateScript({ Test-Path $_ })][Parameter(Mandatory,ValueFromPipeline,ValueFromPipelineByPropertyName)][string[]]$path,
+        [ValidateScript( { Test-Path $_ })][Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)][string[]]$path,
         $name
     )
     PROCESS {
@@ -863,11 +862,11 @@ Function Get-WordDocumentProperty {
                 $document = Open-WordDocument $_.FullName -ReadWrite:(!$WhatIfPreference)
                 $properties = Script:Get-InternalWordDocumentProperty $document.BuiltInDocumentProperties
                 $properties += Script:Get-InternalWordDocumentProperty $document.CustomDocumentProperties
-                $result = @{}
+                $result = @{ }
                 $properties | ForEach-Object {
                     $result."$($_.Name)" = $_.Value
                 }
-                if($name) {
+                if ($name) {
                     $result."$name"
                 }
                 else {
@@ -875,7 +874,7 @@ Function Get-WordDocumentProperty {
                 }
             }
             finally {
-                if((Test-Path variable:document) -and ($document -ne $null) ) {
+                if ((Test-Path variable:document) -and ($document -ne $null) ) {
                     $application = $document.Application
                     try {
                         #TODO: Add support to close only if the document wasn't open prior to calling this method.
@@ -894,10 +893,10 @@ Function Get-WordDocumentProperty {
 Function Set-WordDocumentProperty {
     [CmdletBinding(SupportsShouldProcess)]
     param (
-        [ValidateScript({ Test-Path $_ })][Parameter(Mandatory,ValueFromPipeline,ValueFromPipelineByPropertyName)][string[]]$path,
+        [ValidateScript( { Test-Path $_ })][Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)][string[]]$path,
         [Parameter(Mandatory)]$name,
         [Parameter(Mandatory)]$value,
-        [Microsoft.Office.Core.MsoDocProperties]$propertyType='msoPropertyTypeString'
+        [Microsoft.Office.Core.MsoDocProperties]$propertyType = 'msoPropertyTypeString'
     )
     BEGIN {
 
@@ -906,32 +905,33 @@ Function Set-WordDocumentProperty {
     PROCESS {
         Get-Item $path | ForEach-Object {
             try {
+                $eachPath = $_;
                 $document = Open-WordDocument $eachPath -ReadWrite
                 $property = $null
                 $property = Script:Get-InternalWordDocumentProperty $document.BuiltInDocumentProperties $name -ErrorAction Ignore
-                if(!$property) {
+                if (!$property) {
                     Write-Debug "Unable to find build in property: $name"
                     $property = Script:Get-InternalWordDocumentProperty $document.CustomDocumentProperties $name -ErrorAction Ignore
                 }
-                if($property) {
+                if ($property) {
                     Write-Debug "Property was found: $name"
                     [System.__ComObject].InvokeMember( `
-                        'Value', [System.Reflection.BindingFlags]::SetProperty, `
+                            'Value', [System.Reflection.BindingFlags]::SetProperty, `
                             $null, $property.Property, $value)
                 }
                 else {
                     Write-Debug "Property not found so adding a new one: $name"
-                    [Array]$invokeArgs = $name,$false,$propertyType,$Value
+                    [Array]$invokeArgs = $name, $false, $propertyType, $Value
                     [System.__ComObject].InvokeMember( `
-                        'Add', [System.Reflection.BindingFlags]::SetProperty, `
-                            $null, $document.CustomDocumentProperties,$invokeArgs)
+                            'Add', [System.Reflection.BindingFlags]::SetProperty, `
+                            $null, $document.CustomDocumentProperties, $invokeArgs)
                 }    
             }
             finally {
-                if((Test-Path variable:document) -and ($document -ne $null) ) {
+                if ((Test-Path variable:document) -and ($document -ne $null) ) {
                     $application = $document.Application
                     try {
-                        if($PSCmdlet.ShouldProcess("Set property `'$name`' property to `'$value`' on document `'$document`'")) {
+                        if ($PSCmdlet.ShouldProcess("Set property `'$name`' property to `'$value`' on document `'$document`'")) {
                             $document.Close() > $null
                         }
                         else {
@@ -952,18 +952,18 @@ Function Set-WordDocumentProperty {
 Function Get-WordDocumentTemplate {
     [CmdletBinding()] 
     param(
-        [ValidateScript({Test-Path $_ -PathType Leaf})][Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position)][Alias("FullName","InputObject")][string[]]$Path
+        [ValidateScript( { Test-Path $_ -PathType Leaf })][Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position)][Alias("FullName", "InputObject")][string[]]$Path
     )
 
     PROCESS {
-        $Path | ForEach-Object{
+        $Path | ForEach-Object {
             try {
                 $document = Open-WordDocument $_ -ReadWrite:$false
 
                 Write-Output $document.AttachedTemplate.FullName
             }
             finally {
-                if( (Test-Path variable:document) -and ($document -ne $null) ) {
+                if ( (Test-Path variable:document) -and ($document -ne $null) ) {
                     $application = $document.Application
                     try {
                         $document.Close() > $null
@@ -974,45 +974,44 @@ Function Get-WordDocumentTemplate {
                 }
             }
         }
-    }    
+    }
 }
-    
 
 
 Function Set-WordDocumentTemplate {
-    [CmdletBinding(SupportsShouldProcess)] 
+    [CmdletBinding(SupportsShouldProcess)]
     param(
-        [ValidateScript({Test-Path $_ -PathType Leaf})]
-            [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position)]
-            [Alias("FullName","InputObject")]
-            [string[]]$Path,
-        [ValidateScript({Test-Path $_ -PathType Leaf})]
-            [Parameter(Mandatory, Position)][string]$TemplatePath,
+        [ValidateScript( { Test-Path $_ -PathType Leaf })]
+        [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position)]
+        [Alias("FullName", "InputObject")]
+        [string[]]$Path,
+        [ValidateScript( { Test-Path $_ -PathType Leaf })]
+        [Parameter(Mandatory, Position)][string]$TemplatePath,
         [switch]$LeaveOpen
     )
 
     PROCESS {
-        $Path | ForEach-Object{
+        $Path | ForEach-Object {
             try {
                 $eachPath = $_
                 # TODO: Change to not re-open the document
-                if((Get-WordDocumentTemplate -Path $eachPath).AttachedTemplate.FullName -ne $templatePath) {
+                if ((Get-WordDocumentTemplate -Path $eachPath).AttachedTemplate.FullName -ne $templatePath) {
                     $document = Open-WordDocument $_ -ReadWrite:(!$WhatIfPreference)
                     $document.Application.Visible = $leaveOpen -or $PSCmdlet.MyInvocation.BoundParameters["Debug"]
-                    
-                    $template= Open-WordDocument -Path $TemplatePath -ReadWrite:$false -WordApplication $document.Application
 
-                    if($document.AttachedTemplate) {
+                    $template = Open-WordDocument -Path $TemplatePath -ReadWrite:$false -WordApplication $document.Application
+
+                    if ($document.AttachedTemplate) {
                         Write-Verbose "Previous template was '$($document.AttachedTemplate.FullName)'."
                     }
                     $document.AttachedTemplate = $template
                 }
             }
             finally {
-                if((Test-Path variable:document) -and ($document -ne $null) -and (!$LeaveOpen)) {
+                if ((Test-Path variable:document) -and ($document -ne $null) -and (!$LeaveOpen)) {
                     $application = $document.Application
                     try {
-                        if($PSCmdlet.ShouldProcess("Set Template on '$eachPath' to '$TemplatePath'")) {
+                        if ($PSCmdlet.ShouldProcess("Set Template on '$eachPath' to '$TemplatePath'")) {
                             $document.Close() > $null
                         }
                         else {
@@ -1026,9 +1025,9 @@ Function Set-WordDocumentTemplate {
                 }
             }
         }
-    }        
+    }
 }
-<# 
+<#
 
 Enums we may need:
 
