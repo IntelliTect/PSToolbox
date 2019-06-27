@@ -90,6 +90,37 @@ Function Open-MicrosoftWord {
     return new-object -ComObject Word.Application
 }
 
+#TODO: This should be configured to accept pipeline variables and only create one instance of Word for each pipelin
+Function New-WordDocument {
+    [CmdletBinding()] param(
+        [string]$Path,
+        [string]$Content,
+        [switch]$LeaveOpen
+    )
+
+    If((Test-Path -Path $Path)){
+        throw "There is already a file at $Path"
+    }
+
+    $wdFormatWordDocument = 16
+
+    $word = Open-MicrosoftWord
+    $newDocument = $word.Documents.Add()
+    
+    if($Content){
+        $word.Selection.TypeText($Content)
+    }
+
+    $newDocument.SaveAs([ref]$Path, [ref]$wdFormatWordDocument)
+
+    if($LeaveOpen){
+        return $newDocument
+    }
+    else {
+        $word.Quit()
+    }
+}
+
 Function Open-WordDocument {
     [CmdletBinding()] param(
         [ValidateScript( { Test-Path $_ -PathType Leaf })]
@@ -787,7 +818,8 @@ Function Compare-WordDocument {
     [CmdletBinding()]
     param(
         $BaseFileName,
-        $ChangedFileName
+        $ChangedFileName,
+        $SaveCompareFileName
     )
 
     $ErrorActionPreference = 'Stop'
@@ -802,15 +834,26 @@ Function Compare-WordDocument {
     # Constants
     $wdDoNotSaveChanges = 0
     $wdCompareTargetNew = 2
+    $wdFormatWordDocument = 16
 
     $document = Open-WordDocument $baseFile -ReadWrite:$false
-    $document.Application.Visible = $true
+    $word = $document.Application
     $document.Compare($ChangedFileName, [ref]"Comparison", [ref]$wdCompareTargetNew, [ref]$true, [ref]$true)
 
-    $document.Application.ActiveDocument.Saved = 1    
+    $word.ActiveDocument.Saved = 1
 
     # Now close the document so only compare results window persists:
     $document.Close([ref]$wdDoNotSaveChanges)
+
+    $compareDoc = $word.ActiveDocument
+
+    if($SaveCompareFileName){
+        $compareDoc.SaveAs([ref]$SaveCompareFileName, [ref]$wdFormatWordDocument)
+        $word.Quit()
+    }
+    else{
+        return $compareDoc
+    }
 }
 
 Function Script:Get-InternalWordDocumentProperty {
