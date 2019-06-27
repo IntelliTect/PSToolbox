@@ -23,6 +23,11 @@ Describe 'Join-Path' {
             IntelliTect.Common\Join-Path 'c:' 'test1' 'test2' | `
                 Should Be (Microsoft.PowerShell.Management\Join-Path  'c:' (Microsoft.PowerShell.Management\Join-Path  'test1' 'test2'))
         }
+        It '4 parameters' {
+            IntelliTect.Common\Join-Path 'c:' 'test1' 'test2' 'test3' | `
+                Should Be (Microsoft.PowerShell.Management\Join-Path  'c:' (Microsoft.PowerShell.Management\Join-Path  'test1' (Microsoft.PowerShell.Management\Join-Path  'test2' 'test3')))
+        }
+
     }
     finally {
         Set-Location $originalPath
@@ -86,6 +91,20 @@ Describe "Register-AutoDispose" {
 }
 
 Describe "Get-Tempdirectory" {
+    It 'Verify error handling when the directory is in use.' {
+        $tempItem = $null
+        try {
+            $tempItem = Get-TempDirectory
+            push-location $tempItem
+            { $tempItem.Dispose()} | Should Throw
+        }
+        finally {
+            if (Test-Path $tempItem) {
+                Pop-Location
+                Remove-Item $tempItem -Force -Recurse
+            }
+        }
+    }
     It 'Verify the temp directory created is in the %TEMP% (temporary) directory' {
         try {
             $tempItem = Get-TempDirectory
@@ -96,7 +115,6 @@ Describe "Get-Tempdirectory" {
             Test-Path $tempItem | Should Be $false
         }
     }
-
 }
 
 Describe "Get-TempDirectory/Get-TempFile" {

@@ -8,16 +8,18 @@ if((Get-Command Join-Path).Version -lt '6.0') {
 # catch [System.Management.Automation.ParameterBindingException] {
     Function Join-Path {
         switch ($args.Count) {
-            0 { Join-Path @args '' }
+            0 { Write-Output '' }
             1 { $args[0] | Write-Output }
             2 { Microsoft.PowerShell.Management\Join-Path @args }
             default {
                 $result = $args[0]
+                if($result -eq $null) { throw 'InvalidOperationException: The $result parameter should not be null.'} 
                 $args | Select-Object -Skip 1 | ForEach-Object{
+                    if($_ -eq $null) { throw 'InvalidOperationException: The pipepline parameter should not be null.'}
                     $result = Join-Path $result $_
                 }
                 Write-Output $result
-             }
+            }
         }
     }
 }
@@ -132,15 +134,22 @@ Function Add-DisposeScript {
     [CmdletBinding()]
     param(
         [ValidateNotNull()][Parameter(Mandatory, ValueFromPipeline)][object[]]$InputObject,
-        [ValidateNotNull()][Parameter(Mandatory)][ScriptBlock]$DisposeScript
+        [ValidateNotNull()][Parameter(Mandatory)][ScriptBlock]$DisposeScript,
+        [switch]$Force
     )
-
-    $InputObject | Add-Member -MemberType NoteProperty -Name IsDisposed -Value $false
-    # Set the IsDisposed property to true when Dispose() is called.
-    [ScriptBlock]$DisposeScript = [scriptblock]::Create(
-        "$DisposeScript; `n`$this.IsDisposed = `$true; "
-    )
-    $InputObject | Add-Member -MemberType ScriptMethod -Name Dispose -Value $DisposeScript
+    PROCESS {
+        $inputObject | Foreach-Object {
+            $eachInputObject = $_
+            if($eachInputObject.PSObject.Members.Name -notcontains 'IsDisposed') {
+                $eachInputObject | Add-Member -MemberType NoteProperty -Name 'IsDisposed' -Value $false
+            }
+            # Set the IsDisposed property to true when Dispose() is called.
+            [ScriptBlock]$DisposeScript = [scriptblock]::Create(
+                "$DisposeScript; `n`$this.IsDisposed = `$true; "
+            )
+            $eachInputObject | Add-Member -MemberType ScriptMethod -Name Dispose -Value $DisposeScript -Force:$Force
+        }
+    }
 }
 
 <#
@@ -185,8 +194,6 @@ Function Register-AutoDispose {
         [Parameter(Position = 1, Mandatory)]
         [ScriptBlock]$ScriptBlock
     )
-    BEGIN {
-    }
     PROCESS {
         try {
             Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $InputObject
@@ -247,8 +254,9 @@ Function Script:Get-FileSystemTempItem {
                 $file = New-Item $_ -ItemType $ItemType -ErrorAction Stop
 
                 $file | Add-DisposeScript -DisposeScript {
-                    Remove-Item $this.FullName -Force -Recurse } # Recurse is allowed on both files and directories
-
+                    Remove-Item $this.FullName -Force -Recurse -ErrorVariable failed # Recurse is allowed on both files and directoriese
+                    if($failed) { throw $failed }
+                }
                 Write-Output $file
 
             }
