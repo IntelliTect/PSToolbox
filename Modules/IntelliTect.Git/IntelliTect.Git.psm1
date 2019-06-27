@@ -3,7 +3,8 @@
 
 . $PSScriptRoot\New-DynamicParam.ps1
 
-Enum GitAction {
+# TODO: Using straight enum is not getting imported into other scripts.
+ Enum GitAction {
     Untracked
     Copied
     Renamed
@@ -12,8 +13,7 @@ Enum GitAction {
     Modified
 }
 
-
-$script:gitActionsLookup =@{
+$script:GitActionLookup =@{
     '??'= [GitAction]::Untracked;
     'C'= [GitAction]::Copied;
     'R'= [GitAction]::Renamed;
@@ -31,7 +31,7 @@ Function Invoke-GitCommand {
         ,[Parameter(ParameterSetName='OutputAsText')][string]$Format = $null
     )
     DynamicParam {
-        New-DynamicParam -Name GitProperty -ValidateSet (Get-GitObjectProperty) `
+        New-DynamicParam -Name GitProperty -ValidateSet (Get-GitItemProperty) `
             -HelpMessage 'The property(s) to be retrieved.' `
             -ParameterSetName 'OutputAsObject' -Position 3 -Type ([string[]])
     }
@@ -42,33 +42,37 @@ Function Invoke-GitCommand {
     PROCESS {
 
         # Remove git from the beginning of the command if it exists
-        $Command = $Command | ForEach-Object{ $_ -replace '^\s*(git)*\s','' }
+        $commandText = $Command | ForEach-Object{ $_ -replace '^\s*(git)*\s','' }
 
         if($ActionMessage) {
             $ActionMessage = " $($ActionMessage.Trim())";
         }
 
         if($PSBoundParameters['Verbose'] -and ($Commnd -notmatch '.*\s(-v|--verbose)(?:\s.*?|$).*')) {
-            $Command += ' --verbose'
+            $commandText += ' --verbose'
         }
 
         if($GitProperty) {
             # Format the output as JSON with keys&values single quoted (double quotes don't work with git format by default)
             # Later on the single quotes are converted back to double quotes.
             # TODO: What if there are single quotes in one of the values?
-            $Format = "`"$( (Get-GitObjectProperty -Name $GitProperty |
+            $Format = "`"$( (Get-GitItemProperty -Name $GitProperty |
                 ForEach-Object { "%($_)"})  -join ',')`""
         }
 
         if($Format) {
-            $Command += " --format=$Format"
+            $commandText += " --format=$Format"
         }
 
-        Write-Debug "Command: '$Command'"
+        if($commandText -notmatch '\s*git\s.*') {
+            $commandText = "git $commandText"
+        }
 
-        $command = "git $command"
+        Write-Debug "Command: '$commandText'"
 
-        Invoke-ShouldProcess "`tExecute$($ActionMessage): `n$Command" "`tExecute$($ActionMessage): `n$Command" "Executing$ActionMessage..." {
+        [ScriptBlock]$command = [scriptblock]::Create($commandText)
+
+        Invoke-ShouldProcess "`tExecute$($ActionMessage): `n$commandText" "`tExecute$($ActionMessage): `n$commandText" "Executing$ActionMessage..." {
             try {
                 $foregroundColor = $host.PrivateData.VerboseForegroundColor
                 $backgroundColor = $host.PrivateData.VerboseBackgroundColor
@@ -79,13 +83,14 @@ Function Invoke-GitCommand {
                         ("$backgroundColor" -ne 'Gray') ) {
                     $foregroundColor = 'Gray'
                 }
-                Write-Host "Executing: `n`t$Command" -ForegroundColor $foregroundColor -BackgroundColor $backgroundColor
+                Write-Host "Executing: `n`t$commandText" -ForegroundColor $foregroundColor -BackgroundColor $backgroundColor
             }
             catch {
-                Write-Host "Executing: `n`t$Command" -ForegroundColor Gray
+                Write-Host "Executing: `n`t$commandText" -ForegroundColor Gray
             }
 
-            $result = Invoke-Expression "$Command" -ErrorAction Stop  #Change error handling to use throw instead.
+            $result = Invoke-Command $command -ErrorAction Stop  #Change error handling to use throw instead.
+
             if($GitProperty) {
                 $result = $result.Replace("'",'"') | ConvertFrom-Json
             }
@@ -95,11 +100,11 @@ Function Invoke-GitCommand {
     }
 }
 
-Function Get-GitStatusObject {
+Function Get-GitItemStatus{
     [CmdletBinding()]
     param(
-        [GitAction[]]$action,
-        [string[]]$path='*'
+        [GitAction[]]$Action,
+        [string[]]$Filter='*'
     )
 
     Invoke-GitCommand -ActionMessage 'Show the working tree status' -Command 'git status --porcelain' | Where-Object{
@@ -107,12 +112,12 @@ Function Get-GitStatusObject {
             $matches
         } | ForEach-Object{
             [PSCustomObject]@{
-                "Action"="$($script:gitActionsLookup.Item($_.Action))";
+                "Action"="$([GitAction]$script:GitActionLookup.Item($_.Action))";
                 "FileName"=$_.FileName
             }
         } | Where-Object{
-            (!$PSBoundParameters.ContainsKey('action') -or @($action) -contains $_.Action) -and
-                ($_.FileName -like $path)
+            (!$PSBoundParameters.ContainsKey('action') -or @($Action) -contains $_.Action) -and
+                ($_.FileName -like $Filter)
         }
 }
 
@@ -178,7 +183,6 @@ Function Undo-Git {
         Write-Error '-RemoveIgnoredFilesToo only valid if -RemoveUntrackedFiles is set' -ErrorAction Stop
     }
 
-    [string]$command = $null
     if($RemoveUntrackedFiles -and $RemoveIgnoredFilesToo) {
         Invoke-GitCommand 'Remove files ignored by Git.' "git clean -f -d -X $path"
     }
@@ -211,8 +215,8 @@ Function Remove-GitBranch {
         $deleteIfNotMergedOption = '-D'
     }
 
-    $command = "git branch $deleteIfNotMergedOption"
-    $branches | ForEach-Object { Invoke-GitCommand "Remove the $Name branch$additionalActionMessageDetail." "$command $_" }
+    $commandText = "git branch $deleteIfNotMergedOption"
+    $branches | ForEach-Object { Invoke-GitCommand "Remove the $Name branch$additionalActionMessageDetail." "$commandText $_" }
 }
 
 Function Get-GitBranch {
@@ -242,7 +246,7 @@ Function Get-GitBranch {
     }
 }
 
-Function Get-GitObjectProperty {
+Function Get-GitItemProperty {
     [CmdletBinding()]
     param(
         [string[]]$Name
