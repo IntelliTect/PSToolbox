@@ -1,10 +1,9 @@
 #Requires -Version 5.0  # Needed for enum definition.
 #Requires -Modules IntelliTect.Common
 
-#Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.Common
 . $PSScriptRoot\New-DynamicParam.ps1
 
-enum GitAction {
+Enum GitAction {
     Untracked
     Copied
     Renamed
@@ -23,75 +22,59 @@ $script:gitActionsLookup =@{
     'M'= [GitAction]::Modified;
 };
 
+
 Function Invoke-GitCommand {
-    [CmdletBinding(SupportsShouldProcess,DefaultParameterSetName='OutputAsObject')]
+    [CmdletBinding(SupportsShouldProcess)]
     param(
         [Parameter(Mandatory)][string]$ActionMessage
         ,[Parameter(Mandatory,ValueFromRemainingArguments)][string[]]$Command
-        ,[Parameter(ParameterSetName='OutputAsObject')][string[]]$GitProperty
+        #,[Parameter(ParameterSetName='OutputAsObject')][string[]]$GitProperty
         ,[Parameter(ParameterSetName='OutputAsText')][string]$Format = $null
     )
-    DynamicParam {
-        New-DynamicParam -Name GitProperty -ValidateSet (Get-GitObjectProperty) `
-            -HelpMessage 'The property(s) to be retrieved.' `
-            -ParameterSetName 'OutputAsObject' -Position 3 -Type ([string[]])
-    }
-    BEGIN {
-        $GitProperty = $PSBoundParameters.GitProperty
+
+    if(@($command).Count -gt 1) {
+        $command = $command -join ' '
     }
 
-    PROCESS {
+    if($Command -notmatch '\s*git\s.*') {
+        $Command = "git $Command"
+    }
 
-        # Remove git from the beginning of the command if it exists
-        $Command = $Command | ForEach-Object{ $_ -replace '^\s*(git)*\s','' }
+    if($ActionMessage) {
+        $ActionMessage = " $($ActionMessage.Trim())";
+    }
 
-        if($ActionMessage) {
-            $ActionMessage = " $($ActionMessage.Trim())";
+    if($PSBoundParameters['Verbose'] -and ($Commnd -notmatch '.*\s(-v|--verbose)(?:\s.*?|$).*')) {
+        $Command += ' --verbose'
+    }
+
+    Write-Debug "Command: '$Command'"
+
+    $command = "git $command"
+
+    Invoke-ShouldProcess "`tExecute$($ActionMessage): `n$Command" "`tExecute$($ActionMessage): `n$Command" "Executing$ActionMessage..." {
+        try {
+            $foregroundColor = $host.PrivateData.VerboseForegroundColor
+            $backgroundColor = $host.PrivateData.VerboseBackgroundColor
+
+            # TODO: $host.PrivateData.VerboseForegroundColor returns  RBG, not a color name.
+            #       We need to convert to color name of vise-versa to compare.
+            if( <# ("$foregroundColor" -eq "$($Host.ui.RawUI.ForegroundColor)") -and #>
+                    ("$backgroundColor" -ne 'Gray') ) {
+                $foregroundColor = 'Gray'
+            }
+            Write-Host "Executing: `n`t$Command" -ForegroundColor $foregroundColor -BackgroundColor $backgroundColor
+        }
+        catch {
+            Write-Host "Executing: `n`t$Command" -ForegroundColor Gray
         }
 
-        if($PSBoundParameters['Verbose'] -and ($Commnd -notmatch '.*\s(-v|--verbose)(?:\s.*?|$).*')) {
-            $Command += ' --verbose'
-        }
-
+        $result = Invoke-Expression "$Command" -ErrorAction Stop  #Change error handling to use throw instead.
         if($GitProperty) {
-            # Format the output as JSON with keys&values single quoted (double quotes don't work with git format by default)
-            # Later on the single quotes are converted back to double quotes.
-            # TODO: What if there are single quotes in one of the values?
-            Write-Host "WH ARE HERE" -ForegroundColor Cyan
-            $Format = "`"$( (Get-GitObjectProperty -Name $GitProperty |
-                ForEach-Object { "%($_)"})  -join ',')`""
+            $result = $result.Replace("'",'"') | ConvertFrom-Json
         }
 
-        if($Format) {
-            $Command += " --format=$Format"
-        }
-
-        Write-Debug "Command: '$Command'"
-
-        Invoke-ShouldProcess "`tExecute$($ActionMessage): `n$Command" "`tExecute$($ActionMessage): `n$Command" "Executing$ActionMessage..." {
-            try {
-                $foregroundColor = $host.PrivateData.VerboseForegroundColor
-                $backgroundColor = $host.PrivateData.VerboseBackgroundColor
-
-                # TODO: $host.PrivateData.VerboseForegroundColor returns  RBG, not a color name.
-                #       We need to convert to color name of vise-versa to compare.
-                if( <# ("$foregroundColor" -eq "$($Host.ui.RawUI.ForegroundColor)") -and #>
-                        ("$backgroundColor" -ne 'Gray') ) {
-                    $foregroundColor = 'Gray'
-                }
-                Write-Host "Executing: `n`t$Command" -ForegroundColor $foregroundColor -BackgroundColor $backgroundColor
-            }
-            catch {
-                Write-Host "Executing: `n`t$Command" -ForegroundColor Gray
-            }
-
-            $result = Invoke-Expression "$Command" -ErrorAction Stop  #Change error handling to use throw instead.
-            if($Property) {
-                $result = $result.Replace("'",'"') | ConvertFrom-Json
-            }
-
-            Write-Output $result
-        }
+        Write-Output $result
     }
 }
 
@@ -102,7 +85,7 @@ Function Get-GitStatusObject {
         [string[]]$path='*'
     )
 
-    Invoke-GitCommand 'Show the working tree status' 'git status --porcelain' | Where-Object{
+    Invoke-GitCommand -ActionMessage 'Show the working tree status' -Command 'git status --porcelain' | Where-Object{
         $_ -match '(?<Action>[AMRDC]|\?\?)\s+(?<Filename>.*)' } | ForEach-Object{
             $matches
         } | ForEach-Object{
@@ -122,13 +105,13 @@ Function Update-GitAuthor {
             [string]$newAuthor
         )
 
-        $currentBranch = (Invoke-GitCommand 'Pick out and massage parameters' 'git rev-parse --abbrev-ref HEAD')
-        Invoke-GitCommand "Restore working files to original commit ($originalHash)" "git checkout $originalHash"
-        Invoke-GitCommand "Change the author name to $newAuthor" "git commit --amend --author $newAuthor"
-        $newHash = (Invoke-GitCommand 'Retrieve the hash' 'git show -s --format=%H')
-        Invoke-GitCommand 'Replace the original commit hash with the new one' "git replace $originalHash $newHash"
-        Invoke-GitCommand 'Remove the original commit' "git replace -d $originalHash"
-        Invoke-GitCommand 'Switch back to the head of the branch we started with' "git checkout $currentBranch"
+        $currentBranch = (Invoke-GitCommand 'git rev-parse --abbrev-ref HEAD')
+        Invoke-GitCommand "git checkout $originalHash"
+        Invoke-GitCommand "git commit --amend --author $newAuthor"
+        $newHash = (Invoke-GitCommand 'git show -s --format=%H')
+        Invoke-GitCommand "git replace $originalHash $newHash"
+        Invoke-GitCommand "git replace -d $originalHash"
+        Invoke-GitCommand "git checkout $currentBranch"
         Write-Warning 'Execute ''git filter-branch -- --all'' once all updates are complete. '
 }
 
@@ -173,21 +156,28 @@ Function Undo-Git {
         ,[Parameter(ParameterSetName='TrackedAndIgnored')][switch]$RemoveIgnoredFilesToo
     )
 
-    #Write-Host "Parameters: "; $PSBoundParameters | Out-String
+    Write-Host "Parameters: "; $PSBoundParameters | Out-String
     if($RemoveIgnoredFilesToo -and !$RemoveUntrackedFiles) {
         Write-Error '-RemoveIgnoredFilesToo only valid if -RemoveUntrackedFiles is set' -ErrorAction Stop
     }
+    return
 
     [string]$command = $null
     if($RemoveUntrackedFiles -and $RemoveIgnoredFilesToo) {
-        Invoke-GitCommand 'Remove files ignored by Git.' "git clean -f -d -X $path"
+        $command += "`tgit clean -f -d -X $path `n"
     }
     if($RemoveUntrackedFiles) {
-       Invoke-GitCommand 'Remove untracked directories in addition to untracked files.' "git clean -f -d $path"
+        $command += "`tgit clean -f -d $path `n"
     }
     if($RestoreTrackedFiles) {
-        Invoke-GitCommand 'Reset current branch to the latest commit (HEAD)' "git reset --hard HEAD"
+        $command += "`tgit reset --hard HEAD `n"
     }
+
+    if([string]::IsNullOrWhiteSpace($command)) {
+        Echo 'test'
+    }
+
+    Invoke-GitCommand $command
 }
 
 Function Remove-GitBranch {
@@ -197,22 +187,18 @@ Function Remove-GitBranch {
         [Parameter(Mandatory,ValueFromPipeline)] [string] $Name,
         [Parameter()] [switch] $Force
     )
-
-    [string]$additionalActionMessageDetail = ''
-
     $branches = Get-GitBranch $Name
     if (@($branches).Count -eq 0) {
-        throw "Cannot remove branches matching name '$Name' because it does not exist."
+        throw "Cannot branches matching name '$Name' because it does not exist."
     }
 
     $deleteIfNotMergedOption = '-d'
     if ($Force.IsPresent) {
-        $additionalActionMessageDetail += ' even if not merged'
         $deleteIfNotMergedOption = '-D'
     }
 
     $command = "git branch $deleteIfNotMergedOption"
-    $branches | ForEach-Object { Invoke-GitCommand "Remove the $Name branch$additionalActionMessageDetail." "$command $_" }
+    $branches | ForEach-Object { Invoke-GitCommand "$command $_" }
 }
 
 Function Get-GitBranch {
@@ -220,63 +206,12 @@ Function Get-GitBranch {
     param(
         # The filter, when matched, excludes from the branches to delete
         [Parameter(ValueFromPipeline)] [string] $Name
-        ,[Alias('Remotes')][switch]$IncludeRemotes=$false
-        ,[Alias('Locals')][switch]$IncludeLocals=$true
     )
-
-    [string]$options = ' --list'
-
-    if($IncludeLocals) {
-        Invoke-GitCommand -ActionMessage "List branch $Name" -command "git branch $Name $options" -verbose  | ForEach-Object {
-            #if($_)
-            $_.TrimStart('* ') # Remove the '*' that indicates the branch is current.
-        }
-    }
-
-    if($IncludeRemotes.IsPresent) {
-        $options += ' --remotes'  # --remotes is exclusive, it removes locals
-        Invoke-GitCommand -ActionMessage "List branch $Name" -command "git branch $Name $options" -verbose | ForEach-Object {
-            #if($_)
-            $_.TrimStart('* ') # Remove the '*' that indicates the branch is current.
-        }
+    $nameIsNull = [bool]$Name
+    Invoke-GitCommand "git branch" |
+        ForEach-Object {
+            $_.TrimStart('* ')
+        } | Where-Object {
+            (!$nameIsNull) -or ($_ -like $Name)
     }
 }
-
-Function Get-GitObjectProperty {
-    [CmdletBinding()]
-    param(
-        [string[]]$Name
-    )
-
-    $result = 'refname:short','refname','objecttype','objectsize','objectname','tree','parent','numparent','object','type','tag','author','authorname','authoremail','authordate','committer','committername','committeremail','committerdate','tagger','taggername','taggeremail','taggerdate','creator','creatordate','subject','body',<#'contents',#><#'contents:subject',#><#'contents:body'#>,'contents:signature','upstream','symref','flag','HEAD'
-        # 'contents' removes because no further parsing occurs after this property with --format
-        # 'contents:subject', 'contents:body' removed as they appear to be duplicates.
-    if($Name) {
-        $result = $result | Where-Object {
-            $property = $_
-            $Name | Where-Object {
-                    $property -like $_
-            }
-        }
-    }
-
-#    [string]$compositFormat = $null
-#     switch ($Format) {
-#         'GitFormat' {
-#             $compositFormat = "%({0})"
-#         }
-#         'Json' {
-#             $compositFormat = "`"{0}`":`"%({0})`""
-#         }
-#     }
-
-    # if($compositFormat) {
-    #     $result = $result | ForEach-Object{
-    #         $compositFormat -f $_
-    #     }
-    # }
-
-    $result | Write-Output
-}
-
-#Function ConvertFrom-Git
