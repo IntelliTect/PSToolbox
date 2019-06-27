@@ -9,6 +9,7 @@ Function Script:Initialize-TestGitRepo {
     $tempDirectory = Get-TempDirectory
 
     $currentLocation = Get-Location  # Save the current location.  Note, Pop-Location don't work from inside the Dispose Script.
+    Push-Location $tempDirectory
 
     # Take the existing dispose script and add Pop-Location at the beginning.
     [ScriptBlock]$DisposeScript = [scriptblock]::Create(
@@ -52,3 +53,39 @@ Describe "Get-GitStatusObject" {
 
 
 
+
+Describe 'Get-GitObjectProperty' {
+    It 'Return all properties' {
+        'refname','parent','authorname' | ForEach-Object {
+            (Get-GitObjectProperty) -contains $_ | Should Be $true
+        }
+    }
+    It 'Return a specific property' {
+        'refname','parent','authorname' | ForEach-Object {
+            Get-GitObjectProperty -Name "$_" | Should Be "$_"
+        }
+    }
+    It 'Return propery based on wildcard (*) suffix' {
+        'object*' | ForEach-Object {
+            Get-GitObjectProperty -Name "$_" | Should Be 'objecttype','objectsize','objectname','object'
+        }
+    }
+    It 'Return propery based on wildcard (*) prefix' {
+        '*parent' | ForEach-Object {
+            Get-GitObjectProperty -Name "$_" | Should Be 'parent','numparent'
+        }
+    }
+    # It 'Return properties as Json format string.' {
+    #     'refname','refname:short','authorname' | ForEach-Object {
+    #         Get-GitObjectProperty -Name "$_" -Format 'Json' | Should Be "`"$_`":`"%($_)`""
+    #     }
+    # }
+    # It 'Return properties as git format strings.' {
+    #     'refname','refname:short','authorname' | ForEach-Object {
+    #         Get-GitObjectProperty -Name "$_" -Format 'GitFormat' | Should Be "%($_)"
+    #     }
+    # }
+    It 'Given a collection of names/wildcards, return only those' {
+            Get-GitObjectProperty -Name 'object*','authorname' | Should Be 'objecttype','objectsize','objectname','object','authorname'
+    }
+}
