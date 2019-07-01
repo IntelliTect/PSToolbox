@@ -1,32 +1,38 @@
-Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.Common
+# Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.Common
+Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.File\IntelliTect.File.Psd1 -Force
 
 Import-Module $PSScriptRoot\..\Modules\IntelliTect.MicrosoftWord\IntelliTect.MicrosoftWord.psd1 -Force
 
 Describe "New-WordDocument" {
     It "Create Word Document Leave Open"{
         $path = "$PSScriptRoot\MicrosoftWord.NewFile.docx"
-        $newDocument = New-WordDocument $path -LeaveOpen
+        Script:AddFileDispose -path $path
+        $newDocument = New-WordDocument -Path $path -LeaveOpen
+        $word = $newDocument.Application
 
         Test-Path $path | should be $true
         $newDocument.FullName | Should be $path
-        $newDocument.Application.Quit()
+        $newDocument.Close()
+        $word.Quit()
         Start-Sleep 1
         Remove-Item $path -Force
     }
 
     It "Create Word Document With Content"{
-        $path = "$PSScriptRoot\MicrosoftWord.NewFile.docx"
+        $path = "$PSScriptRoot\MicrosoftWord.NewFile2.docx"
         $content = "This is my content"
-        New-WordDocument $path -Content $content
+        New-WordDocument -Path $path -Content $content
 
         $newDocument = Open-WordDocument $path
+        $word = $newDocument.Application
         $newDocument.FullName | Should be $path
         $allComparedText = @()
         $newDocument.paragraphs | ForEach-Object {
             $allComparedText += "$($_.Range.Text)"
         }
         $allComparedText[0] | Should Match $content
-        $newDocument.Application.Quit()
+        $newDocument.Close()
+        $word.Quit()
         Start-Sleep 1
         Remove-Item $path -Force
     }
@@ -222,4 +228,98 @@ Describe "Get-WordDocumentComment" {
         Remove-Item -Path $path -Force
     }
 }
+
+Describe "Invoke-WordDocumentFindReplace" {
+    It "The word document's text is replaced"{
+        $path = "$PSScriptRoot\MicrosoftWord.FindAndReplace.docx"
+        $content = "This is some data: 123`nThis is text: some text`nThis is nothing:"
+        New-WordDocument -Path $path -Content $content
+
+        Invoke-WordDocumentFindReplace -Path $path -FindValue 'This' -ReplaceValue 'That'   #######################This wont replace the first line unless changed
+
+        $document = Open-WordDocument -Path $path
+        $word = $document.Application
+        $selection = $word.Selection
+
+        $selection.SetRange($document.Words.First.Start, $document.Words.Last.End)
+        $text = $selection.Text
+        $word.Quit()
+
+        Start-Sleep 1
+        Remove-Item -Path $path -Force
+    }
+}
+
+Describe "Invoke-WordDocumentFind" {
+    It "The word document's found text is returned"{
+        $path = "$PSScriptRoot\MicrosoftWord.Find.docx"
+        $content = "This is some data: 123`nThis is text: some text`nThis is nothing:"
+        New-WordDocument -Path $path -Content $content
+
+        $found = Invoke-WordDocumentFind -Path $path -value 'This'
+
+        $found.Length | Should Be 3
+        $found[0].FindSnippet | Should Be "This is some data: 123"
+        $found[1].FindSnippet | Should Be "This is text: some text"
+
+        Start-Sleep 1
+        Remove-Item -Path $path -Force
+    }
+}
+
+Describe "Get-WordDocumentProperty" {
+    It "The word document's number of words property is returned"{
+        $path = "$PSScriptRoot\MicrosoftWord.GetProperty.docx"
+        $content = "This is a word doc`nhow many words`nare in here?"
+        New-WordDocument -Path $path -Content $content
+
+        $numWords = Get-WordDocumentProperty -Path $path -name "Number of words"
+        $numWords | Should Be 11 
+        Start-Sleep 1
+        Remove-Item -Path $path -Force
+    }
+
+    It "The word document's number of lines property is returned"{
+        $path = "$PSScriptRoot\MicrosoftWord.GetProperty.docx"
+        $content = "This is`n a word doc`nhow many`n characters`nare in here?"
+        New-WordDocument -Path $path -Content $content
+
+        $numWords = Get-WordDocumentProperty -Path $path -name "Number of lines"
+        $numWords | Should Be 5
+        Start-Sleep 1
+        Remove-Item -Path $path -Force
+    }
+}
+
+# need to figure out Microsoft.Office.Core.MsoDocProperties reference
+# Describe "Set-WordDocumentProperty"{
+#     It "The Author gets set"{
+#         $path = "$PSScriptRoot\MicrosoftWord.SetProperty.docx"
+#         $content = "This is to test the Set-WordDocumentProperty method"
+#         New-WordDocument -Path $path -Content $content
+
+#         Set-WordDocumentProperty -Path $path -name "Author" -value "Inigo Montoya"
+
+#         $author = Get-WordDocumentProperty -Path $path -name "Author"
+#         $author | Should Be "Inigo Montoya" 
+#         Start-Sleep 1
+#         Remove-Item -Path $path -Force
+#     }
+# }
+
+Describe "Get-WordDocumentTemplate"{
+    It "The word document template is returned"{
+        $path = "$PSScriptRoot\MicrosoftWord.GetTemplate.docx"
+        $content = "This is to test the Get-WordDocumentTemplate method"
+        New-WordDocument -Path $path -Content $content
+
+        $out = Get-WordDocumentTemplate -Path $path
+        $file =  [System.IO.FileInfo] $out
+        
+        $file.Name | Should Be "normal.dotm" 
+        Start-Sleep 1
+        Remove-Item -Path $path -Force
+    }
+}
+
 
