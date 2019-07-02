@@ -94,8 +94,7 @@ Function Open-MicrosoftWord {
 Function New-WordDocument {
     [CmdletBinding()] param(
         [string]$Path,
-        [string]$Content,
-        [switch]$LeaveOpen
+        [string]$Content
     )
 
     If((Test-Path -Path $Path)){
@@ -113,12 +112,18 @@ Function New-WordDocument {
 
     $newDocument.SaveAs([ref]$Path, [ref]$wdFormatWordDocument)
 
-    if($LeaveOpen){
-        return $newDocument
+    Add-DisposeScript -InputObject $newDocument -DisposeScript {
+        $application = $newDocument.Application
+        $documentPath = $newDocument.FullName
+        $newDocument.Close()
+        Wait-ForCondition -InputObject $application -TimeSpan (New-TimeSpan -Seconds 5) -Condition { 
+            $application.Documents | ForEach-Object{
+                if($_.FullName -eq $documentPath) { Write-Output $false }
+            }
+        }
     }
-    else {
-        $word.Quit()
-    }
+    return $newDocument
+
 }
 
 Function Open-WordDocument {

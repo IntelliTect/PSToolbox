@@ -50,7 +50,7 @@ Description = 'Provides an easy-to-use interface to Microsoft Word via PowerShel
 # ProcessorArchitecture = ''
 
 # Modules that must be imported into the global environment prior to importing this module
-# RequiredModules = @()
+RequiredModules = @('Intellitect.Common')
 
 # Assemblies that must be loaded prior to importing this module
 # RequiredAssemblies = @('Microsoft.Office.Interop.Word')

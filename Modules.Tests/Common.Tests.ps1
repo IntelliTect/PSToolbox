@@ -48,6 +48,13 @@ Describe "Add-DisposeScript" {
         $object.Dispose() | Should Be $true
         $object.IsDisposed | Should Be $true
     }
+    # Method invocation fails because [System.String] does not contain a method named 'Dispose'
+    # It "Verify add dispose to string" { 
+    #     $object = [String]"New-Object Object"
+    #     $object | Add-DisposeScript -DisposeScript { Write-Output  $true }
+    #     $object.Dispose() | Should Be $true
+    #     $object.IsDisposed | Should Be $true
+    # }
 }
 
 Describe "Register-AutoDispose" {

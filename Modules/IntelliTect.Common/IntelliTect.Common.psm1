@@ -190,11 +190,12 @@ Function Register-AutoDispose {
         [ValidateScript( {$_.PSobject.Members.Name -contains "Dispose"})]
         [ValidateNotNull()][Parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [Object[]]$InputObject,
-
+        
         [Parameter(Position = 1, Mandatory)]
         [ScriptBlock]$ScriptBlock
-    )
+        )
     PROCESS {
+        # TODO: Add support for using string objects ad input objects.
         try {
             Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $InputObject
         }
@@ -254,7 +255,7 @@ Function Script:Get-FileSystemTempItem {
                 $file = New-Item $_ -ItemType $ItemType -ErrorAction Stop
 
                 $file | Add-DisposeScript -DisposeScript {
-                    Remove-Item $this.FullName -Force -Recurse -ErrorVariable failed # Recurse is allowed on both files and directoriese
+                    Remove-Item $this.FullName -Force -Recurse -ErrorVariable $failed # Recurse is allowed on both files and directoriese
                     if($failed) { throw $failed }
                 }
                 Write-Output $file
