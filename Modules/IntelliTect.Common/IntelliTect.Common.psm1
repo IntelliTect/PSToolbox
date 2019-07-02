@@ -208,6 +208,7 @@ Function Register-AutoDispose {
             [ScriptBlock]$ScriptBlock
         )
     PROCESS {
+        # TODO: Add support for using string objects ad input objects.
         try {
             # Only call the script once - even if the #InputObject is a collection of objects.
             Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $InputObject
