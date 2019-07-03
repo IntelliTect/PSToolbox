@@ -19,7 +19,7 @@ Function Script:Initialize-TestGitRepo {
         "
     )
     $tempDirectory | Add-DisposeScript -DisposeScript $DisposeScript -Force
-    Invoke-GitCommand -ActionMessage "Initialize a temporary repository in '$tempDirectory'." -Command 'git init' | Write-Verbose
+    Invoke-GitCommand -ActionMessage "Initialize a temporary repository in '$tempDirectory'." -Command 'git init','git config user.name "Inigo.Montoya"','git config user.email "Inigo.Montoya@PrincessBride.com"' | Where-Object{ $_ -ne $null } | Write-Verbose
     return $tempDirectory
 }
 

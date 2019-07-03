@@ -40,61 +40,63 @@ Function Invoke-GitCommand {
 
     PROCESS {
 
-        # Remove git from the beginning of the command if it exists
-        $commandText = $Command | ForEach-Object{ $_ -replace '^\s*(git)*\s','' }
+        $Command | ForEach-Object {
+            # Remove git from the beginning of the command if it exists
+            $commandText = $_ | ForEach-Object{ $_ -replace '^\s*(git)*\s','' }
 
-        if($ActionMessage) {
-            $ActionMessage = " $($ActionMessage.Trim())";
-        }
-
-        if($PSBoundParameters['Verbose'] -and ($Commnd -notmatch '.*\s(-v|--verbose)(?:\s.*?|$).*')) {
-            $commandText += ' --verbose'
-        }
-
-        if($GitProperty) {
-            # Format the output as JSON with keys&values single quoted (double quotes don't work with git format by default)
-            # Later on the single quotes are converted back to double quotes.
-            # TODO: What if there are single quotes in one of the values?
-            $Format = "`"$( (Get-GitItemProperty -Name $GitProperty |
-                ForEach-Object { "%($_)"})  -join ',')`""
-        }
-
-        if($Format) {
-            $commandText += " --format=$Format"
-        }
-
-        if($commandText -notmatch '\s*git\s.*') {
-            $commandText = "git $commandText"
-        }
-
-        Write-Debug "Command: '$commandText'"
-
-        [ScriptBlock]$command = [scriptblock]::Create($commandText)
-
-        Invoke-ShouldProcess "`tExecute$($ActionMessage): `n$commandText" "`tExecute$($ActionMessage): `n$commandText" "Executing$ActionMessage..." {
-            try {
-                $foregroundColor = $host.PrivateData.VerboseForegroundColor
-                $backgroundColor = $host.PrivateData.VerboseBackgroundColor
-
-                # TODO: $host.PrivateData.VerboseForegroundColor returns  RBG, not a color name.
-                #       We need to convert to color name of vise-versa to compare.
-                if( <# ("$foregroundColor" -eq "$($Host.ui.RawUI.ForegroundColor)") -and #>
-                        ("$backgroundColor" -ne 'Gray') ) {
-                    $foregroundColor = 'Gray'
-                }
-                Write-Host "Executing: `n`t$commandText" -ForegroundColor $foregroundColor -BackgroundColor $backgroundColor
-            }
-            catch {
-                Write-Host "Executing: `n`t$commandText" -ForegroundColor Gray
+            if($ActionMessage) {
+                $ActionMessage = " $($ActionMessage.Trim())";
             }
 
-            $result = Invoke-Command $command -ErrorAction Stop  #Change error handling to use throw instead.
+            if($PSBoundParameters['Verbose'] -and ($commndText -notmatch '.*\s(-v|--verbose)(?:\s.*?|$).*')) {
+                $commandText += ' --verbose'
+            }
 
             if($GitProperty) {
-                $result = $result.Replace("'",'"') | ConvertFrom-Json
+                # Format the output as JSON with keys&values single quoted (double quotes don't work with git format by default)
+                # Later on the single quotes are converted back to double quotes.
+                # TODO: What if there are single quotes in one of the values?
+                $Format = "`"$( (Get-GitItemProperty -Name $GitProperty |
+                    ForEach-Object { "%($_)"})  -join ',')`""
             }
 
-            Write-Output $result
+            if($Format) {
+                $commandText += " --format=$Format"
+            }
+
+            if($commandText -notmatch '\s*git\s.*') {
+                $commandText = "git $commandText"
+            }
+
+            Write-Debug "Command: '$commandText'"
+
+            [ScriptBlock]$eachCommand = [scriptblock]::Create($commandText)
+
+            Invoke-ShouldProcess "`tExecute$($ActionMessage): `n$commandText" "`tExecute$($ActionMessage): `n$commandText" "Executing$ActionMessage..." {
+                try {
+                    $foregroundColor = $host.PrivateData.VerboseForegroundColor
+                    $backgroundColor = $host.PrivateData.VerboseBackgroundColor
+
+                    # TODO: $host.PrivateData.VerboseForegroundColor returns  RBG, not a color name.
+                    #       We need to convert to color name of vise-versa to compare.
+                    if( <# ("$foregroundColor" -eq "$($Host.ui.RawUI.ForegroundColor)") -and #>
+                            ("$backgroundColor" -ne 'Gray') ) {
+                        $foregroundColor = 'Gray'
+                    }
+                    Write-Host "Executing: `n`t$commandText" -ForegroundColor $foregroundColor -BackgroundColor $backgroundColor
+                }
+                catch {
+                    Write-Host "Executing: `n`t$commandText" -ForegroundColor Gray
+                }
+
+                $result = Invoke-Command $eachCommand -ErrorAction Stop  #Change error handling to use throw instead.
+
+                if($GitProperty) {
+                    $result = $result.Replace("'",'"') | ConvertFrom-Json
+                }
+
+                Write-Output $result
+            }
         }
     }
 }
