@@ -87,39 +87,61 @@ Function script:Invoke-ComUsing {
 Function Open-MicrosoftWord {
     [CmdletBinding()] param(
     )
-    return new-object -ComObject Word.Application
+    $wordApplication = new-object -ComObject Word.Application
+    Add-DisposeScript -InputObject $wordApplication -DisposeScript {
+        [int]$wordApplicationInstances = @(Get-Process -Name 'WinWord').Count
+        $this.Quit();
+        Wait-ForCondition -InputObject $this -TimeSpan (New-TimeSpan -Seconds 5) -Condition { 
+            return (@(Get-Process -Name 'WinWord').Count -eq ($wordApplicationInstances-1) )
+        }
+
+    }
+    return $wordApplication
 }
 
 #TODO: This should be configured to accept pipeline variables and only create one instance of Word for each pipelin
 Function New-WordDocument {
     [CmdletBinding()] param(
         [string]$Path,
-        [string]$Content
+        [string]$Content,
+        $WordApplication # An already open instance of the Microsoft Word application.
     )
 
     If((Test-Path -Path $Path)){
         throw "There is already a file at $Path"
     }
 
+    # TODO: Casey, I can't find this name on the Internet.  Please include a URL to the value and name it (even create an enum?) for the type.  I couldn't even find a value of 16
+    # here: https://docs.microsoft.com/en-us/office/vba/api/word.documents.add and https://docs.microsoft.com/en-us/dotnet/api/microsoft.office.interop.word.wdnewdocumenttype
     $wdFormatWordDocument = 16
 
-    $word = Open-MicrosoftWord
-    $newDocument = $word.Documents.Add()
+    [bool]$closeWordApplication = $false
+    if (!$WordApplication) {
+        $WordApplication = Open-MicrosoftWord
+        $closeWordApplication = $true
+    }
+    $WordApplication | Add-Member -MemberType NoteProperty -Name 'CloseApplicationRequired' -Value $closeWordApplication
+
+    $newDocument = $WordApplication.Documents.Add()
     
     if($Content){
-        $word.Selection.TypeText($Content)
+        $WordApplication.Selection.TypeText($Content)
     }
 
     $newDocument.SaveAs([ref]$Path, [ref]$wdFormatWordDocument)
 
     Add-DisposeScript -InputObject $newDocument -DisposeScript {
-        $application = $newDocument.Application
-        $documentPath = $newDocument.FullName
-        $newDocument.Close()
+        $application = $this.Application
+        $documentPath = $this.FullName
+        $this.Close()
         Wait-ForCondition -InputObject $application -TimeSpan (New-TimeSpan -Seconds 5) -Condition { 
-            $application.Documents | ForEach-Object{
-                if($_.FullName -eq $documentPath) { Write-Output $false }
+            @($application.Documents) | ForEach-Object{
+                if($_.FullName -eq $documentPath) { return $false }
             }
+            return true
+        }
+        if($application.CloseApplicationRequired) {
+            $application.Dispose()
         }
     }
     return $newDocument
@@ -127,7 +149,8 @@ Function New-WordDocument {
 }
 
 Function Open-WordDocument {
-    [CmdletBinding()] param(
+    [CmdletBinding()] 
+    param(
         [ValidateScript( { Test-Path $_ -PathType Leaf })]
         [Parameter(Mandatory, ValueFromPipeLine, ValueFromPipelineByPropertyName, Position)]
         [Alias("FullName", "InputObject")]
@@ -141,8 +164,10 @@ Function Open-WordDocument {
             [bool]$readOnly = ![bool]$ReadWrite.IsPresent  # TODO: Blog: switch and bool are not the same
             [bool]$ConfirmConversions = $false  # Optional Object. True to display the Convert File dialog box if the file isn't in Microsoft Word format.
 
+            [bool]$closeWordApplication = $false
             if (!$WordApplication) {
                 $WordApplication = Open-MicrosoftWord
+                $closeWordApplication = $true
             }
 
             if (Test-FileIsLocked $eachDocumentPath) {
@@ -161,7 +186,21 @@ Function Open-WordDocument {
             $comments = $document.Comments | ForEach-Object { Add-Member -InputObject $_ -MemberType ScriptProperty -Name Text -Value { $this.Range.Text } -PassThru } 
             Add-Member -InputObject $document -MemberType ScriptProperty -Name CommentsEx -Value { $comments } -Force
 
-            return $document
+            Add-DisposeScript -InputObject $document -DisposeScript {
+                $application = $inputObject.Application
+                $documentPath = $inputObject.FullName
+                $inputObject.Close()
+                Wait-ForCondition -InputObject $application -TimeSpan (New-TimeSpan -Seconds 5) -Condition { 
+                    @($application.Documents) | ForEach-Object{
+                        if($_.FullName -eq $documentPath) { return $false }
+                    }
+                    return true
+                }
+                if($closeWordApplication) {
+                    $application.Dispose()
+                }
+            }
+            Write-Output $document
         }
     }
 }
