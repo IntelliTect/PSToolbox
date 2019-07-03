@@ -135,18 +135,20 @@ Describe "Get-TempDirectory/Get-TempFile" {
             $_.IsDisposed | Should Be $true
         }
     }
-    ($tempDirectory = Get-TempDirectory) |
-        Register-AutoDispose -ScriptBlock {
-            $path = $tempDirectory.FullName
-            # Now that a temporary directory exists, call Get-TempDirectory and Get-TempFile
-            # and specify the above directory in which to place the temp directory/file.
-            (Get-TempDirectory -Path $path), (Get-TempFile $path) | ForEach-Object {
-                It "Verify item is created with the correct path" {
-                    Register-AutoDispose $_ {}
-                    Test-Path $_ | Should Be $false
-                }
+    ($tempDirectory = Get-TempDirectory) | Register-AutoDispose -ScriptBlock {
+        $path = $tempDirectory.FullName
+        # Now that a temporary directory exists, call Get-TempDirectory and Get-TempFile
+        # and specify the above directory in which to place the temp directory/file.
+        (Get-TempDirectory -Path $path), (Get-TempFile $path) | ForEach-Object {
+            It "Verify item is created with the correct path" {
+                Register-AutoDispose $_ {}
+                Test-Path $_ | Should Be $false
             }
         }
+        It 'Verify you can''t pass an ambiguous wildcard' {
+            {Get-TempDirectory -Path (Join-Path $path '*')},{Get-TempFile (Join-Path $path '*')} | Should Throw
+        }
+    }
     It 'Verify that the Dispose method removes the directory even if it contains files.' {
         $tempItem = $null
         try {

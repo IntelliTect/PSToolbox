@@ -73,7 +73,7 @@ Function Invoke-ShouldProcess {
 
     if ($PSCmdlet.ShouldProcess($ContinueMessage, $InquireMessage, $Caption)) {
         Write-Debug 'Executing script...'
-        Invoke-Command $Script
+        Invoke-Command -ScriptBlock $Script
         Write-Debug 'Finished executing script.'
     }
 }
@@ -231,6 +231,10 @@ Function Script:Get-FileSystemTempItem {
             [string]$fullName = $null
             # If the directory doesn't exist then Resolve-Path will report an error.
             $eachPath = Resolve-Path $_ -ErrorAction Stop
+            if(@($eachPath).Count -ne 1) {
+                # The path contained wildcards that were not unique and is not supported.
+                throw "'$_' is an ambiguous path and only one path is supported."
+            }
             if ((!$Name) -or ([string]::IsNullOrEmpty($Name))) {
                 $fullName = Get-FileSystemTempItemPath $_
             }
