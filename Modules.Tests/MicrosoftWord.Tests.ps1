@@ -3,62 +3,81 @@ Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.File -Force
 
 Import-Module $PSScriptRoot\..\Modules\IntelliTect.MicrosoftWord\IntelliTect.MicrosoftWord.psd1 -Force
 
-function Get-TempWordDocument {
-    [OutputType([System.IO.FileInfo])]
+
+Function Get-TempWordDocument {
+    [CmdletBinding()]
     param (
-        # TODO: Add parameter attributes such as manditory and exists.
-        [System.IO.FileInfo]$path
+        $WordApplication
     )
+        
+    # Instantiate a FileInfo object that has a Dispose method.
+    [System.IO.FileInfo]$file = Get-TempFile
+    #Delete the actual file since New-WordDocument will create one.
+    Remove-Item $file
 
-    if(Test-Path $path) { Remove-Item $path -Force }
+    $tempDocument = New-WordDocument -Path $file -WordApplication $WordApplication
 
-    Add-DisposeScript -InputObject $path -DisposeScript {
-        Wait-ForCondition -InputObject $inputObject -TimeSpan (New-TimeSpan -Seconds 5) -Condition { !(Test-FileIsLocked $inputObject) }
-        Remove-Item $inputObject -force
+    $tempDocument | Add-Member -MemberType ScriptMethod -Name 'InternalWordDocumentDispose' -Value $tempDocument.Dispose.Script
+    $tempDocument | Add-Member -MemberType ScriptMethod -Name 'InternalFileDispose' -Value $file.Dispose.Script
+
+    [ScriptBlock]$wordDocumentDisposeScript = [ScriptBlock]::Create( $tempDocument.Dispose.Script )
+    [ScriptBlock]$tempFileDisposeScript = [ScriptBlock]::Create( $file.Dispose.Script )
+    $tempDocument | Add-DisposeScript -DisposeScript {
+        $this.InternalWordDocumentDispose()
+        $this.InternalFileDispose()
+    } -Force
+    return $tempDocument
+}
+
+Describe "Get-TempWordDocument" { #### I was focussing on a Get-TempDocument file.  ###
+    It "Verify the temporary word document has a dispose method that closes the document and deletes the file."{
+        $tempDocument = Get-TempWordDocument
+        $path = $tempDocument
+        Register-AutoDispose -InputObject $tempDocument -ScriptBlock {
+            Write-Debug ''
+        }
+        Test-Path $path | Should $false
     }
-
-    return $path
 }
 
 
-Describe "New-WordDocument" { ################################### The dispose is failing for $newDocument ###################################
-    It "Create a new word document"{
+Describe "New-WordDocument" { 
+    It "Create a new word document and verify both document and Microsoft Word Application (WinWord) are closed."{
         $file = Get-TempFile
         Remove-Item $file
 
-        $application = $null
+        $wordApplicationInstances = @(Get-Process -Name 'WinWord' -ErrorAction Ignore).Count
 
         Register-AutoDispose -InputObject $file -ScriptBlock {
             $newDocument = New-WordDocument -Path $file.fullName
             Register-AutoDispose -InputObject $newDocument -ScriptBlock {
-                $application = $newDocument.Application
-                
                 Test-Path $file.FullName | should be $true
                 $newDocument.FullName | Should be $file.fullName
-                # $newDocument.Close()
-                # $application.Quit()
             }
-            Wait-ForCondition -InputObject $file -TimeSpan (New-TimeSpan -Seconds 5) -Condition { !(Test-FileIsLocked $file) }
         }
+
+        # Verify the Microsoft word application is closed.
+        @(Get-Process -Name 'WinWord' -ErrorAction Ignore).Count | Should Be $wordApplicationInstances
+        
+        # Verify the document has been deleted (and therefore is no longer open by Microsoft word.)
+        Test-Path $file.FullName | Should Be $false
     }
 
     It "Create Word Document With Content"{
-        $path = [System.IO.FileInfo]"$PSScriptRoot\MicrosoftWord.NewFile2.docx"
-        Add-DisposeScript -InputObject $path -DisposeScript $(Script:GetFileDispose($path.fullName))
-        Register-AutoDispose -InputObject $path -ScriptBlock {
-            $content = "This is my content"
-            New-WordDocument -Path $path.fullName -Content $content
+        $file = Get-TempFile
+        Remove-Item $file
 
-            $newDocument = Open-WordDocument $path.fullName
-            $word = $newDocument.Application
-            $newDocument.FullName | Should be $path.fullName
-            $allComparedText = @()
-            $newDocument.paragraphs | ForEach-Object {
-                $allComparedText += "$($_.Range.Text)"
+        $content = "This is my content"
+
+        Register-AutoDispose -InputObject $file -ScriptBlock {
+            $newDocument = New-WordDocument -Path $file.fullName -Content $content
+            Register-AutoDispose -InputObject $newDocument {
+                $allComparedText = @()
+                $newDocument.paragraphs | ForEach-Object {
+                    $allComparedText += "$($_.Range.Text)"
+                }
+                $allComparedText[0] | Should Match $content
             }
-            $allComparedText[0] | Should Match $content
-            $newDocument.Close()
-            $word.Quit()
         }
     }
 }
@@ -129,28 +148,6 @@ Describe "Compare-WordDocument" {
                     $word.Quit()
                 }
             }
-        }
-    }
-}
-
-Describe "Open-WordDocument" {
-    It "The word document is Opened"{
-        $path = [System.IO.FileInfo]"$PSScriptRoot\MicrosoftWord.NewFile.docx"
-        $content = "This is my content"
-
-        Add-DisposeScript -InputObject $path -DisposeScript $(Script:GetFileDispose($path.fullName))
-
-        Register-AutoDispose -InputObject $path -ScriptBlock {
-            New-WordDocument $path.fullName -Content $content
-
-            $document = Open-WordDocument $path.fullName
-            $allComparedText = @()
-            $document.paragraphs | ForEach-Object {
-                $allComparedText += "$($_.Range.Text)"
-            }
-            $allComparedText[0] | Should Match $content
-
-            $document.Application.Quit()
         }
     }
 }
