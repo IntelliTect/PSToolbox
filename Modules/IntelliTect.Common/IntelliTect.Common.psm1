@@ -139,15 +139,24 @@ Function Add-DisposeScript {
     )
     PROCESS {
         $inputObject | Foreach-Object {
+            if($_.GetType() -eq [string]) { throw 'Add-DisposeScript will not work with [string] type $InputObjects'}
             $eachInputObject = $_
             if($eachInputObject.PSObject.Members.Name -notcontains 'IsDisposed') {
                 $eachInputObject | Add-Member -MemberType NoteProperty -Name 'IsDisposed' -Value $false
             }
+
+            $eachInputObject | Add-Member -MemberType ScriptMethod -Name InternalDispose -Value $DisposeScript -Force:$Force
+            
             # Set the IsDisposed property to true when Dispose() is called.
-            [ScriptBlock]$DisposeScript = [scriptblock]::Create(
-                "$DisposeScript; `n`$this.IsDisposed = `$true; "
+            [ScriptBlock]$localDisposeScript = [scriptblock]::Create(
+                "`n$DisposeScript; `n`$this.IsDisposed = `$true; "
             )
-            $eachInputObject | Add-Member -MemberType ScriptMethod -Name Dispose -Value $DisposeScript -Force:$Force
+            $eachInputObject | Add-Member -MemberType ScriptMethod -Name Dispose -Value $localDisposeScript -Force:$Force
+
+            # $eachInputObject | Add-Member -MemberType ScriptMethod -Name Dispose -Value {
+            #     Invoke-Command -ScriptBlock $DisposeScript
+            #     $this.IsDisposed = $true
+            # }.GetNewClosure() -Force:$Force
         }
     }
 }
@@ -161,7 +170,9 @@ Provides equivalent functionality to C#'using statment, invoking Dispose after
 executing the $ScriptBlock specified.
 
 .PARAMETER inputObject
-The object on which to find and invoke the Dispose method.
+The object on which to find and invoke the Dispose method.  Note that if a collection (such as an array)
+of object is used, the ScriptBlock will only be invoked once whereas, Dispose() will be called
+on each item in the inputObject collection.
 
 .PARAMETER ScriptBlock
 The ScriptBlock to execute before calling the $InputObject's dispose method.
@@ -188,19 +199,20 @@ Function Register-AutoDispose {
     [CmdletBinding(SupportsShouldProcess)]
     param(
         [ValidateScript( {$_.PSobject.Members.Name -contains "Dispose"})]
-        [ValidateNotNull()][Parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Object[]]$InputObject,
+            [ValidateNotNull()][Parameter(Position = 0, Mandatory, ValueFromPipeline)]
+            [Object[]]$InputObject,
         
         [Parameter(Position = 1, Mandatory)]
-        [ScriptBlock]$ScriptBlock
+            [ScriptBlock]$ScriptBlock
         )
     PROCESS {
-        # TODO: Add support for using string objects ad input objects.
         try {
+            # Only call the script once - even if the #InputObject is a collection of objects.
             Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $InputObject
         }
         finally {
             $InputObject | ForEach-Object {
+                if($_-eq $null) { throw '$inputOject contains items that are null.'}
                 try {
                     $_.Dispose()
                 }
@@ -220,14 +232,14 @@ Function Script:Get-FileSystemTempItem {
     [OutputType('System.IO.FileSystemInfo')]
     param (
         [Parameter(ValueFromPipelineByPropertyName)]
-        [string[]]${Path} = [System.IO.Path]::GetTempPath(),
+        [string[]]$Path = [System.IO.Path]::GetTempPath(),
         [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)]
         [AllowNull()][AllowEmptyString()][string[]]${Name},
         [ValidateSet('File', 'Directory')][string]$ItemType = 'File'
     )
 
     PROCESS {
-        $path | ForEach-Object {
+        $Path | ForEach-Object {
 
             [string]$fullName = $null
             # If the directory doesn't exist then Resolve-Path will report an error.
@@ -255,7 +267,7 @@ Function Script:Get-FileSystemTempItem {
                 $file = New-Item $_ -ItemType $ItemType -ErrorAction Stop
 
                 $file | Add-DisposeScript -DisposeScript {
-                    Remove-Item $this.FullName -Force -Recurse -ErrorVariable $failed # Recurse is allowed on both files and directoriese
+                    Remove-Item -Path $this.FullName -Force -Recurse -ErrorVariable failed # Recurse is allowed on both files and directoriese
                     if($failed) { throw $failed }
                 }
                 Write-Output $file
@@ -271,7 +283,7 @@ Function Get-TempDirectory {
     [OutputType('System.IO.DirectoryInfo')]
     param (
         [Parameter(ValueFromPipelineByPropertyName)]
-        [string[]]${Path} = [System.IO.Path]::GetTempPath(),
+        [string[]]$Path = [System.IO.Path]::GetTempPath(),
         [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)]
         [AllowNull()][AllowEmptyString()][string[]]${Name}
     )
@@ -284,7 +296,7 @@ Function Get-TempFile {
     [OutputType('System.IO.FileInfo')]
     param (
         [Parameter(ValueFromPipelineByPropertyName)]
-        [string[]]${Path} = [System.IO.Path]::GetTempPath(),
+        [string[]]$Path = [System.IO.Path]::GetTempPath(),
         [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)]
         [AllowNull()][AllowEmptyString()][string[]]${Name}
     )

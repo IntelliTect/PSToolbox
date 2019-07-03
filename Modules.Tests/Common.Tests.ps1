@@ -48,13 +48,26 @@ Describe "Add-DisposeScript" {
         $object.Dispose() | Should Be $true
         $object.IsDisposed | Should Be $true
     }
-    # Method invocation fails because [System.String] does not contain a method named 'Dispose'
-    # It "Verify add dispose to string" { 
-    #     $object = [String]"New-Object Object"
-    #     $object | Add-DisposeScript -DisposeScript { Write-Output  $true }
-    #     $object.Dispose() | Should Be $true
-    #     $object.IsDisposed | Should Be $true
-    # }
+    It "Verify that a dispose method is added for multiple input objects on the pipe." {
+        $object1 = New-Object Object
+        $object2 = New-Object Object
+        $object1,$object2 | Add-DisposeScript -DisposeScript { Write-Output  $true }
+        $object1,$object2 | ForEach-Object {
+            $_.PSobject.Members.Name -contains "Dispose" | Should Be $true
+            $_.Dispose() | Should Be $true
+            $_ | Get-Member -Name 'IsDisposed' | Select-Object -ExpandProperty Name | Should Be 'IsDisposed'
+            $_.IsDisposed | Should Be $true
+        }
+    }
+    It "Verify add dispose to string" { 
+        [String]$text = "Inigo Montoya"
+        { $text | Add-DisposeScript -DisposeScript { Write-Output  $true } } | Should Throw
+        # TODO  'Add-DisposeScript does not work for a string (it likely is behaves with pass-by-value because it is read-only'
+        # As a result of the above warning, the following lines will fail if we didn't throw the exception.
+        # $text | Add-DisposeScript -DisposeScript { Write-Output  $true } 
+        # $text.Dispose() | Should Be $true
+        # $text.IsDisposed | Should Be $true
+    }
 }
 
 Describe "Register-AutoDispose" {
@@ -80,7 +93,7 @@ Describe "Register-AutoDispose" {
     It "Verify that the disposed object is passed as a parameter to the `$ScriptBlock" {
         $sampleDisposeObject = Get-SampleDisposeObject
         Register-AutoDispose $sampleDisposeObject {
-            param($inputObject) Write-Output $inputObject } | Should Be $sampleDisposeObject
+            param($parmameter) Write-Output $parmameter } | Should Be $sampleDisposeObject
         $sampleDisposeObject.DisposeCalled | Should Be $true
     }
     It "NOTE: Both value types and refrence types can be passed in closure but neither will reflect change after the closure." {
@@ -103,7 +116,9 @@ Describe "Get-Tempdirectory" {
         try {
             $tempItem = Get-TempDirectory
             push-location $tempItem
-            { $tempItem.Dispose()} | Should Throw
+            { 
+                $tempItem.Dispose()
+            } | Should Throw
         }
         finally {
             if (Test-Path $tempItem) {
@@ -127,7 +142,8 @@ Describe "Get-Tempdirectory" {
 Describe "Get-TempDirectory/Get-TempFile" {
     (Get-TempDirectory), (Get-TempFile) | ForEach-Object {
         It "Verify that the item has a Dispose and IsDisposed member" {
-            $_.PSobject.Members.Name -match "Dispose" | Should Be 'IsDisposed', 'Dispose'
+            $_.PSobject.Members.Name -contains "Dispose" | Should Be $true
+            $_.PSobject.Members.Name -contains "IsDisposed" | Should Be $true
         }
         It "Verify that Dispose removes the item" {
             $_.Dispose()
