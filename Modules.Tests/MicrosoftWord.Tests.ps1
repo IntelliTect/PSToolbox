@@ -20,12 +20,23 @@ Function Get-TempWordDocument {
     $tempDocument | Add-Member -MemberType ScriptMethod -Name 'InternalWordDocumentDispose' -Value $tempDocument.Dispose.Script
     $tempDocument | Add-Member -MemberType ScriptMethod -Name 'InternalFileDispose' -Value $file.Dispose.Script
 
-    [ScriptBlock]$wordDocumentDisposeScript = [ScriptBlock]::Create( $tempDocument.Dispose.Script )
-    [ScriptBlock]$tempFileDisposeScript = [ScriptBlock]::Create( $file.Dispose.Script )
-    $tempDocument | Add-DisposeScript -DisposeScript {
-        $this.InternalWordDocumentDispose()
-        $this.InternalFileDispose()
-    } -Force
+    # [ScriptBlock]$wordDocumentDisposeScript = [ScriptBlock]::Create( $tempDocument.Dispose.Script )
+    # [ScriptBlock]$tempFileDisposeScript = [ScriptBlock]::Create( $file.Dispose.Script )
+    # $tempDocument | Add-DisposeScript -DisposeScript {
+    #     $this.InternalWordDocumentDispose()
+    #     $this.InternalFileDispose()
+    # } -Force
+
+    [ScriptBlock]$disposeScript = [ScriptBlock]::Create(
+        "
+        `$path = `$this.FullName
+        $($tempDocument.Dispose.Script)
+        $($file.Dispose.Script -replace '\$this\.FullName','$path' )
+        "
+    )
+
+    $tempDocument | Add-DisposeScript -DisposeScript $disposeScript -Force
+
     return $tempDocument
 }
 
@@ -34,9 +45,9 @@ Describe "Get-TempWordDocument" { #### I was focussing on a Get-TempDocument fil
         $tempDocument = Get-TempWordDocument
         $path = $tempDocument
         Register-AutoDispose -InputObject $tempDocument -ScriptBlock {
-            Write-Debug ''
+            # Write-Debug ''
         }
-        Test-Path $path | Should $false
+        Test-Path $path | Should Be $false
     }
 }
 

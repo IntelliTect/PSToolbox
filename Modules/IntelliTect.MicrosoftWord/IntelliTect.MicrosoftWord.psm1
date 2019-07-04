@@ -91,7 +91,8 @@ Function Open-MicrosoftWord {
     Add-DisposeScript -InputObject $wordApplication -DisposeScript {
         [int]$wordApplicationInstances = @(Get-Process -Name 'WinWord').Count
         $this.Quit();
-        Wait-ForCondition -InputObject $this -TimeSpan (New-TimeSpan -Seconds 5) -Condition { 
+        # TODO: Figure out the specific process ID of MS Word and wait for that specific process to close.
+        Wait-ForCondition -InputObject $this -TimeSpan (New-TimeSpan -Seconds 5) -Condition {
             return (@(Get-Process -Name 'WinWord').Count -eq ($wordApplicationInstances-1) )
         }
 
