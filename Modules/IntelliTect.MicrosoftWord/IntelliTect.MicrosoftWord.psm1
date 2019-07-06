@@ -89,68 +89,61 @@ Function Open-MicrosoftWord {
     )
     $wordApplication = new-object -ComObject Word.Application
     Add-DisposeScript -InputObject $wordApplication -DisposeScript {
-        [int]$wordApplicationInstances = @(Get-Process -Name 'WinWord').Count
-        $this.Quit();
+        if($wordApplication.IsDisposed) { return } # Application has already been closed.
+        [int]$wordApplicationInstances = @(Get-Process -Name 'WinWord' -ErrorAction Ignore).Length
+        $this.Quit()
         # TODO: Figure out the specific process ID of MS Word and wait for that specific process to close.
-        Wait-ForCondition -InputObject $this -TimeSpan (New-TimeSpan -Seconds 5) -Condition {
-            return (@(Get-Process -Name 'WinWord').Count -eq ($wordApplicationInstances-1) )
+        try {
+            Wait-ForCondition -InputObject $this -TimeSpan (New-TimeSpan -Seconds 5) -Condition {
+                return (@(Get-Process -Name 'WinWord' -ErrorAction Ignore).Length -eq ($wordApplicationInstances-1) )
+            }
         }
-
+        catch [System.TimeoutException] {
+            throw 'Unable to shut down Microsoft Word within the alloted 5 seconds.'
+        }
     }
     return $wordApplication
 }
 
 #TODO: This should be configured to accept pipeline variables and only create one instance of Word for each pipelin
+#TODO: Add support for SupportsShouldProcess (-whatif)
 Function New-WordDocument {
     [CmdletBinding()] param(
-        [string]$Path,
+        # TODO: Add validation script for Path parameter and remove the Test-Path parameter check in the implementation 
+        <#[ValidateScript({-not (Test-Path -Path $_)})]#>[string]$Path,
+        # TODO: Remove the Content parameter entirely.
         [string]$Content,
-        $WordApplication # An already open instance of the Microsoft Word application.
+        $WordApplication # An already open instance of the Microsoft Word application..
     )
 
     If((Test-Path -Path $Path)){
         throw "There is already a file at $Path"
     }
-
-    # TODO: Casey, I can't find this name on the Internet.  Please include a URL to the value and name it (even create an enum?) for the type.  I couldn't even find a value of 16
-    # here: https://docs.microsoft.com/en-us/office/vba/api/word.documents.add and https://docs.microsoft.com/en-us/dotnet/api/microsoft.office.interop.word.wdnewdocumenttype
-    $wdFormatWordDocument = 16
-
     [bool]$closeWordApplication = $false
     if (!$WordApplication) {
         $WordApplication = Open-MicrosoftWord
         $closeWordApplication = $true
     }
-    $WordApplication | Add-Member -MemberType NoteProperty -Name 'CloseApplicationRequired' -Value $closeWordApplication
 
-    $newDocument = $WordApplication.Documents.Add()
-    
+    $document = $WordApplication.Documents.Add()
+
+    if(!(Test-Property -InputObject $document.Application -Name 'CloseApplicationRequired')) {
+        $document.Application | Add-Member -MemberType NoteProperty -Name 'CloseApplicationRequired' -Value $closeWordApplication
+    }
+
     if($Content){
         $WordApplication.Selection.TypeText($Content)
     }
 
-    $newDocument.SaveAs([ref]$Path, [ref]$wdFormatWordDocument)
+    $document.SaveAs([ref]$Path, [ref][int][Microsoft.Office.Interop.Word.WdSaveFormat]::wdFormatDocumentDefault) > $null
 
-    Add-DisposeScript -InputObject $newDocument -DisposeScript {
-        $application = $this.Application
-        $documentPath = $this.FullName
-        $this.Close()
-        Wait-ForCondition -InputObject $application -TimeSpan (New-TimeSpan -Seconds 5) -Condition { 
-            @($application.Documents) | ForEach-Object{
-                if($_.FullName -eq $documentPath) { return $false }
-            }
-            return true
-        }
-        if($application.CloseApplicationRequired) {
-            $application.Dispose()
-        }
-    }
-    return $newDocument
+    Script:Add-DocumentDisposeScript $document
 
+    return $document
 }
 
 Function Open-WordDocument {
-    [CmdletBinding()] 
+    [CmdletBinding()]
     param(
         [ValidateScript( { Test-Path $_ -PathType Leaf })]
         [Parameter(Mandatory, ValueFromPipeLine, ValueFromPipelineByPropertyName, Position)]
@@ -171,6 +164,10 @@ Function Open-WordDocument {
                 $closeWordApplication = $true
             }
 
+            if(!(Test-Property -InputObject $WordApplication -Name 'CloseApplicationRequired')) {
+                $WordApplication | Add-Member -MemberType NoteProperty -Name 'CloseApplicationRequired' -Value $closeWordApplication
+            }
+
             if (Test-FileIsLocked $eachDocumentPath) {
                 throw "The $eachDocumentPath document is already opened."
             }
@@ -180,28 +177,38 @@ Function Open-WordDocument {
                 # Used to avoid the error, "This method or property is not available because this command is not available for reading."
                 # when using Find.Execute on the document
                 # see http://blogs.msmvps.com/wordmeister/2013/02/22/word2013bug-not-available-for-reading/
-                $document.ActiveWindow.View = [Microsoft.Office.Interop.Word.WdViewType]"wdPrintView"
+                $document.ActiveWindow.View = [Microsoft.Office.Interop.Word.WdViewType]"wdPrintView" # TODO: Switch to [Microsoft.Office.Interop.Word.WdViewType]::wdPrintView 
             }
 
             #Add Text Property to Comment where the comment text is the Range.Text property on a comment.
             $comments = $document.Comments | ForEach-Object { Add-Member -InputObject $_ -MemberType ScriptProperty -Name Text -Value { $this.Range.Text } -PassThru } 
             Add-Member -InputObject $document -MemberType ScriptProperty -Name CommentsEx -Value { $comments } -Force
 
-            Add-DisposeScript -InputObject $document -DisposeScript {
-                $application = $inputObject.Application
-                $documentPath = $inputObject.FullName
-                $inputObject.Close()
-                Wait-ForCondition -InputObject $application -TimeSpan (New-TimeSpan -Seconds 5) -Condition { 
-                    @($application.Documents) | ForEach-Object{
-                        if($_.FullName -eq $documentPath) { return $false }
-                    }
-                    return true
-                }
-                if($closeWordApplication) {
-                    $application.Dispose()
-                }
-            }
+            Script:Add-DocumentDisposeScript $document
+
             Write-Output $document
+        }
+    }
+}
+
+Function Script:Add-DocumentDisposeScript {
+    [CmdletBinding()]
+    param($document)
+    Add-DisposeScript -InputObject $document -DisposeScript {
+        if($this.IsDisposed) { return } # Document has already been closed.
+        $application = $this.Application
+        $documentPath = $this.FullName
+        $this.Close()
+        try {
+            Wait-ForCondition -InputObject $application -TimeSpan (New-TimeSpan -Seconds 5) -Condition {
+                $application.Documents.FullName -notcontains $documentPath
+            } > $null
+        }
+        catch [System.TimeoutException] {
+            throw "Unable to close the '$($this.FullName)' file within the alotted 5 seconds."
+        }
+        if((Test-Property -InputObject $application -Name 'CloseApplicationRequired') -and $application.CloseApplicationRequired) {
+            $application.Dispose()
         }
     }
 }
