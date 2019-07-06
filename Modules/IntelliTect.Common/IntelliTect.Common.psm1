@@ -7,10 +7,11 @@ if((Get-Command Join-Path).Version -lt '6.0') {
 # }
 # catch [System.Management.Automation.ParameterBindingException] {
     Function Join-Path {
+        @($args) | ForEach-Object{ if($_ -eq $null) {throw 'Join-Path parameter cannot be null.'} }
         switch ($args.Count) {
             0 { Write-Output '' }
             1 { $args[0] | Write-Output }
-            2 { Microsoft.PowerShell.Management\Join-Path @args }
+            2 { Microsoft.PowerShell.Management\Join-Path $args[0] $args[1] }
             default {
                 $result = $args[0]
                 if($result -eq $null) { throw 'InvalidOperationException: The $result parameter should not be null.'} 
@@ -73,7 +74,7 @@ Function Invoke-ShouldProcess {
 
     if ($PSCmdlet.ShouldProcess($ContinueMessage, $InquireMessage, $Caption)) {
         Write-Debug 'Executing script...'
-        Invoke-Command -ScriptBlock $Script
+        Invoke-Command $Script
         Write-Debug 'Finished executing script.'
     }
 }
@@ -139,15 +140,25 @@ Function Add-DisposeScript {
     )
     PROCESS {
         $inputObject | Foreach-Object {
+            if($_.GetType() -eq [string]) { throw 'Add-DisposeScript will not work with [string] type $InputObjects'}
             $eachInputObject = $_
             if($eachInputObject.PSObject.Members.Name -notcontains 'IsDisposed') {
                 $eachInputObject | Add-Member -MemberType NoteProperty -Name 'IsDisposed' -Value $false
             }
-            # Set the IsDisposed property to true when Dispose() is called.
-            [ScriptBlock]$DisposeScript = [scriptblock]::Create(
-                "$DisposeScript; `n`$this.IsDisposed = `$true; "
+
+            $eachInputObject | Add-Member -MemberType ScriptMethod -Name InternalDispose -Value $DisposeScript -Force:$Force
+
+            # TODO: Figure out a way to combine ScriptBlocgs without making them strings.                            
+            [ScriptBlock]$localDisposeScript = [scriptblock]::Create(
+                # Set the IsDisposed property to true when Dispose() is called.
+                "`n$DisposeScript; `n`$this.IsDisposed = `$true; "
             )
-            $eachInputObject | Add-Member -MemberType ScriptMethod -Name Dispose -Value $DisposeScript -Force:$Force
+            $eachInputObject | Add-Member -MemberType ScriptMethod -Name Dispose -Value $localDisposeScript -Force:$Force
+
+            # $eachInputObject | Add-Member -MemberType ScriptMethod -Name Dispose -Value {
+            #     Invoke-Command -ScriptBlock $DisposeScript
+            #     $this.IsDisposed = $true
+            # }.GetNewClosure() -Force:$Force
         }
     }
 }
@@ -161,7 +172,9 @@ Provides equivalent functionality to C#'using statment, invoking Dispose after
 executing the $ScriptBlock specified.
 
 .PARAMETER inputObject
-The object on which to find and invoke the Dispose method.
+The object on which to find and invoke the Dispose method.  Note that if a collection (such as an array)
+of object is used, the ScriptBlock will only be invoked once whereas, Dispose() will be called
+on each item in the inputObject collection.
 
 .PARAMETER ScriptBlock
 The ScriptBlock to execute before calling the $InputObject's dispose method.
@@ -188,18 +201,20 @@ Function Register-AutoDispose {
     [CmdletBinding(SupportsShouldProcess)]
     param(
         [ValidateScript( {$_.PSobject.Members.Name -contains "Dispose"})]
-        [ValidateNotNull()][Parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Object[]]$InputObject,
-
+            [ValidateNotNull()][Parameter(Position = 0, Mandatory, ValueFromPipeline)]
+            [Object[]]$InputObject,
+        
         [Parameter(Position = 1, Mandatory)]
-        [ScriptBlock]$ScriptBlock
-    )
+            [ScriptBlock]$ScriptBlock
+        )
     PROCESS {
         try {
+            # Only call the script once - even if the #InputObject is a collection of objects.
             Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $InputObject
         }
         finally {
             $InputObject | ForEach-Object {
+                if($_-eq $null) { throw '$inputOject contains items that are null.'}
                 try {
                     $_.Dispose()
                 }
@@ -219,22 +234,18 @@ Function Script:Get-FileSystemTempItem {
     [OutputType('System.IO.FileSystemInfo')]
     param (
         [Parameter(ValueFromPipelineByPropertyName)]
-        [string[]]${Path} = [System.IO.Path]::GetTempPath(),
+        [string[]]$Path = [System.IO.Path]::GetTempPath(),
         [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)]
         [AllowNull()][AllowEmptyString()][string[]]${Name},
         [ValidateSet('File', 'Directory')][string]$ItemType = 'File'
     )
 
     PROCESS {
-        $path | ForEach-Object {
+        $Path | ForEach-Object {
 
             [string]$fullName = $null
             # If the directory doesn't exist then Resolve-Path will report an error.
             $eachPath = Resolve-Path $_ -ErrorAction Stop
-            if(@($eachPath).Count -ne 1) {
-                # The path contained wildcards that were not unique and is not supported.
-                throw "'$_' is an ambiguous path and only one path is supported."
-            }
             if ((!$Name) -or ([string]::IsNullOrEmpty($Name))) {
                 $fullName = Get-FileSystemTempItemPath $_
             }
@@ -258,7 +269,7 @@ Function Script:Get-FileSystemTempItem {
                 $file = New-Item $_ -ItemType $ItemType -ErrorAction Stop
 
                 $file | Add-DisposeScript -DisposeScript {
-                    Remove-Item $this.FullName -Force -Recurse -ErrorVariable failed # Recurse is allowed on both files and directoriese
+                    Remove-Item -Path $this.FullName -Force -Recurse -ErrorVariable failed # Recurse is allowed on both files and directoriese
                     if($failed) { throw $failed }
                 }
                 Write-Output $file
@@ -274,7 +285,7 @@ Function Get-TempDirectory {
     [OutputType('System.IO.DirectoryInfo')]
     param (
         [Parameter(ValueFromPipelineByPropertyName)]
-        [string[]]${Path} = [System.IO.Path]::GetTempPath(),
+        [string[]]$Path = [System.IO.Path]::GetTempPath(),
         [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)]
         [AllowNull()][AllowEmptyString()][string[]]${Name}
     )
@@ -287,7 +298,7 @@ Function Get-TempFile {
     [OutputType('System.IO.FileInfo')]
     param (
         [Parameter(ValueFromPipelineByPropertyName)]
-        [string[]]${Path} = [System.IO.Path]::GetTempPath(),
+        [string[]]$Path = [System.IO.Path]::GetTempPath(),
         [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)]
         [AllowNull()][AllowEmptyString()][string[]]${Name}
     )
@@ -435,7 +446,8 @@ Function Wait-ForCondition {
         [Parameter(Mandatory,ValueFromPipeline)][object[]]$InputObject,
         [Parameter(Mandatory)][ScriptBlock]$Condition,
         [ValidateScript({$_.TotalMilliseconds -ne 0})][Parameter(ParameterSetName = "TimeSpan")][TimeSpan]$TimeSpan,
-        [ValidateScript({$_ -ge 0})][Parameter(ParameterSetName = "TimeoutInMilliseconds")][long]$TimeoutInMilliseconds=0
+        [ValidateScript({$_ -ge 0})][Parameter(ParameterSetName = "TimeoutInMilliseconds")][long]$TimeoutInMilliseconds=0,
+        [switch]$PassThru
     )
     BEGIN {
          $items=@()
@@ -454,16 +466,38 @@ Function Wait-ForCondition {
         [int]$iterationCount = 0
         while ($moreItems -and ($moreItems.Count -gt 0)) {
             $iterationCount++
-            Write-Progress "Checking condition on remaining $($moreItems.Count) items for the $iterationCount time"
-            $moreItems = $moreItems | ForEach-Object {
-                    if(($TimeoutInMilliseconds -gt 0) -and ($stopwatch.ElapsedMilliseconds -gt $TimeoutInMilliseconds)) {
-                        throw [TimeoutException]::new("Execution time exceeded $TimeoutInMilliseconds milliseconds.")
+            Write-Progress "Checking condition on remaining $(@($moreItems).Length) items for the $iterationCount time"
+            Write-Debug "Checking condition on remaining $(@($moreItems).Length) items for the $iterationCount time"
+            $moreItems = $moreItems | Where-Object {
+                # Filter out the items for which the condition is true.
+                $conditionResult =  @($condition.Invoke($_)) # Invoke returns a Collection<PSObject>
+                switch($conditionResult.Length) {
+                    0 { throw 'The Condition script must return a Boolean value ([bool]), not $null' }
+                    1 {
+                        if($conditionResult[0].GetType() -ne [bool]) {
+                            throw "The Condition script must be a predicate (return a [bool]), not a $($conditionResult.GetType())"
+                        }
+                        Write-Debug "Checking condition for item `$condition.Invoke($_)=$conditionResult"
+                        if ($conditionResult[0] -ne $true) { <# Filter out anything that is not actually $true (even if it is not a bool) #>
+                            Write-Debug "'$_' didn't meet the condition so checking for timeout..."
+                            # If the condition still isn't met, check for timeout
+                            if(($TimeoutInMilliseconds -gt 0) -and ($stopwatch.ElapsedMilliseconds -gt $TimeoutInMilliseconds)) {
+                                throw [TimeoutException]::new("Execution time exceeded $TimeoutInMilliseconds milliseconds.")
+                            }
+                            return $true
+                        }
+                        else {
+                            return $false
+                        }
                     }
-                    Write-Output $_
-                } | Group-Object $condition | `
-                    Where-Object -Property Name -eq -Value 'False' | Select-Object -ExpandProperty Group
+                    default { throw 'The Condition must return a scalar (a single boolean).' }
+                }
+            }
+            Write-Debug "After iteration $iterationCount, there are $(@($moreItems).Length) items remaining."
         }
-        $items | Write-Output
-        Write-Debug "Number of times the list was polled for a true condition was $iterationCount"
+        if ($PSBoundParameters.ContainsKey('PassThru')) {
+            $items | Write-Output
+        }
+        Write-Debug "Number of times iterated over the list for was $iterationCount"
     }
 }
