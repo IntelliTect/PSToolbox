@@ -2,7 +2,7 @@
 Set-StrictMode -Version "Latest"
 
 Get-Module IntelliTect.Common | Remove-Module -Force
-Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.Common -Force
+Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.Common\IntelliTect.Common.psm1 -Force
 <#EndHeader#>
 
 Describe 'Join-Path' {
@@ -272,14 +272,31 @@ Describe "Get-IsWindowsPlatform" {
     }
 }
 
-
+Describe 'Wait-ForCondition Isolated' {
+}
 Describe 'Wait-ForCondition' {
-    It 'Check for timeout when wiating for even numbers 1000 times' {
+    It 'Simplest Wait' {
+        $script:falseCount=0
+        [int]$script:sum=0
+        [int]$script:innvocationCount=0
+        1..3 | Wait-ForCondition -Condition {
+            param($_)
+            $script:innvocationCount++
+            [bool]$passed=(($script:sum+=$_) -gt 1)
+            if(!$passed) {
+                $script:falseCount++
+            }
+            return $passed
+        }
+        $script:falseCount | Should Be 1
+        [int]$script:innvocationCount | Should Be 4
+    }
+    It 'Check for timeout when waiting for even numbers 10000 times' {
         $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
         $exception=$null
-        [int]$timeout = 5
+        [int]$timeout = 10
         try {
-            1..10000 | Wait-ForCondition -TimeSpan (New-TimeSpan -Seconds 1) -Condition { ((Get-Random -Minimum 1 -Maximum 11)%2) -eq 0 } > $null
+            1..10000 | Wait-ForCondition -TimeoutInMilliseconds $timeout  -Condition { ((Get-Random -Minimum 1 -Maximum 11)%2) -eq 0 } > $null
         }
         catch [TimeoutException] {
             $exception = $_.Exception
@@ -329,5 +346,32 @@ Describe 'Wait-ForCondition' {
         }
         $stopwatch.ElapsedMilliseconds | Should BeGreaterThan $timeout
         $exception | Should BeOfType [TimeoutException]
+    }
+}
+
+Describe 'Wait-ForCondition Error Checking' {
+    It 'Verify that the Condition must be a predicate (return a [bool]' {
+        try {
+            Wait-ForCondition -InputObject 'Input' -Condition { return 'Inigo Montoya'}
+        }
+        catch {
+            $_.Exception.Message | Should BeLike '*The Condition script must be a predicate*'
+        }
+    }
+    It 'Verify that the condition must be a scalar (a single value)' {
+        try {
+            Wait-ForCondition -InputObject 'Input' -Condition { return $true,$false }
+        }
+        catch {
+            $_.Exception.Message | Should BeLike '*The Condition must return a scalar*'
+        }
+    }
+    It 'Verify that the condition have a return' {
+        try {
+            Wait-ForCondition -InputObject 'Input' -Condition { }
+        }
+        catch {
+            $_.Exception.Message | Should BeLike '*The Condition script must return a Boolean value*'
+        }
     }
 }

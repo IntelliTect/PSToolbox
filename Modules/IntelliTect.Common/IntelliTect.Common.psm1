@@ -7,10 +7,11 @@ if((Get-Command Join-Path).Version -lt '6.0') {
 # }
 # catch [System.Management.Automation.ParameterBindingException] {
     Function Join-Path {
+        @($args) | ForEach-Object{ if($_ -eq $null) {throw 'Join-Path parameter cannot be null.'} }
         switch ($args.Count) {
             0 { Write-Output '' }
             1 { $args[0] | Write-Output }
-            2 { Microsoft.PowerShell.Management\Join-Path @args }
+            2 { Microsoft.PowerShell.Management\Join-Path $args[0] $args[1] }
             default {
                 $result = $args[0]
                 if($result -eq $null) { throw 'InvalidOperationException: The $result parameter should not be null.'} 
@@ -146,9 +147,10 @@ Function Add-DisposeScript {
             }
 
             $eachInputObject | Add-Member -MemberType ScriptMethod -Name InternalDispose -Value $DisposeScript -Force:$Force
-            
-            # Set the IsDisposed property to true when Dispose() is called.
+
+            # TODO: Figure out a way to combine ScriptBlocgs without making them strings.                            
             [ScriptBlock]$localDisposeScript = [scriptblock]::Create(
+                # Set the IsDisposed property to true when Dispose() is called.
                 "`n$DisposeScript; `n`$this.IsDisposed = `$true; "
             )
             $eachInputObject | Add-Member -MemberType ScriptMethod -Name Dispose -Value $localDisposeScript -Force:$Force
@@ -444,7 +446,8 @@ Function Wait-ForCondition {
         [Parameter(Mandatory,ValueFromPipeline)][object[]]$InputObject,
         [Parameter(Mandatory)][ScriptBlock]$Condition,
         [ValidateScript({$_.TotalMilliseconds -ne 0})][Parameter(ParameterSetName = "TimeSpan")][TimeSpan]$TimeSpan,
-        [ValidateScript({$_ -ge 0})][Parameter(ParameterSetName = "TimeoutInMilliseconds")][long]$TimeoutInMilliseconds=0
+        [ValidateScript({$_ -ge 0})][Parameter(ParameterSetName = "TimeoutInMilliseconds")][long]$TimeoutInMilliseconds=0,
+        [switch]$PassThru
     )
     BEGIN {
          $items=@()
@@ -463,16 +466,38 @@ Function Wait-ForCondition {
         [int]$iterationCount = 0
         while ($moreItems -and ($moreItems.Count -gt 0)) {
             $iterationCount++
-            Write-Progress "Checking condition on remaining $($moreItems.Count) items for the $iterationCount time"
-            $moreItems = $moreItems | ForEach-Object {
-                    if(($TimeoutInMilliseconds -gt 0) -and ($stopwatch.ElapsedMilliseconds -gt $TimeoutInMilliseconds)) {
-                        throw [TimeoutException]::new("Execution time exceeded $TimeoutInMilliseconds milliseconds.")
+            Write-Progress "Checking condition on remaining $(@($moreItems).Length) items for the $iterationCount time"
+            Write-Debug "Checking condition on remaining $(@($moreItems).Length) items for the $iterationCount time"
+            $moreItems = $moreItems | Where-Object {
+                # Filter out the items for which the condition is true.
+                $conditionResult =  @($condition.Invoke($_)) # Invoke returns a Collection<PSObject>
+                switch($conditionResult.Length) {
+                    0 { throw 'The Condition script must return a Boolean value ([bool]), not $null' }
+                    1 {
+                        if($conditionResult[0].GetType() -ne [bool]) {
+                            throw "The Condition script must be a predicate (return a [bool]), not a $($conditionResult.GetType())"
+                        }
+                        Write-Debug "Checking condition for item `$condition.Invoke($_)=$conditionResult"
+                        if ($conditionResult[0] -ne $true) { <# Filter out anything that is not actually $true (even if it is not a bool) #>
+                            Write-Debug "'$_' didn't meet the condition so checking for timeout..."
+                            # If the condition still isn't met, check for timeout
+                            if(($TimeoutInMilliseconds -gt 0) -and ($stopwatch.ElapsedMilliseconds -gt $TimeoutInMilliseconds)) {
+                                throw [TimeoutException]::new("Execution time exceeded $TimeoutInMilliseconds milliseconds.")
+                            }
+                            return $true
+                        }
+                        else {
+                            return $false
+                        }
                     }
-                    Write-Output $_
-                } | Group-Object $condition | `
-                    Where-Object -Property Name -eq -Value 'False' | Select-Object -ExpandProperty Group
+                    default { throw 'The Condition must return a scalar (a single boolean).' }
+                }
+            }
+            Write-Debug "After iteration $iterationCount, there are $(@($moreItems).Length) items remaining."
         }
-        $items | Write-Output
-        Write-Debug "Number of times the list was polled for a true condition was $iterationCount"
+        if ($PSBoundParameters.ContainsKey('PassThru')) {
+            $items | Write-Output
+        }
+        Write-Debug "Number of times iterated over the list for was $iterationCount"
     }
 }
