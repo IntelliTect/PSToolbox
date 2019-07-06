@@ -40,15 +40,13 @@ Function Get-TempWordDocument {
     return $tempDocument
 }
 
-Describe "Get-TempWordDocument" { #### I was focussing on a Get-TempDocument file.  ###
+Describe "Get-TempWordDocument" {
     It "Verify the temporary word document has a dispose method that closes the document and deletes the file."{
         $wordApplicationInstances = @(Get-Process -Name 'WinWord' -ErrorAction Ignore).Length
 
         $tempDocument = Get-TempWordDocument
         $path = $tempDocument
-        Register-AutoDispose -InputObject $tempDocument -ScriptBlock {
-            # No op
-        }
+        Register-AutoDispose -InputObject $tempDocument -ScriptBlock {<# No op #> }
         Test-Path $path | Should Be $false
 
         # Verify the Microsoft word application is closed.
