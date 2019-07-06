@@ -1,4 +1,4 @@
-Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.Common
+Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.Common -Force
 Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.File -Force
 
 Import-Module $PSScriptRoot\..\Modules\IntelliTect.MicrosoftWord\IntelliTect.MicrosoftWord.psd1 -Force
@@ -9,17 +9,17 @@ Function Get-TempWordDocument {
     param (
         $WordApplication
     )
-        
+
     # Instantiate a FileInfo object that has a Dispose method.
-    [System.IO.FileInfo]$file = Get-TempFile
+    [System.IO.FileInfo]$file = Get-TempFile # -Name "$([System.IO.Path]::GetRandomFileName()).docx"
     #Delete the actual file since New-WordDocument will create one.
     Remove-Item $file
 
     $tempDocument = New-WordDocument -Path $file -WordApplication $WordApplication
 
-    $tempDocument | Add-Member -MemberType ScriptMethod -Name 'InternalWordDocumentDispose' -Value $tempDocument.Dispose.Script
-    $tempDocument | Add-Member -MemberType ScriptMethod -Name 'InternalFileDispose' -Value $file.Dispose.Script
-
+    # TODO: Figure out a way to combine ScriptBlocgs without making them strings.
+    #$tempDocument | Add-Member -MemberType ScriptMethod -Name 'InternalWordDocumentDispose' -Value $tempDocument.Dispose.Script
+    #$tempDocument | Add-Member -MemberType ScriptMethod -Name 'InternalFileDispose' -Value $file.Dispose.Script
     # [ScriptBlock]$wordDocumentDisposeScript = [ScriptBlock]::Create( $tempDocument.Dispose.Script )
     # [ScriptBlock]$tempFileDisposeScript = [ScriptBlock]::Create( $file.Dispose.Script )
     # $tempDocument | Add-DisposeScript -DisposeScript {
@@ -42,111 +42,73 @@ Function Get-TempWordDocument {
 
 Describe "Get-TempWordDocument" { #### I was focussing on a Get-TempDocument file.  ###
     It "Verify the temporary word document has a dispose method that closes the document and deletes the file."{
+        $wordApplicationInstances = @(Get-Process -Name 'WinWord' -ErrorAction Ignore).Length
+
         $tempDocument = Get-TempWordDocument
         $path = $tempDocument
         Register-AutoDispose -InputObject $tempDocument -ScriptBlock {
-            # Write-Debug ''
+            # No op
         }
         Test-Path $path | Should Be $false
+
+        # Verify the Microsoft word application is closed.
+        @(Get-Process -Name 'WinWord' -ErrorAction Ignore).Length | Should Be $wordApplicationInstances
     }
 }
 
-
-Describe "New-WordDocument" { 
+Describe "New-WordDocument" {
     It "Create a new word document and verify both document and Microsoft Word Application (WinWord) are closed."{
         $file = Get-TempFile
         Remove-Item $file
 
-        $wordApplicationInstances = @(Get-Process -Name 'WinWord' -ErrorAction Ignore).Count
+        $wordApplicationInstances = @(Get-Process -Name 'WinWord' -ErrorAction Ignore).Length
 
         Register-AutoDispose -InputObject $file -ScriptBlock {
             $newDocument = New-WordDocument -Path $file.fullName
             Register-AutoDispose -InputObject $newDocument -ScriptBlock {
                 Test-Path $file.FullName | should be $true
                 $newDocument.FullName | Should be $file.fullName
-            }
-        }
+            } | Should Be $null
+        } | Should Be $null
 
         # Verify the Microsoft word application is closed.
-        @(Get-Process -Name 'WinWord' -ErrorAction Ignore).Count | Should Be $wordApplicationInstances
-        
+        @(Get-Process -Name 'WinWord' -ErrorAction Ignore).Length | Should Be $wordApplicationInstances
+
         # Verify the document has been deleted (and therefore is no longer open by Microsoft word.)
         Test-Path $file.FullName | Should Be $false
-    }
-
-    It "Create Word Document With Content"{
-        $file = Get-TempFile
-        Remove-Item $file
-
-        $content = "This is my content"
-
-        Register-AutoDispose -InputObject $file -ScriptBlock {
-            $newDocument = New-WordDocument -Path $file.fullName -Content $content
-            Register-AutoDispose -InputObject $newDocument {
-                $allComparedText = @()
-                $newDocument.paragraphs | ForEach-Object {
-                    $allComparedText += "$($_.Range.Text)"
-                }
-                $allComparedText[0] | Should Match $content
-            }
-        }
     }
 }
 
 Describe "Compare-WordDocument" {
     It "The comparison word document is returned"{
-        $nl = [System.Environment]::NewLine
-        $path1 = [System.IO.FileInfo]"$PSScriptRoot\MicrosoftWord.Test1.docx"
-        $path2 = [System.IO.FileInfo]"$PSScriptRoot\MicrosoftWord.Test2.docx"
 
-        Add-DisposeScript -InputObject $path1 -DisposeScript $(Script:GetFileDispose($path1.fullName))
-        Add-DisposeScript -InputObject $path2 -DisposeScript $(Script:GetFileDispose($path2.fullName))
-
-        $i = 1
-
-        Register-AutoDispose -InputObject $path1, $path2 -ScriptBlock {
-            param($inputObject) 
-                Write-Host $i
-                $i++
-                New-WordDocument $path1.fullName -Content "test$($nl)2$($nl)3$($nl)4"        
-                New-WordDocument $path2.fullName -Content "test$($nl)1$($nl)Different$($nl)Text$($nl)4"
-
-                $compareDoc = Compare-WordDocument $path1.fullName $path2.fullName
-                $word = $compareDoc.Application
-                $paragraphs = $compareDoc.Paragraphs
-                $allComparedText = @()
-                $paragraphs | ForEach-Object {
-                    $allComparedText += "$($_.Range.Text)"
+        Register-AutoDispose -InputObject ($wordApplication = Open-MicrosoftWord) {
+            Function New-DocmentWithContent {
+                [OutputType([System.IO.FileInfo])]
+                [CmdletBinding(SupportsShouldProcess)]
+                param(
+                    [string]$Content
+                )
+                [System.IO.FileInfo]$file = Get-TempFile
+                Remove-Item -Path $file.FullName  # Now that we have a document (that supports dispose) let's remove the document
+                                            # so that New-WordDocument can create a word document.
+                $tempDocument = New-WordDocument -Path $file.FullName -WordApplication $WordApplication
+                Register-AutoDispose -InputObject $tempDocument {
+                    $tempDocument.Application.Selection.TypeText($Content)
+                    $tempDocument.Save()
                 }
-                $expectedLines = @("test*","1*","Different*","Text*","4*")
-                for($i = 0; $i -lt $allComparedText.Count; $i++){
-                    $allComparedText[$i] | Should Match $expectedLines[$i]
-                }
-                $word.Quit()
-            # }
-        }
-    }
 
-    It "The comparison word document is saved"{
-        $nl = [System.Environment]::NewLine
-        $path1 = [System.IO.FileInfo]"$PSScriptRoot\MicrosoftWord.Test1.docx"
-        $path2 = [System.IO.FileInfo]"$PSScriptRoot\MicrosoftWord.Test2.docx"
-        $savePath = [System.IO.FileInfo]"$PSScriptRoot\MicrosoftWord.CompareTest.docx"
+                Write-Debug $file.GetType()
+                return $file
+            }
 
-        Add-DisposeScript -InputObject $path1 -DisposeScript $(Script:GetFileDispose($path1.fullName))
-        Add-DisposeScript -InputObject $path2 -DisposeScript $(Script:GetFileDispose($path2.fullName))
-        Add-DisposeScript -InputObject $savePath -DisposeScript $(Script:GetFileDispose($savePath.fullName))
+            [System.IO.FileInfo]$file1 = New-DocmentWithContent "test`n2`n3`n4"
+            [System.IO.FileInfo]$file2 = New-DocmentWithContent "test`n1`nDifferent`nText`n4"
 
-        Register-AutoDispose -InputObject $path1 -ScriptBlock {
-            Register-AutoDispose -InputObject $path2 -ScriptBlock {
-                Register-AutoDispose -InputObject $savePath -ScriptBlock {
+            $file1,$file2 |  Register-AutoDispose -ScriptBlock `
+            {
 
-                    New-WordDocument $path1.fullName -Content "test$($nl)2$($nl)3$($nl)4"
-                    New-WordDocument $path2.fullName -Content "test$($nl)1$($nl)Different$($nl)Text$($nl)4"
-
-                    Compare-WordDocument $path1.fullName $path2.fullName $savePath.fullName
-                    $compareDoc = Open-WordDocument $savePath.fullName
-                    $word = $compareDoc.Application
+                Register-AutoDispose -InputObject  ($compareDoc = Compare-WordDocument $file1.FullName $file2.FullName) {
                     $paragraphs = $compareDoc.Paragraphs
                     $allComparedText = @()
                     $paragraphs | ForEach-Object {
@@ -156,10 +118,43 @@ Describe "Compare-WordDocument" {
                     for($i = 0; $i -lt $allComparedText.Count; $i++){
                         $allComparedText[$i] | Should Match $expectedLines[$i]
                     }
-                    $word.Quit()
                 }
             }
         }
+
+    # It "The comparison word document is saved"{
+    #     $nl = [System.Environment]::NewLine
+    #     $path1 = [System.IO.FileInfo]"$PSScriptRoot\MicrosoftWord.Test1.docx"
+    #     $path2 = [System.IO.FileInfo]"$PSScriptRoot\MicrosoftWord.Test2.docx"
+    #     $savePath = [System.IO.FileInfo]"$PSScriptRoot\MicrosoftWord.CompareTest.docx"
+
+    #     Add-DisposeScript -InputObject $path1 -DisposeScript $(Script:GetFileDispose($path1.fullName))
+    #     Add-DisposeScript -InputObject $path2 -DisposeScript $(Script:GetFileDispose($path2.fullName))
+    #     Add-DisposeScript -InputObject $savePath -DisposeScript $(Script:GetFileDispose($savePath.fullName))
+
+    #     Register-AutoDispose -InputObject $path1 -ScriptBlock {
+    #         Register-AutoDispose -InputObject $path2 -ScriptBlock {
+    #             Register-AutoDispose -InputObject $savePath -ScriptBlock {
+
+    #                 New-WordDocument $path1.fullName -Content "test$($nl)2$($nl)3$($nl)4"
+    #                 New-WordDocument $path2.fullName -Content "test$($nl)1$($nl)Different$($nl)Text$($nl)4"
+
+    #                 Compare-WordDocument $path1.fullName $path2.fullName $savePath.fullName
+    #                 $compareDoc = Open-WordDocument $savePath.fullName
+    #                 $word = $compareDoc.Application
+    #                 $paragraphs = $compareDoc.Paragraphs
+    #                 $allComparedText = @()
+    #                 $paragraphs | ForEach-Object {
+    #                     $allComparedText += "$($_.Range.Text)"
+    #                 }
+    #                 $expectedLines = @("test*","1*","Different*","Text*","4*")
+    #                 for($i = 0; $i -lt $allComparedText.Count; $i++){
+    #                     $allComparedText[$i] | Should Match $expectedLines[$i]
+    #                 }
+    #                 $word.Quit()
+    #             }
+    #         }
+    #     }
     }
 }
 
