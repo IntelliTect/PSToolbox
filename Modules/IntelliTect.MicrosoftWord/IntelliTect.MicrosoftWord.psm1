@@ -135,7 +135,7 @@ Function New-WordDocument {
         $WordApplication.Selection.TypeText($Content)
     }
 
-    $document.SaveAs([ref]$Path, [ref][int][Microsoft.Office.Interop.Word.WdSaveFormat]::wdFormatDocumentDefault) > $null
+    $document.SaveAs([ref]$Path, [ref][Microsoft.Office.Interop.Word.WdSaveFormat]::wdFormatDocumentDefault) > $null
 
     Script:Add-DocumentDisposeScript $document
 
@@ -883,25 +883,22 @@ Function Compare-WordDocument {
         Throw "Error: $BaseFileName is marked as read-only."
     }
 
-    # Constants
-    $wdDoNotSaveChanges = 0
-    $wdCompareTargetNew = 2
-    $wdFormatWordDocument = 16
-
     $document = Open-WordDocument $baseFile -ReadWrite:$false
     $word = $document.Application
-    $document.Compare($ChangedFileName, [ref]"Comparison", [ref]$wdCompareTargetNew, [ref]$true, [ref]$true)
+    $document.Compare($ChangedFileName, [ref]"Comparison",
+        [ref][Microsoft.Office.Interop.Word.WdCompareTarget]::wdCompareTargetNew, [ref]$true, [ref]$true)
 
     $word.ActiveDocument.Saved = 1
 
     # Now close the document so only compare results window persists:
-    $document.Close([ref]$wdDoNotSaveChanges)
+    $document.Close([ref][Microsoft.Office.Interop.Word.WdSaveOptions]::wdDoNotSaveChanges)
 
     $compareDoc = $word.ActiveDocument
+    Script:Add-DocumentDisposeScript $compareDoc
 
     if($SaveCompareFileName){
-        $compareDoc.SaveAs([ref]$SaveCompareFileName, [ref]$wdFormatWordDocument)
-        $word.Quit()
+        $compareDoc.SaveAs([ref]$SaveCompareFileName, [ref][Microsoft.Office.Interop.Word.WdSaveFormat]::wdFormatDocumentDefault)
+        $compare.Dispose()
     }
     else{
         return $compareDoc

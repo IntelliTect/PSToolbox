@@ -105,7 +105,7 @@ Describe "Compare-WordDocument" {
 
             $file1,$file2 |  Register-AutoDispose -ScriptBlock `
             {
-
+                ############################## TODO: Working here... feel free to pick it up.
                 Register-AutoDispose -InputObject  ($compareDoc = Compare-WordDocument $file1.FullName $file2.FullName) {
                     $paragraphs = $compareDoc.Paragraphs
                     $allComparedText = @()
