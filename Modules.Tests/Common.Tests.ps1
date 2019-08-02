@@ -15,16 +15,27 @@ Describe 'Join-Path' {
         }
         It '1 parameters' {
             Join-Path 'test' | Should Be 'test'
+            Join-Path -Path 'test' | Should Be 'test'
+            Join-Path -Path 'path1','path2' | Should Be 'path1','path2'
+            Join-Path -ChildPath 'test' | Should Be 'test'
         }
         It '2 parameters' {
             Join-Path 'c:' 'test' | Should Be (Microsoft.PowerShell.Management\Join-Path 'c:' 'test')
+            Join-Path -Path 'c:' -ChildPath 'test' | Should Be (Microsoft.PowerShell.Management\Join-Path 'c:' 'test')
+            Join-Path -Path 'c:','d:' -ChildPath 'test' | Should Be (Microsoft.PowerShell.Management\Join-Path 'c:' 'test'),(Microsoft.PowerShell.Management\Join-Path 'd:' 'test')
         }
         It '3 parameters' {
             IntelliTect.Common\Join-Path 'c:' 'test1' 'test2' | `
                 Should Be (Microsoft.PowerShell.Management\Join-Path  'c:' (Microsoft.PowerShell.Management\Join-Path  'test1' 'test2'))
+            IntelliTect.Common\Join-Path -Path 'c:','d:' 'test1' 'test2' | `
+                Should Be (Microsoft.PowerShell.Management\Join-Path  'c:' (Microsoft.PowerShell.Management\Join-Path  'test1' 'test2')),(Microsoft.PowerShell.Management\Join-Path  'd:' (Microsoft.PowerShell.Management\Join-Path  'test1' 'test2'))
+            IntelliTect.Common\Join-Path -Path 'c:', -ChildPath 'test1' 'test2' | `
+                Should Be (Microsoft.PowerShell.Management\Join-Path  'c:' (Microsoft.PowerShell.Management\Join-Path  'test1' 'test2'))
         }
         It '4 parameters' {
             IntelliTect.Common\Join-Path 'c:' 'test1' 'test2' 'test3' | `
+                Should Be (Microsoft.PowerShell.Management\Join-Path  'c:' (Microsoft.PowerShell.Management\Join-Path  'test1' (Microsoft.PowerShell.Management\Join-Path  'test2' 'test3')))
+            IntelliTect.Common\Join-Path -Path 'c:' -ChildPath 'test1' 'test2' 'test3' | `
                 Should Be (Microsoft.PowerShell.Management\Join-Path  'c:' (Microsoft.PowerShell.Management\Join-Path  'test1' (Microsoft.PowerShell.Management\Join-Path  'test2' 'test3')))
         }
 
