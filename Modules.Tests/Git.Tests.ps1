@@ -105,7 +105,7 @@ Describe 'Undo-Git' {
         }
         It "Undo-git for single untracked file" {
             New-TemporaryFile 
-            Undo-git -RemoveUntrackedFiles
+            Undo-git -RemoveUntrackedItems
             Get-GitItemStatus | Should Be $null
         } 
         It "Undo-git for single tracked file" {
@@ -114,5 +114,29 @@ Describe 'Undo-Git' {
             Undo-git -RestoreTrackedFiles
             Get-GitItemStatus | Should Be $null
         } 
+        Context "Undo-git with -RemoveIgnoredFilesToo" {
+            $ignoreFile = Get-TempFile -path .\
+            $ignoreFile.Name | Out-File -FilePath (Join-Path '.\' '.gitignore') -Encoding ascii
+            Invoke-GitCommand -ActionMessage 'Staging an item' -Command "git add .gitignore"
+            Invoke-GitCommand -ActionMessage 'Commit item' -Command "git commit -m 'Adding .gitignore'"            
+            $tempFile = Get-TempFile -path .\
+
+            It ' but not -RemoveUntrackedFiles' {
+                $status = Get-GitItemStatus 
+                $status.Action | Should Be 'Untracked'
+                $tempFile.Name | Should BeIn $status.FileName
+                @($status.FileName) -notcontains $ignoreFile.Name | Should Be $true
+
+                {Undo-git -RemoveIgnoredFilesToo -ErrorAction Stop } | Should Throw
+            }
+            It "Undo-git for ignored files" {
+                # NOTE: Continue with files from previous test.
+
+                Undo-git -RemoveIgnoredFilesToo -RemoveUntrackedItems
+                $status = Get-GitItemStatus  | Should Be $null
+                Test-Path -Path $tempFile.FullName -PathType Leaf | Should Be $false
+                Test-Path -Path $ignoreFile.FullName -PathType Leaf | Should Be $false
+            }  
+    }
     }
 }
