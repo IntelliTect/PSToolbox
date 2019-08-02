@@ -91,3 +91,28 @@ Describe 'Get-GitItemProperty' {
             Get-GitItemProperty -Name 'object*','authorname' | Should Be 'objecttype','objectsize','objectname','object','authorname'
     }
 }
+
+
+
+Describe 'Undo-Git' {
+    (Script:Initialize-TestGitRepo) | Register-AutoDispose -ScriptBlock {
+        $initialFile = Get-TempFile -path .\
+        Invoke-GitCommand -ActionMessage 'Staging an item' -Command "git add $initialFile"
+        Invoke-GitCommand -ActionMessage 'Commit item' -Command "git commit -m 'Adding $initialFile'"
+        
+        It "Undo when there is nothing to do does nothing" {
+            Undo-git | Should Be $null
+        }
+        It "Undo-git for single untracked file" {
+            New-TemporaryFile 
+            Undo-git -RemoveUntrackedFiles
+            Get-GitItemStatus | Should Be $null
+        } 
+        It "Undo-git for single tracked file" {
+            $tempFile = Get-TempFile -path .\
+            Invoke-GitCommand -ActionMessage 'Staging an item' -Command "git add $tempFile"
+            Undo-git -RestoreTrackedFiles
+            Get-GitItemStatus | Should Be $null
+        } 
+    }
+}
