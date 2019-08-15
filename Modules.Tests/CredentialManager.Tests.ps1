@@ -1,7 +1,7 @@
 Set-StrictMode -Version "Latest"
 
 Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.Common
-Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.CredentialManager
+Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.CredentialManager\IntelliTect.CredentialManager.psm1 -force
 
 $targetName = 'tempCredentialManagerCredential.Test'
 
@@ -18,7 +18,7 @@ Describe "CredentialManagerCredenial Set and Get" {
                 $result.GetNetworkCredential().password | should be '<password>';
             }
             finally {
-                Remove-CredentialManagerCredential $targetName -ErrorVariable E -ErrorAction SilentlyContine
+                Remove-CredentialManagerCredential $targetName -ErrorVariable E -ErrorAction SilentlyContinue
                 $E | Should Be $null
             }
         }
