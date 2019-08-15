@@ -50,12 +50,13 @@ function Set-CredentialManagerCredential {
         } 
     } 
 
-    Invoke-ShouldProcess -ContinueMessage "Storing credential within Manager Credential named ''$TargetName'" `
-            -InquireMessage "Store credential within Credential Manager named '$TargetName'" `
-            -Caption 'Store credential in Credential Manager' {
+    $output = $null;
+
+    if($PSCmdlet.ShouldProcess("Storing credential within ManagerCredential name '$TargetName.'")) {
         $output = cmdkey /generic:$TargetName /user:$($credential.UserName) /pass:$($credential.GetNetworkCredential().password)
     }
 
+    $output = $output | Where-Object{ -not [string]::IsNullOrWhiteSpace($_) }
     if("$output".Trim() -notlike "*successfully*") {
         throw $output;
     }
