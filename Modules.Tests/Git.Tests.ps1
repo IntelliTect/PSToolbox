@@ -137,6 +137,6 @@ Describe 'Undo-Git' {
                 Test-Path -Path $tempFile.FullName -PathType Leaf | Should Be $false
                 Test-Path -Path $ignoreFile.FullName -PathType Leaf | Should Be $false
             }  
-    }
+        }
     }
 }
