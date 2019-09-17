@@ -595,7 +595,7 @@ if($PSBoundParameters.Count -ne 0) {
 Function Get-PhotoExifData {
     [CmdletBinding()]
     param(
-        [ValidateScript({Test-Path $_})][Parameter(ValueFromPipeline)][sting[]]$path,
+        [ValidateScript({Test-Path $_})][Parameter(ValueFromPipeline)][string[]]$path,
         [switch]$recurse
     )
     PROCESS {
@@ -612,7 +612,7 @@ Function Get-PhotoExifData {
 Filter Select-PhotosTagged {
     [CmdletBinding()]
     param(
-        [ValidateScript({Test-Path $_})][Parameter(ValueFromPipeline)][sting[]]$path,
+        [ValidateScript({Test-Path $_})][Parameter(ValueFromPipeline)][string[]]$path,
         [switch]$recurse
     )
 
