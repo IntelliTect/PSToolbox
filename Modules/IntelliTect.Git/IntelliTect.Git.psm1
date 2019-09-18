@@ -105,6 +105,19 @@ Function Invoke-GitCommand {
     }
 }
 
+
+Function Get-GitRepo {
+    [CmdletBinding()]
+    param()
+
+    $result = @{}
+    $result.IsBare=[bool]::Parse((
+        Invoke-GitCommand -ActionMessage 'Determine if a repo is "Bare"' -command 'git rev-parse --is-bare-repository'
+    ))
+
+    return [PSCustomObject]$result
+}
+
 Function Get-GitItemStatus{
     [CmdletBinding()]
     param(

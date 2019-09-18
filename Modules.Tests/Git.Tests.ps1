@@ -5,7 +5,9 @@ Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.Git -Force
 
 Function Script:Initialize-TestGitRepo {
     [CmdletBinding()]
-    param ()
+    param (
+        [switch]$IsBare
+    )
     $tempDirectory = Get-TempDirectory
 
     $currentLocation = Get-Location  # Save the current location.  Note, Pop-Location don't work from inside the Dispose Script.
@@ -19,9 +21,25 @@ Function Script:Initialize-TestGitRepo {
         "
     )
     $tempDirectory | Add-DisposeScript -DisposeScript $DisposeScript -Force
-    Invoke-GitCommand -ActionMessage "Initialize a temporary repository in '$tempDirectory'." -Command 'git init','git config user.name "Inigo.Montoya"','git config user.email "Inigo.Montoya@PrincessBride.com"' | Where-Object{ $_ -ne $null } | Write-Verbose
+    Invoke-GitCommand -ActionMessage "Initialize a temporary repository in '$tempDirectory'." `
+        -Command "git init $(if($IsBare){'--bare '})",`
+        'git config user.name "Inigo.Montoya"','git config user.email "Inigo.Montoya@PrincessBride.com"' | Where-Object{ $_ -ne $null } | Write-Verbose
     return $tempDirectory
 }
+
+Describe 'Get-GitRepo' {
+    (Script:Initialize-TestGitRepo) | Register-AutoDispose -ScriptBlock {
+        It 'Returns a repo object where IsBare==false' { 
+            (Get-GitRepo).IsBare | Should Be $false
+        }
+    }
+    (Script:Initialize-TestGitRepo -IsBare) | Register-AutoDispose -ScriptBlock {
+        It 'Returns a bare repo object where IsBare==true' { 
+            (Get-GitRepo).IsBare | Should Be $true
+        }
+    }
+}
+
 
 Describe 'Initialize-TestGitRepo' {
     $currentLocation = Get-Location
