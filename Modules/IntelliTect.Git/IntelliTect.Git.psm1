@@ -254,6 +254,13 @@ Function Undo-Git {
     }
 }
 
+Function Get-GitBranch {
+    [CmdletBinding()]
+    param()
+
+    Invoke-GitCommand -ActionMessage 'Get the current branch name.' -Command 'git branch --show-current'
+}
+
 Function Remove-GitBranch {
     [CmdletBinding(SupportsShouldProcess = $true)]
     param(
@@ -264,7 +271,7 @@ Function Remove-GitBranch {
 
     [string]$additionalActionMessageDetail = ''
 
-    $branches = Get-GitBranch $Name
+    $branches = Find-GitBranch $Name
     if (@($branches).Count -eq 0) {
         throw "Cannot remove branches matching name '$Name' because it does not exist."
     }
@@ -279,7 +286,7 @@ Function Remove-GitBranch {
     $branches | ForEach-Object { Invoke-GitCommand "Remove the $Name branch$additionalActionMessageDetail." "$commandText $_" }
 }
 
-Function Get-GitBranch {
+Function Find-GitBranch {
     [CmdletBinding()]
     param(
         # The filter, when matched, excludes from the branches to delete
@@ -343,4 +350,27 @@ Function Get-GitItemProperty {
     $result | Write-Output
 }
 
-#Function ConvertFrom-Git
+function Push-GitBranch {
+    [CmdletBinding(SupportsShouldProcess=$true)]
+    param (
+        [switch]$SetUpstream
+    )
+
+    Invoke-ShouldProcess -ContinueMessage 'Pushing current branch to remote' 
+            -InquireMessage 'Do you want to push the curren branch to remote' `
+            -Caption 'Push-GitBranch' {
+                [string] $result = Invoke-GitCommand -ActionMessage 'Push current branch to remote.' -command 'git push'
+                
+                if($result.Count -eq 2 `
+                -and $result[0] -like 'fatal: The current branch * has no upstream branch.' `
+                -and $result[1] -like '*git push --set-upstream origin *') {
+            }
+            Invoke-ShouldProcess -ContinueMessage 'Pushing current branch to remote' 
+                    -InquireMessage 'Do you want to push the curren branch to remote' `
+                    -Caption 'Push-GitBranch' {
+            
+                [string] $result = Invoke-GitCommand -ActionMessage 'Push current branch to remote.' -command 'git push'
+                Write-Output $result;
+        }
+    }    
+}

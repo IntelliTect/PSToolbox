@@ -158,3 +158,10 @@ Describe 'Undo-Git' {
         }
     }
 }
+
+
+Describe 'Get-GitBranch' {
+    (Script:Initialize-TestGitRepo) | Register-AutoDispose -ScriptBlock {
+        Get-GitBranch | should be 'master'
+    }
+}
