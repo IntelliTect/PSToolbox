@@ -258,7 +258,9 @@ Function Get-GitBranch {
     [CmdletBinding()]
     param()
 
-    Invoke-GitCommand -ActionMessage 'Get the current branch name.' -Command 'git branch --show-current'
+    # --show-current doesn't work on some versions of Git (such as the one used on Azure DevOps)
+    $result = Invoke-GitCommand -ActionMessage 'Get the current branch name.' -Command 'git symbolic-ref --short HEAD'
+    Write-Output $result.Trim()
 }
 
 Function Remove-GitBranch {
