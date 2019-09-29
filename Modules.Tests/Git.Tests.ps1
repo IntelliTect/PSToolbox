@@ -175,7 +175,7 @@ Describe 'Push-GitBranch' {
         try {
             Set-Location $localRepo
             Invoke-GitCommand -ActionMessage 'Set remote pointing to file system "remote"' -Command "git remote add origin $($mockRemoteRepo.FullName)"
-            Invoke-GitCommand -ActionMessage 'Creaete a new branch called ''Temp''' -Command 'git checkout -b Temp'
+            Invoke-GitCommand -ActionMessage 'Creaete a new branch called ''Temp''' -Command 'git checkout -b Temp' -ErrorAction Ignore
             New-Item -ItemType file 'dummy.txt'
             Invoke-GitCommand -ActionMessage 'Commit initial file.' -Command 'git add .'
             Invoke-GitCommand -ActionMessage 'Commit initial file.' -Command 'git commit -m ''Initial commit'''
