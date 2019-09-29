@@ -7,14 +7,22 @@ if((Get-Command Join-Path).Version -lt '6.0') {
 # }
 # catch [System.Management.Automation.ParameterBindingException] {
     Function Join-Path {
+        [CmdletBinding()]
+        param(
+            [Parameter(Mandatory=$false)][string[]]$Path,
+            [Parameter(Mandatory=$false)][string]$ChildPath,
+            [Parameter(Mandatory=$false)][string[]]$AdditionalChildPath,
+            [switch]$Resolve,
+            [Parameter(Mandatory=$false)][PSCredential]$Credential
+        )
         @($args) | ForEach-Object{ if($_ -eq $null) {throw 'Join-Path parameter cannot be null.'} }
         switch ($args.Count) {
             0 { Write-Output '' }
             1 { $args[0] | Write-Output }
-            2 { Microsoft.PowerShell.Management\Join-Path $args[0] $args[1] }
+            2 { Microsoft.PowerShell.Management\Join-Path $args}
             default {
                 $result = $args[0]
-                if($result -eq $null) { throw 'InvalidOperationException: The $result parameter should not be null.'} 
+                if($null -eq $result) { throw 'InvalidOperationException: The $result parameter should not be null.'} 
                 $args | Select-Object -Skip 1 | ForEach-Object{
                     if($_ -eq $null) { throw 'InvalidOperationException: The pipepline parameter should not be null.'}
                     $result = Join-Path $result $_
@@ -24,7 +32,6 @@ if((Get-Command Join-Path).Version -lt '6.0') {
         }
     }
 }
-
 
 Function Add-PathToEnvironmentVariable {
     [CmdletBinding(SupportsShouldProcess)]
@@ -499,5 +506,44 @@ Function Wait-ForCondition {
             $items | Write-Output
         }
         Write-Debug "Number of times iterated over the list for was $iterationCount"
+    }
+}
+
+
+<#
+.SYNOPSIS
+Converts RegEx result ($Matches) to a OSCustomObject and, optionally, removes the numeric named groups.
+
+#>
+Function ConvertFrom-Matches {
+    [CmdletBinding()]#DefaultParameterSetName='Matches')]
+    param(
+        # The [Hashtable] set from the -match operator and assigned to $Matches.
+        [ValidateNotNullOrEmpty()][Parameter(ValueFromPipeline,Mandatory,ParameterSetName='Matches')][HashTable[]]$InputObject,
+        # Specifies that the only properties displayed in the default display set are explicitly named (of the form (?<name>...)). Unnamed parentheses (such as the 0 or 1 property) do not display in the output.
+        [switch]$OnlyDisplayExplicitlyCapturedGroups
+    )
+
+    Process {
+        @($InputObject)  | Foreach-Object {
+            $eachItem = $_
+            $psCustomObject = [PSCustomObject]$eachItem
+
+            if($OnlyDisplayExplicitlyCapturedGroups) {
+                $removeKeyList= $eachitem.Keys | Where-Object {
+                    ([string]$_) -match '\d+'
+                }
+                $removekeylist | ForEach-Object {
+                    $eachItem.Remove($_)
+                }
+            }
+
+            $typeName = 'ConvertFrom-Matches.Matches'
+            $psCustomObject.PSObject.TypeNames.Insert(0, $typeName)
+            [string[]]$defaultDisplaySet=([string[]]($eachitem.Keys |ForEach-Object{ [string]$_ }))
+            Update-TypeData -TypeName $typeName -DefaultDisplayPropertySet $defaultDisplaySet -Force
+
+            Write-Output $psCustomObject
+        }
     }
 }

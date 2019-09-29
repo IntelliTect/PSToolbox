@@ -375,3 +375,41 @@ Describe 'Wait-ForCondition Error Checking' {
         }
     }
 }
+
+
+Describe 'ConvertFrom-Matches' {
+    It 'Given $matches value' {
+        $expected = @{
+            ProcessId='18860';
+            Path='C:\Users\mark\AppData\Local\ExpanDrive\onedrivebusiness-oywrdsbn\exfs_files.db';
+            ProcessName='exfs.exe';
+            1='type';
+            0='exfs.exe           pid: 18860  type: File           280: C:\Users\mark\AppData\Local\ExpanDrive\onedrivebusiness-oywrdsbn\exfs_files.db'
+        }
+        $regex = '(?<ProcessName>\S*)\s* pid: (?<ProcessId>\d*)\s* (type): .*\s .*: (?<Path>.*)\s*'
+        $expected.0 -match $regex
+        $result = ConvertFrom-Matches -InputObject $matches
+        $result.ProcessId| Should Be $expected.ProcessId
+        $result.Path| Should Be $expected.Path
+        $result.ProcessName| Should Be $expected.ProcessName
+        $result.1 | Should Be $expected.1
+    }
+
+    It 'Given $matches value with OnlyDisplayExplicitlyCapturedGroups' {
+        $expected = @{
+            ProcessId='18860';
+            Path='C:\Users\mark\AppData\Local\ExpanDrive\onedrivebusiness-oywrdsbn\exfs_files.db';
+            ProcessName='exfs.exe';
+            1='type';
+            0='exfs.exe           pid: 18860  type: File           280: C:\Users\mark\AppData\Local\ExpanDrive\onedrivebusiness-oywrdsbn\exfs_files.db'
+        }
+        $regex = '(?<ProcessName>\S*)\s* pid: (?<ProcessId>\d*)\s* (type): .*\s .*: (?<Path>.*)\s*'
+        $expected.0 -match $regex
+        $result = ConvertFrom-Matches -InputObject $matches -OnlyDisplayExplicitlyCapturedGroups
+        $result.ProcessId| Should Be $expected.ProcessId
+        $result.Path| Should Be $expected.Path
+        $result.ProcessName| Should Be $expected.ProcessName
+        $formatTable = $result | Format-Table
+        Test-Property -InputObject $formatTable -Name '1' | Should Be $false
+    }
+}
