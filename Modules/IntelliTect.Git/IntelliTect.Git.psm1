@@ -360,7 +360,8 @@ function Push-GitBranch {
 
     # Check if an upstream branch exists.  Since Invoke-GitCommand doesn't (yet) use start-process and we don't return the $LastExitCode cleanly,
     # we call git explicitly here until Invoke-GitCommand is fixed.
-    git rev-parse --abbrev-ref '@{upstream}' >> $null
+    Write-Host "Executing: git rev-parse --abbrev-ref '@{upstream}'"
+    git rev-parse --abbrev-ref '@{upstream}' 2>&1 >> $null
 
     [string]$result=$null
     if($LASTEXITCODE -eq 0) {
