@@ -158,3 +158,38 @@ Describe 'Undo-Git' {
         }
     }
 }
+
+
+Describe 'Get-GitBranch' {
+    (Script:Initialize-TestGitRepo) | Register-AutoDispose -ScriptBlock {
+        Get-GitBranch | should be 'master'
+    }
+}
+
+Describe 'Push-GitBranch' {
+    $localRepo = Script:Initialize-TestGitRepo
+    $mockRemoteRepo = Script:Initialize-TestGitRepo -IsBare
+
+    Register-AutoDispose -InputObject $localRepo,$mockRemoteRepo -ScriptBlock {
+        Push-Location
+        try {
+            Set-Location $localRepo
+            Invoke-GitCommand -ActionMessage 'Set remote pointing to file system "remote"' -Command "git remote add origin $($mockRemoteRepo.FullName)"
+            Invoke-GitCommand -ActionMessage 'Creaete a new branch called ''Temp''' -Command 'git checkout -b Temp' -ErrorAction Ignore
+            New-Item -ItemType file 'dummy.txt'
+            Invoke-GitCommand -ActionMessage 'Commit initial file.' -Command 'git add .'
+            Invoke-GitCommand -ActionMessage 'Commit initial file.' -Command 'git commit -m ''Initial commit'''
+            It 'Push branch that doesn''t exist remotely' {
+                Push-GitBranch -SetUpstream | Should Be "Branch 'Temp' set up to track remote branch 'Temp' from 'origin'."
+            }
+            It 'Push branch that exists remotely' {
+                Invoke-GitCommand -ActionMessage 'Remove file' -Command 'git rm dummy.txt'
+                Invoke-GitCommand -ActionMessage 'Commit dummy.txt file remove.' -Command 'git commit -m ''Remove dummy.txt'''
+                Push-GitBranch | Should BeLike 'To * Temp -> Temp'
+            }
+        }
+        catch {
+            Pop-Location
+        }
+    }
+}

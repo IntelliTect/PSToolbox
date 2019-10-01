@@ -188,7 +188,7 @@ Function Script:Get-GitIgnoreContentTypes {
     return $Script:contentTypes
 }
 Function New-GitIgnore {
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param(
          # [Parameter(Mandatory)]$ProjectType = "VisualStudio",
          [ValidateScript({Test-Path $_ -PathType Container })][string]$Path = $pwd,
@@ -254,6 +254,15 @@ Function Undo-Git {
     }
 }
 
+Function Get-GitBranch {
+    [CmdletBinding()]
+    param()
+
+    # --show-current doesn't work on some versions of Git (such as the one used on Azure DevOps)
+    $result = Invoke-GitCommand -ActionMessage 'Get the current branch name.' -Command 'git symbolic-ref --short HEAD'
+    Write-Output $result.Trim()
+}
+
 Function Remove-GitBranch {
     [CmdletBinding(SupportsShouldProcess = $true)]
     param(
@@ -264,7 +273,7 @@ Function Remove-GitBranch {
 
     [string]$additionalActionMessageDetail = ''
 
-    $branches = Get-GitBranch $Name
+    $branches = Find-GitBranch $Name
     if (@($branches).Count -eq 0) {
         throw "Cannot remove branches matching name '$Name' because it does not exist."
     }
@@ -279,25 +288,25 @@ Function Remove-GitBranch {
     $branches | ForEach-Object { Invoke-GitCommand "Remove the $Name branch$additionalActionMessageDetail." "$commandText $_" }
 }
 
-Function Get-GitBranch {
+Function Find-GitBranch {
     [CmdletBinding()]
     param(
         # The filter, when matched, excludes from the branches to delete
         [Parameter(ValueFromPipeline)] [string] $Name
-        ,[Alias('Remotes')][switch]$IncludeRemotes=$false
-        ,[Alias('Locals')][switch]$IncludeLocals=$true
+        ,[Alias('Remotes')][switch]$IncludeRemotes
+        ,[Alias('Locals')][switch]$IgnoreLocals
     )
 
     [string]$options = ' --list'
 
-    if($IncludeLocals) {
+    if(-not $IgnoreLocals) {
         Invoke-GitCommand -ActionMessage "List branch $Name" -command "git branch $Name $options" -verbose  | ForEach-Object {
             #if($_)
             $_.TrimStart('* ') # Remove the '*' that indicates the branch is current.
         }
     }
 
-    if($IncludeRemotes.IsPresent) {
+    if($IncludeRemotes) {
         $options += ' --remotes'  # --remotes is exclusive, it removes locals
         Invoke-GitCommand -ActionMessage "List branch $Name" -command "git branch $Name $options" -verbose | ForEach-Object {
             #if($_)
@@ -343,4 +352,34 @@ Function Get-GitItemProperty {
     $result | Write-Output
 }
 
-#Function ConvertFrom-Git
+function Push-GitBranch {
+    [CmdletBinding(SupportsShouldProcess=$true)]
+    param (
+        [switch]$SetUpstream
+    )
+
+    # Check if an upstream branch exists.  Since Invoke-GitCommand doesn't (yet) use start-process and we don't return the $LastExitCode cleanly,
+    # we call git explicitly here until Invoke-GitCommand is fixed.
+    Write-Host "Executing: git rev-parse --abbrev-ref '@{upstream}'"
+    git rev-parse --abbrev-ref '@{upstream}' 2>&1 >> $null
+
+    [string]$result=$null
+    if($LASTEXITCODE -eq 0) {
+        if($SetUpstream) { Write-Information -MessageData '-SetUpstream specified unnecessarily. Switch is ignored.' }
+        if ($PSCmdlet.ShouldProcess('Pushing current branch to remote', 'Do you want to push the current branch to remote','Push-GitBranch' )) {
+            $result=Invoke-GitCommand -ActionMessage 'Push current branch to remote.' -command 'git push' 2>&1
+        }
+    }
+    elseif($SetUpstream) {
+        if ($PSCmdlet.ShouldProcess('Pushing current branch to remote and setting upstream because there isn''t one already', `
+                'Do you want to push the current branch to remote and set the upstream branch', 'Push-GitBranch')) {
+            #ToDo: Switch Invoke-GitCommand to use Start-Process in order to capture the output.
+            $result=Invoke-GitCommand -ActionMessage 'Push current branch to remote.' -command "git push --set-upstream origin $(Get-GitBranch)"
+        }
+    }
+    else {
+        throw 'Remote upstream branch not set.  Use -SetUpstream to push this branch.'
+    }
+
+    Write-Output $result.Trim()
+}
