@@ -182,7 +182,7 @@ Describe 'Push-GitBranch' {
             It 'Push branch that doesn''t exist remotely' {
                 Push-GitBranch -SetUpstream | Should Be "Branch 'Temp' set up to track remote branch 'Temp' from 'origin'."
             }
-            It 'Push branch that doesn''t exist remotely' {
+            It 'Push branch that exists remotely' {
                 Invoke-GitCommand -ActionMessage 'Remove file' -Command 'git rm dummy.txt'
                 Invoke-GitCommand -ActionMessage 'Commit dummy.txt file remove.' -Command 'git commit -m ''Remove dummy.txt'''
                 Push-GitBranch | Should BeLike 'To * Temp -> Temp'
