@@ -40,12 +40,10 @@ Function Invoke-GitCommand {
 
     PROCESS {
 
-        
         if($ActionMessage) {
             $ActionMessage = " $($ActionMessage.Trim())";
         }
-        
-        
+
         if($GitProperty) {
             # Format the output as JSON with keys&values single quoted (double quotes don't work with git format by default)
             # Later on the single quotes are converted back to double quotes.
@@ -53,7 +51,7 @@ Function Invoke-GitCommand {
             $Format = "`"$( (Get-GitItemProperty -Name $GitProperty |
             ForEach-Object { "%($_)"})  -join ',')`""
         }
-        
+
         $commandText = $Command | Where-Object { -not [string]::IsNullOrEmpty($_) } | Foreach-Object {
             # Remove git from the beginning of the command if it exists
             $eachCommandText = $_ -replace '^\s*(git)*\s',''
@@ -61,7 +59,7 @@ Function Invoke-GitCommand {
             if($Format) {
                 $eachCommandText += " --format=$Format"
             }
-            
+
             if($PSBoundParameters['Verbose'] -and ($eachCommandText -notmatch '.*\s(-v|--verbose)(?:\s.*?|$).*')) {
                 $eachCommandText += ' --verbose'
             }
@@ -71,7 +69,7 @@ Function Invoke-GitCommand {
             }
 
             Write-Debug "Command: '$eachCommandText'"
-            
+
             Write-Output $eachCommandText
         }
 
@@ -104,6 +102,7 @@ Function Invoke-GitCommand {
         }
     }
 }
+
 
 
 Function Get-GitRepo {
