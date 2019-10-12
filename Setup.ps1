@@ -18,8 +18,9 @@ If(!(get-module Pester -ListAvailable)) {
     }
 }
 
-if(-not (Test-Path Function:Set-EnvironmentVariable)) {
-Function Set-EnvironmentVariable {
+# Note: This function is defined by Chocolatey as well but we have a script local version in case Chocolatey is not installed.
+#       Also, this version sets the session instance of the enviroment variable.
+Function Script:Set-EnvironmentVariable {
      [CmdletBinding(SupportsShouldProcess)]
      param(
           [ValidateScript({-not [string]::IsNullOrWhiteSpace($_)})][Parameter(Mandatory)][string]$Name,
@@ -33,14 +34,16 @@ Function Set-EnvironmentVariable {
      }
      setx.exe $Name $Value $scopeArgs | Out-Null
      Set-Item -Path Env:$Name -Value $Value
- }
 }
 
- $PSToolboxPath=Join-Path $PSScriptRoot Modules
-if(!($env:PSModulePath -like "*$PSToolboxPath*")) {
-    Set-EnvironmentVariable -Name PSModulePath -Value "$PSToolboxPath;$env:PSModulePath" 
-    if(!($env:PSModulePath -like "*$PSToolboxPath*")) {
-        throw "PSModulePath not set with $PSToolboxPath"  #NOTE: This does not test the change from [System.Environment]::SetEnvironmentVariable is permanent.
+
+$PSToolboxPath=Join-Path $PSScriptRoot Modules
+if($env:PSModulePath -notlike "*$PSToolboxPath*") {
+    Script:Set-EnvironmentVariable -Name 'PSModulePath' -Value "$PSToolboxPath;$env:PSModulePath" 
+    if($PSToolboxPath -notin ($env:PSModulePath -split ';')) {
+        Write-Host -foreground Cyan $PSToolboxPath
+        #NOTE: This does not test the change from [System.Environment]::SetEnvironmentVariable is permanent.
+        throw "PSModulePath ('$env:PSModulePath') is not set with $PSToolboxPath"  
     }
 }
 
