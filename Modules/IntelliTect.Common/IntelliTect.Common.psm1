@@ -236,7 +236,7 @@ Function Script:Get-FileSystemTempItem {
         [Parameter(ValueFromPipelineByPropertyName)]
         [string[]]$Path = [System.IO.Path]::GetTempPath(),
         [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)]
-        [AllowNull()][AllowEmptyString()][string[]]${Name},
+        [AllowNull()][AllowEmptyString()][string[]]$Name,
         [ValidateSet('File', 'Directory')][string]$ItemType = 'File'
     )
 
@@ -246,7 +246,7 @@ Function Script:Get-FileSystemTempItem {
             [string]$fullName = $null
             # If the directory doesn't exist then Resolve-Path will report an error.
             $eachPath = Resolve-Path $_ -ErrorAction Stop
-            if ((!$Name) -or ([string]::IsNullOrEmpty($Name))) {
+            if ([string]::IsNullOrEmpty($Name)) {
                 $fullName = Get-FileSystemTempItemPath $_
             }
             else {
@@ -287,9 +287,9 @@ Function Get-TempDirectory {
         [Parameter(ValueFromPipelineByPropertyName)]
         [string[]]$Path = [System.IO.Path]::GetTempPath(),
         [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)]
-        [AllowNull()][AllowEmptyString()][string[]]${Name}
+        [AllowNull()][AllowEmptyString()][string[]]$Name
     )
-
+    
     Get-FileSystemTempItem -Path $Path -Name $Name -ItemType Directory
 }
 
@@ -320,7 +320,7 @@ Function Get-FileSystemTempItemPath {
     [OutputType([String])]
     param (
         [Parameter(ValueFromPipeLine, ValueFromPipelineByPropertyName)]
-        [string[]]${Path} = [System.IO.Path]::GetTempPath()
+        [string[]]$Path = [System.IO.Path]::GetTempPath()
     )
 
     $path | ForEach-Object {

@@ -8,7 +8,7 @@ Function Script:Initialize-TestGitRepo {
     param (
         [switch]$IsBare
     )
-    $tempDirectory = Get-TempDirectory
+    $tempDirectory = Get-TempDirectory -Name ([System.IO.Path]::GetRandomFileName().Replace('.','_'))
 
     $currentLocation = Get-Location  # Save the current location.  Note, Pop-Location don't work from inside the Dispose Script.
     Push-Location $tempDirectory
