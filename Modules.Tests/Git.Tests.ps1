@@ -3,7 +3,7 @@
 Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.Common -Force
 Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.Git -Force
 
-Function Script:Initialize-TestGitRepo {
+Function Initialize-TestGitRepo {
     [CmdletBinding()]
     param (
         [switch]$IsBare
@@ -28,12 +28,12 @@ Function Script:Initialize-TestGitRepo {
 }
 
 Describe 'Get-GitRepo' {
-    (Script:Initialize-TestGitRepo) | Register-AutoDispose -ScriptBlock {
+    (Initialize-TestGitRepo) | Register-AutoDispose -ScriptBlock {
         It 'Returns a repo object where IsBare==false' { 
             (Get-GitRepo).IsBare | Should Be $false
         }
     }
-    (Script:Initialize-TestGitRepo -IsBare) | Register-AutoDispose -ScriptBlock {
+    (Initialize-TestGitRepo -IsBare) | Register-AutoDispose -ScriptBlock {
         It 'Returns a bare repo object where IsBare==true' { 
             (Get-GitRepo).IsBare | Should Be $true
         }
@@ -43,7 +43,7 @@ Describe 'Get-GitRepo' {
 
 Describe 'Initialize-TestGitRepo' {
     $currentLocation = Get-Location
-    $tempGitDirectory = (Script:Initialize-TestGitRepo)
+    $tempGitDirectory = (Initialize-TestGitRepo)
     $tempGitDirectory | Register-AutoDispose -ScriptBlock {
     }
     Test-Path $tempGitDirectory.FullName | Should be $false
@@ -51,7 +51,7 @@ Describe 'Initialize-TestGitRepo' {
 }
 
 Describe "Get-GitItemStatus" {
-    (Script:Initialize-TestGitRepo) | Register-AutoDispose -ScriptBlock {
+    (Initialize-TestGitRepo) | Register-AutoDispose -ScriptBlock {
         It "Determine status in brand new repo" {
            Get-GitItemStatus| should be $null # Initially, there are no modification git status --porcelain returns nothing.
            $randomFileName = [System.IO.Path]::GetRandomFileName()
@@ -113,7 +113,7 @@ Describe 'Get-GitItemProperty' {
 
 
 Describe 'Undo-Git' {
-    (Script:Initialize-TestGitRepo) | Register-AutoDispose -ScriptBlock {
+    (Initialize-TestGitRepo) | Register-AutoDispose -ScriptBlock {
         $initialFile = Get-TempFile -path .\
         Invoke-GitCommand -ActionMessage 'Staging an item' -Command "git add $initialFile"
         Invoke-GitCommand -ActionMessage 'Commit item' -Command "git commit -m 'Adding $initialFile'"
@@ -161,20 +161,23 @@ Describe 'Undo-Git' {
 
 
 Describe 'Get-GitBranch' {
-    (Script:Initialize-TestGitRepo) | Register-AutoDispose -ScriptBlock {
+    (Initialize-TestGitRepo) | Register-AutoDispose -ScriptBlock {
         Get-GitBranch | should be 'master'
     }
 }
 
 Describe 'Push-GitBranch' {
-    $localRepo = Script:Initialize-TestGitRepo
-    $mockRemoteRepo = Script:Initialize-TestGitRepo -IsBare
+    $localRepo = Initialize-TestGitRepo
+    $mockRemoteRepo = Initialize-TestGitRepo -IsBare
 
     Register-AutoDispose -InputObject $localRepo,$mockRemoteRepo -ScriptBlock {
         Push-Location
         try {
             Set-Location $localRepo
             Invoke-GitCommand -ActionMessage 'Set remote pointing to file system "remote"' -Command "git remote --verbose add origin $($mockRemoteRepo.FullName)" -Verbose
+            New-Item -ItemType File -Name 'Readme.md'
+            Invoke-GitCommand -ActionMessage 'Make first commit' -Command 'git add .'
+            Invoke-GitCommand -ActionMessage 'Make first commit' -Command 'git commit -m ''Initial commit'''
             Invoke-GitCommand -ActionMessage 'Creaete a new branch called ''Temp''' -Command 'git branch --verbose Temp'
             Invoke-GitCommand -ActionMessage 'Checkout the Temp branch' -Command 'git checkout Temp'
             New-Item -ItemType file 'dummy.txt'

@@ -125,7 +125,7 @@ Function Get-GitItemStatus{
     )
 
     Invoke-GitCommand -ActionMessage 'Show the working tree status' -Command 'git status --porcelain' | Where-Object{
-        $_ -match '(?<Action>[AMRDC]|\?\?)\s+(?<Filename>.*)' } | ForEach-Object{
+        $_ -match '(?<Action>[AMRDC]|\?\?)\s+(?<FileName>.*)' } | ForEach-Object{
             $matches
         } | ForEach-Object{
             [PSCustomObject]@{
