@@ -179,7 +179,18 @@ Describe 'Push-GitBranch' {
             Invoke-GitCommand -ActionMessage 'Make first commit' -Command 'git add .'
             Invoke-GitCommand -ActionMessage 'Make first commit' -Command 'git commit -m ''Initial commit'''
             Invoke-GitCommand -ActionMessage 'Creaete a new branch called ''Temp''' -Command 'git branch --verbose Temp'
-            Invoke-GitCommand -ActionMessage 'Checkout the Temp branch' -Command 'git checkout Temp'
+            Invoke-GitCommand -ActionMessage 'List local branches' -Command 'git branch'
+            try{
+            $gitOutputTemp = Invoke-GitCommand -ActionMessage 'Checkout the Temp branch' -Command 'git checkout Temp'
+            }
+            catch
+            {
+                Write-Error -Message "Error: $_"
+            }
+            finally {
+                Write-Hos "`$gitOutputTemp | FL"
+                $gitOutputTemp | Format-List
+            }
             New-Item -ItemType file 'dummy.txt'
             Invoke-GitCommand -ActionMessage 'Commit initial file.' -Command 'git add .'
             Invoke-GitCommand -ActionMessage 'Commit initial file.' -Command 'git commit -m ''Initial commit'''
