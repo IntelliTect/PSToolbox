@@ -92,7 +92,7 @@ Function Invoke-GitCommand {
                 Write-Host "Executing: `n`t$commandText" -ForegroundColor Gray
             }
 
-            $result = Invoke-Command $CommandScript -ErrorAction Stop  #Change error handling to use throw instead.
+            $result = Invoke-Utf8ConsoleCommand -cmd $CommandScript
 
             if($GitProperty) {
                 $result = $result.Replace("'",'"') | ConvertFrom-Json
@@ -103,6 +103,35 @@ Function Invoke-GitCommand {
     }
 }
 
+# Pulled from Posh-Git: https://github.com/dahlbyk/posh-git/blob/master/src/Utils.ps1
+Function Invoke-Utf8ConsoleCommand([ScriptBlock]$cmd) {
+    $currentEncoding = [Console]::OutputEncoding
+    $errorCount = $global:Error.Count
+    try {
+        # A native executable that writes to stderr AND has its stderr redirected will generate non-terminating
+        # error records if the user has set $ErrorActionPreference to Stop. Override that value in this scope.
+        $ErrorActionPreference = 'Continue'
+        if ($currentEncoding.IsSingleByte) {
+            [Console]::OutputEncoding = [Text.Encoding]::UTF8
+        }
+        & $cmd
+    }
+    finally {
+        if ($currentEncoding.IsSingleByte) {
+            [Console]::OutputEncoding = $currentEncoding
+        }
+
+        # Clear out stderr output that was added to the $Error collection, putting those errors in a module variable
+        if ($global:Error.Count -gt $errorCount) {
+            $numNewErrors = $global:Error.Count - $errorCount
+            $invokeErrors.InsertRange(0, $global:Error.GetRange(0, $numNewErrors))
+            if ($invokeErrors.Count -gt 256) {
+                $invokeErrors.RemoveRange(256, ($invokeErrors.Count - 256))
+            }
+            $global:Error.RemoveRange(0, $numNewErrors)
+        }
+    }
+}
 
 
 Function Get-GitRepo {
