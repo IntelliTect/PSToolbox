@@ -13,7 +13,7 @@ function script:Test-CommandExists {
     }
 
     catch {
-        Write-Host “$command does not exist”
+        Write-Host "'$command' does not exist"
         return $false
     }
 
@@ -27,12 +27,10 @@ Function script:Add-GPSBabelCommandAlias {
     [CmdletBinding()] param(
     )
 
-    if(script:Test-CommandExists 'GPSBabel') {
+    if(!(script:Test-CommandExists 'GPSBabel')) {
         # Note: Error handling for Get-Command does not work.  
         # See https://blogs.technet.microsoft.com/heyscriptingguy/2013/02/19/use-a-powershell-function-to-see-if-a-command-exists/)
-        Get-Command GPSBabel
-    }
-    else {
+     
         $gpsBabelPath = "${ProgramFiles(x86)}\GPSBabel\GPSBabel.exe"
         if(Test-Path $gpsBabelPath) {
             Set-Alias -Name  GPSBabel -Value $gpsBabelPath
@@ -67,12 +65,9 @@ Function GpsBabel {
         }
 
         if($args.Count -eq 0) {
-            '`n' | & $gpsBabelPath | select -SkipLast 1
+            '`n' | & $gpsBabelPath | Select-Object -SkipLast 1
         }
     }
-
-
-    
 }
 Add-GPSBabelCommandAlias
 
@@ -92,10 +87,12 @@ Function Convert-GeoTrack {
         [ValidateScript({ (Test-Path $_ -PathType Leaf) -and ([IO.Path]::GetExtension($_) -in ,".kml")})] # Limited to extensions that have been tested.
             [Parameter(Mandatory, ValueFromPipeLine, ValueFromPipelineByPropertyName)][Alias("FullName","InputObject")][string]$inputFile,
         [ValidateScript({ ([IO.Path]::GetExtension($_) -in ,".gpx")})] # Limited to extensions that have been tested.
-            [Parameter(Mandatory)][string]$outputFile = [IO.Path]::ChangeExtension($inputFile.FullName, ".gpx")
+            [string]$outputFile = [IO.Path]::ChangeExtension($inputFile.FullName, ".gpx")
     )
 
-    $command = "gpsbabel -i $([IO.Path]::GetExtension($inputFile).Trim(".")) -f $inputFile  -o $([IO.Path]::GetExtension($outputFile).Trim(".")) -F $outputFile"
+    [string] $inputFileExtension = [IO.Path]::GetExtension($inputFile).Trim(".")
+    [string] $outputFileExtension = [IO.Path]::GetExtension($outputFile).Trim(".")
+    $command = "gpsbabel -i $inputFileExtension -f $inputFile  -o $outputFileExtension -F $outputFile"
     if ($PSCmdlet.ShouldProcess("`tExecuting: $command", "`tExecute gpsbabel.exe: $command", "Executing gpsbabel.exe")) {
         Invoke-Expression $command
     }
