@@ -876,6 +876,11 @@ Function Compare-WordDocument {
 
     $ErrorActionPreference = 'Stop'
 
+    # Resolve to full path which is required by the Word Object Model
+    $BaseFileName = (Resolve-Path $BaseFileName).Path
+    $ChangedFileName = (Resolve-Path $ChangedFileName).Path
+    $SaveCompareFileName = (Resolve-Path $SaveCompareFileName).Path
+
     # Remove the readonly attribute because Word is unable to compare readonly
     # files:
     $baseFile = Get-ChildItem $BaseFileName
@@ -898,7 +903,7 @@ Function Compare-WordDocument {
 
     if($SaveCompareFileName){
         $compareDoc.SaveAs([ref]$SaveCompareFileName, [ref][Microsoft.Office.Interop.Word.WdSaveFormat]::wdFormatDocumentDefault)
-        $compare.Dispose()
+        $compareDoc.Dispose()
     }
     else{
         return $compareDoc
