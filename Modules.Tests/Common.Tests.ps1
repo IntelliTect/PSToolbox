@@ -5,35 +5,6 @@ Get-Module IntelliTect.Common | Remove-Module -Force
 Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.Common\IntelliTect.Common.psm1 -Force
 <#EndHeader#>
 
-Describe 'Join-Path' {
-    try {
-        # Set directory to use FileSystem PSProvider
-        $originalPath = Get-Location
-        Set-Location $env:HOMEDRIVE
-        It '0 parameters' {
-            Join-Path | Should Be ''
-        }
-        It '1 parameters' {
-            Join-Path 'test' | Should Be 'test'
-        }
-        It '2 parameters' {
-            Join-Path 'c:' 'test' | Should Be (Microsoft.PowerShell.Management\Join-Path 'c:' 'test')
-        }
-        It '3 parameters' {
-            IntelliTect.Common\Join-Path 'c:' 'test1' 'test2' | `
-                Should Be (Microsoft.PowerShell.Management\Join-Path  'c:' (Microsoft.PowerShell.Management\Join-Path  'test1' 'test2'))
-        }
-        It '4 parameters' {
-            IntelliTect.Common\Join-Path 'c:' 'test1' 'test2' 'test3' | `
-                Should Be (Microsoft.PowerShell.Management\Join-Path  'c:' (Microsoft.PowerShell.Management\Join-Path  'test1' (Microsoft.PowerShell.Management\Join-Path  'test2' 'test3')))
-        }
-
-    }
-    finally {
-        Set-Location $originalPath
-    }
-}
-
 Function Script:Get-SampleDisposeObject {
     $object = New-Object object
     $object | Add-Member -MemberType NoteProperty -Name DisposeCalled -Value $false

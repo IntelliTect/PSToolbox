@@ -1,31 +1,4 @@
 
-if((Get-Command Join-Path).Version -lt '6.0') {
-# An alternative approach is to trap the error but this causes a code analysis warning that can't be 
-# turned of with a block.
-# try {
-#     Microsoft.PowerShell.Management\Join-Path 'first' 'second' 'third' -ErrorAction ignore
-# }
-# catch [System.Management.Automation.ParameterBindingException] {
-    Function Join-Path {
-        @($args) | ForEach-Object{ if($_ -eq $null) {throw 'Join-Path parameter cannot be null.'} }
-        switch ($args.Count) {
-            0 { Write-Output '' }
-            1 { $args[0] | Write-Output }
-            2 { Microsoft.PowerShell.Management\Join-Path $args[0] $args[1] }
-            default {
-                $result = $args[0]
-                if($result -eq $null) { throw 'InvalidOperationException: The $result parameter should not be null.'} 
-                $args | Select-Object -Skip 1 | ForEach-Object{
-                    if($_ -eq $null) { throw 'InvalidOperationException: The pipepline parameter should not be null.'}
-                    $result = Join-Path $result $_
-                }
-                Write-Output $result
-            }
-        }
-    }
-}
-
-
 Function Add-PathToEnvironmentVariable {
     [CmdletBinding(SupportsShouldProcess)]
     param(
