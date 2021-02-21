@@ -176,7 +176,7 @@ Function Register-AutoDispose {
         [ValidateScript( {$_.PSobject.Members.Name -contains "Dispose"})]
             [ValidateNotNull()][Parameter(Position = 0, Mandatory, ValueFromPipeline)]
             [Object[]]$InputObject,
-        
+
         [Parameter(Position = 1, Mandatory)]
             [ScriptBlock]$ScriptBlock
         )
@@ -260,10 +260,13 @@ Function Get-TempDirectory {
         [Parameter(ValueFromPipelineByPropertyName)]
         [string[]]$Path = [System.IO.Path]::GetTempPath(),
         [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)]
-        [AllowNull()][AllowEmptyString()][string[]]${Name}
+        [AllowNull()][AllowEmptyString()][string[]]$Name
     )
 
-    Get-FileSystemTempItem -Path $Path -Name $Name -ItemType Directory
+    PROCESS {
+        $Path | ForEach-Object{
+            Get-FileSystemTempItem -Path $_ -Name $Name -ItemType Directory }
+    }
 }
 
 Function Get-TempFile {
@@ -311,27 +314,43 @@ Set-Alias -Name Get-TempItemPath -Value Get-FileSystemTempItemPath
 Function ConvertTo-Lines {
     [CmdLetBinding()] param(
         [Parameter(Position = 1, Mandatory, ValueFromPipeline)]
-        [string]$inputObject,
-        [string]$deliminator = [Environment]::NewLine
+        [string]$InputObject,
+        [string]$Deliminator = [Environment]::NewLine
     )
 
-    $inputObject -split [Environment]::NewLine
-}
-
-Filter Test-Command {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory, ValueFromPipeline)][string[]]$command
-
-    )
-    $command | Foreach-Object {
-        Write-Output ([bool](get-command $_ -ErrorAction Ignore))
+    PROCESS {
+        $InputObject -split $deliminator
     }
 }
 
 <#
 .SYNOPSIS
-Test is a property of the specified name exists on the object.
+Determines whether a command exists.
+
+.DESCRIPTION
+The `Test-Command` cmdlet determines whether the specified command exists. It returns `$True` if the command exists and `$False`.
+
+.PARAMETER Command
+Specifies a command to be tested. Wildcard characters are permitted. If the command name includes spaces, enclose it in quotation marks.
+
+#>
+Filter Test-Command {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory, ValueFromPipeline)][string[]]$Command
+
+    )
+
+    PROCESS {
+        $Command | Foreach-Object {
+            Write-Output ([bool](get-command $_ -ErrorAction Ignore))
+        }
+    }
+}
+
+<#
+.SYNOPSIS
+Determine whether the specified property name exists on the object.
 
 .DESCRIPTION
 Given an input object, check to see whether a property of the specified name exists.
@@ -340,21 +359,27 @@ Given an input object, check to see whether a property of the specified name exi
 The input object on which to look for the property.
 
 .PARAMETER Name
-The name of the property to look for.
+The name(s) of the property to look for.
 
 #>
 Function Test-Property {
     [CmdLetBinding()]
     param(
-        [Parameter(ValueFromPipeline, Mandatory)] $InputObject,
+        [Parameter(ValueFromPipeline, Mandatory)][object[]] $InputObject,
         [Parameter(Mandatory)][string[]]$Name
     )
-    # TODO: Add support for hashtable name checks as well
-    # TODO: Add support so you don't need to specifically provide the parameter name for -Name.
-    $Name | ForEach-Object {
-        $_ -in $InputObject.PSobject.Properties.Name | Write-Output
+
+    PROCESS {
+        # TODO: Add support for hashtable name checks as well
+        $Name = $Name # $Name shows a warning on the parameter if we don't refer to it.
+        $InputObject | ForEach-Object {
+            $item = $_
+            $Name | ForEach-Object {
+                $_ -in $item.PSobject.Properties.Name | Write-Output
+            }
+        }
     }
-}   
+}
 
 #[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "")]
 Function Test-VariableExists {
@@ -367,9 +392,9 @@ Function Test-VariableExists {
 Function Get-IsWindowsPlatform {
     [OutputType([bool])]
     [CmdletBinding()]param()
-    return (('PSEdition' -in $PSVersionTable.Keys) `
+    return ($IsWindows || ('PSEdition' -in $PSVersionTable.Keys) `
         -and ($PSVersionTable.PSEdition -eq 'Desktop') `
-        -and ($PSVersionTable.Clrversion.Major -ge 4)) 
+        -and ($PSVersionTable.Clrversion.Major -ge 4))
 }
 
 Function Set-IsWindowsVariable {
@@ -378,9 +403,7 @@ Function Set-IsWindowsVariable {
         Invoke-ShouldProcess -ContinueMessage 'Seting global:IsWindows variable' -InquireMessage 'Set global:IsWindows variable?' `
                  -Caption 'Set global:IsWindows variable' {
             Set-Variable -Name "IsWindows" -Value `
-                (('PSEdition' -in $PSVersionTable.Keys) `
-                            -and ($PSVersionTable.PSEdition -eq 'Desktop') `
-                            -and ($PSVersionTable.Clrversion.Major -ge 4)) -Scope global
+                (Get-IsWindowsPlatform) -Scope global
         }
     }
 }
