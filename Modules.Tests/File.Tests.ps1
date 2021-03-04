@@ -69,7 +69,7 @@ Describe 'Edit-File' {
                     Start-Sleep -Seconds 2
                     $openedFileProcess = @(Get-Process | ? { $processes.id -notcontains $_.id })
                 }
-                $openedFileProcess.Length | Should Be 1;
+                $openedFileProcess.Length | Should -Be 1;
             }
             finally {
                 Get-Process | ? { $processes.id -notcontains $_.id } | Stop-Process
@@ -92,10 +92,10 @@ Describe 'Edit-File' {
                     Start-Sleep -Seconds 2
                     $openedFileProcess = @(Get-Process | ? { $processes.id -notcontains $_.id })
                 }
-                $openedFileProcess.Length | Should Be 1;
+                $openedFileProcess.Length | Should -Be 1;
             }
             finally {
-                Get-Process | ? { $processes.id -notcontains $_.id } | Stop-Process
+                Get-Process | Where-Object { $processes.id -notcontains $_.id } | Stop-Process
             }
         }
         finally {
@@ -110,9 +110,9 @@ Describe 'Edit-File' {
 Describe 'Test-FileIsLocked' {
     It 'Create a new temp file and verify it is not locked' {
         $tempFile = [IO.Path]::GetTempFileName()
-        Test-Path $tempFile | Should Be $true
+        Test-Path $tempFile | Should -Be $true
         try {
-            Test-FileIsLocked $tempFile | Should Be $false
+            Test-FileIsLocked $tempFile | Should -Be $false
         }
         finally {
             if (Test-Path $tempFile) {
@@ -124,12 +124,12 @@ Describe 'Test-FileIsLocked' {
         $fileStream = $null
         try {
             $tempFile = [IO.Path]::GetTempFileName()
-            Test-Path $tempFile | Should Be $true
+            Test-Path $tempFile | Should -Be $true
             try {
                 $fileInfo = New-Object System.IO.FileInfo $tempFile
                 $fileStream = $fileInfo.Open( [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::None )
 
-                Test-FileIsLocked $tempFile | Should Be $true
+                Test-FileIsLocked $tempFile | Should -Be $true
             }
             finally {
                 if ($fileStream) {
@@ -178,9 +178,9 @@ Describe 'Remove-FileToRecycleBin' {
     if ((Test-Property $PSVersionTable 'PSEdition') -and ($PSVersionTable.PSEdition -eq 'Desktop') -and ($PSVersionTable.Clrversion.Major -ge 4)) {
         It 'Item is no longer in original directory' {
             $sampleFileName = Get-TempFile
-            Test-Path $sampleFileName | Should Be $true
+            Test-Path $sampleFileName | Should -Be $true
             Remove-FileToRecycleBin $sampleFileName
-            Test-Path $sampleFileName | Should Be False
+            Test-Path $sampleFileName | Should -Be False
             #TODO: Check that the file is in the recycle bin.
         }
     }
@@ -191,10 +191,10 @@ Describe 'Remove-FileToRecycleBin' {
 
 Describe 'Join-Path' {
     It 'Provide valid paramaters' {
-        Join-Path 'first' 'second' | Should Be ([string]::Join([System.IO.Path]::DirectorySeparatorChar, 'first', 'second' ))
-        Join-Path 'first' 'second' 'third' | Should Be ([string]::Join([System.IO.Path]::DirectorySeparatorChar, 'first', 'second', 'third' ))
+        Join-Path 'first' 'second' | Should -Be ([string]::Join([System.IO.Path]::DirectorySeparatorChar, 'first', 'second' ))
+        Join-Path 'first' 'second' 'third' | Should -Be ([string]::Join([System.IO.Path]::DirectorySeparatorChar, 'first', 'second', 'third' ))
         #Value on pipeline passing not yet supported.
-        #'first','second','third' | Join-Path | Should Be ([string]::Join([System.IO.Path]::DirectorySeparatorChar, 'first', 'second', 'third' ))
+        #'first','second','third' | Join-Path | Should -Be ([string]::Join([System.IO.Path]::DirectorySeparatorChar, 'first', 'second', 'third' ))
     }
     try {
         Microsoft.PowerShell.Management\Join-Path 'first' 'second' 'third' -ErrorAction ignore
