@@ -382,3 +382,24 @@ function Push-GitBranch {
 
     Write-Output $result.Trim()
 }
+
+Function Invoke-GitDiff {
+    [CmdletBinding()]
+    param(
+        [ValidateScript({Test-Path $_ -PathType Leaf})]
+            [Parameter(Mandatory)] [System.IO.FileInfo]$leftFile,
+        [ValidateScript({Test-Path $_ -PathType Leaf})]
+            [Parameter(Mandatory)] [System.IO.FileInfo]$rightFile
+    )
+
+    Invoke-GitCommand -ActionMessage "Invoking Git Diff" -Command "git --no-pager diff --unified=0 $leftFile $rightFile" | Where-Object {
+        $_ -notmatch '@@.*|\-\-\-.*|\+\+\+.*|diff.*' 
+    } | Foreach-Object {
+        if($_ -match '\-.*') {
+            Write-Host $_ -ForegroundColor Red
+        }
+        elseif($_ -match '\+.*') {
+            Write-Host $_ -ForegroundColor Green
+        }
+    }
+}
