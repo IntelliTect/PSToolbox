@@ -101,6 +101,50 @@ Function Get-DbxItem {
     }
 }
 
+Function Save-DbxFile {
+    [CmdletBinding(SupportsShouldProcess)]
+    param (
+        # The Dropbox path to the file to download
+        [Parameter(Mandatory,ValueFromPipeline,ValueFromPipelineByPropertyName)][Alias('Path')][string]$DroboxPath,
+        # The target path to download the file to.  The default
+        # is the current directory with the same file name
+        [Parameter()][string]$TargetPath,
+        # Force the file to download even if it already exists.
+        [Parameter()][switch]$Force
+    )
+    BEGIN {
+        if(@($DroboxPath).Count -gt 1) {
+            # The $TargetPath should be a directory
+            if(!(Test-Path $TargetPath -PathType Container)) {
+                Write-Warning "'$TargetPath is not a container causing multiple files to overwrite each other."
+            }
+        }
+        $TargetPath = $TargetPath
+        $Force = $Force
+    }
+
+    PROCESS {
+        $DroboxPath | ForEach-Object {
+            $item = $_
+            if(!$TargetPath) {
+                $itemTargetPath = Join-Path (Get-Location) (Split-Path $item -Leaf)
+            }
+            elseif(Test-Path $TargetPath -PathType Container) {
+                $itemTargetPath = Join-Path ($TargetPath) (Split-Path $item -Leaf)
+            }
+
+            if((Test-Path $itemTargetPath) -and !$Force) {
+                throw "Cannot download file when that file ('$itemTargetPath') already exists. Use -Force to override."
+            }
+
+            if($PSCmdlet.ShouldProcess("$item", "Save-DbxFile '$item' to '$itemTargetPath'")) {
+                Invoke-DbxCli "dbxcli get '$item' '$itemTargetPath'"
+                Write-Output (Get-Item $itemTargetPath)
+            }
+        }
+    }
+}
+
 Function Get-DbxRevision {
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingInvokeExpression", "")]

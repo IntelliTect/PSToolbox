@@ -76,3 +76,39 @@ Describe 'DbxFile' {
 }
 
 
+Describe 'Save-DbxFile' {
+    It 'Save a file locally defaulting the target name to the name of the file' {
+        $items = Get-DbxItem -File
+        # ToDO: Size is still a string
+        $items = $items | Where-Object { $_.Size -like '* B*'} | Select-Object -First 2
+        if(@($items).Count -eq 0) {
+            Set-ItResult -Inconclusive -Because 'There were not items measured in bytes'
+        }
+        $items | ForEach-Object{
+            [string]$fileName = $null
+            [string]$currentDirectory = Get-Location
+            try {
+                Push-Location
+                Set-Location $env:Temp
+                $fileName = Join-Path $env:Temp $(Split-Path -Leaf $_.Path)
+                if(!(Test-Path $fileName)) {
+                    try {
+                        Save-DbxFile $_.Path # | Select-Object -ExpandProperty Path | Should -Be $fileName
+                        Test-Path $fileName | Should -BeTrue
+                    }
+                    finally {
+                        Get-Item $fileName -ErrorAction Ignore | Remove-Item -Force
+                    }
+                }
+                else {
+                    Set-ItResult -Inconclusive -Because "The file ('$fileName') already existed"
+                }
+            }
+            finally {
+                Pop-Location
+            }
+            Test-Path $fileName | Should -BeFalse
+            Get-Location | Should -Be $currentDirectory
+        }
+    }
+}
