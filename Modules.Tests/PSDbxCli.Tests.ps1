@@ -31,6 +31,48 @@ Describe 'Get-DbxItem' {
         $items | ForEach-Object{
             $_.GetType().Name | Should -Be 'DbxDirectory' }
     }
+    It 'Retrieve a single directory by name' {
+        $items = Get-DbxItem -Directory
+        $items | Select-Object -First 1 | ForEach-Object{
+            $path = $_.Path
+            Get-DbxItem $_.Path | Select-Object -ExpandProperty Path | Should -BeLike "$path*"
+        }
+    }
+}
+
+Describe 'DbxDirectory' {
+    It 'Retrieve childe items using DbxDirectory.GetChildItems()' {
+        $items = Get-DbxItem -Directory
+        $items | Select-Object -First 2 | ForEach-Object{
+            $expectedPath = $_.Path
+            $childItems = $_.GetChildItems()
+            $childItems | Select-Object -ExpandProperty 'Path' | Should -BeLike "$expectedPath*"
+        }
+    }
+}
+
+Describe 'Get-DbxRevision' {
+    It 'Retrieve a simple revision' {
+        $items = Get-DbxItem -File
+        $items | Select-Object -First 2 | ForEach-Object{
+            $expectedPath = $_.Path
+            $revisions = @($_ | Get-DbxRevision)
+            $revisions.Count | Should -BeGreaterOrEqual 1
+            $revisions | Select-Object -ExpandProperty 'Path' | Should -Be $expectedPath
+        }
+    }
+}
+
+Describe 'DbxFile' {
+    It 'Retrieve using DbxFile.GetRevisions()' {
+        $items = Get-DbxItem -File
+        $items | Select-Object -First 2 | ForEach-Object{
+            $expectedPath = $_.Path
+            $revisions = $_.GetRevisions()
+            $revisions.Count | Should -BeGreaterOrEqual 1
+            $revisions | Select-Object -ExpandProperty 'Path' | Should -Be $expectedPath
+        }
+    }
 }
 
 
