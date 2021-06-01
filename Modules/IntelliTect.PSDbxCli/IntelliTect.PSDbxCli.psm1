@@ -10,13 +10,19 @@ class DbxDirectory : DbxItem {
 }
 class DbxFile : DbxItem {
     [ValidateNotNullOrEmpty()][string]$Revision;
-    [ValidateNotNullOrEmpty()][string]$Size;
-    [ValidateNotNullOrEmpty()][string]$LastModified
+    [ValidateNotNullOrEmpty()][int]$Size;
+    [ValidateNotNullOrEmpty()]hidden[string]$DisplaySize
+    [ValidateNotNullOrEmpty()][string]$Age
 
     [DbxItem[]]GetRevisions() {
         return Get-DbxRevision -Path $this.Path
     }
 }
+$TypeData = @{
+    TypeName = 'DbxFile'
+    DefaultDisplayPropertySet = 'Path','DisplaySize','Age'
+}
+Update-TypeData @TypeData
 
 Function Script:Invoke-DbxCli {
     [CmdletBinding()]
@@ -65,22 +71,22 @@ Function Get-DbxItem {
 
     Invoke-DbxCli $command | ForEach-Object{
         if(-not $Header) {
-            if($_ -match '(?<Revision>Revision\s*)(?<Size>Size\s*)(?<LastModified>Last Modified\s*)(?<Path>Path)') {
+            if($_ -match '(?<Revision>Revision\s*)(?<Size>Size\s*)(?<Age>Last Modified\s*)(?<Path>Path)') {
                 $Header = [PSCustomObject]($Matches | Select-Object -ExcludeProperty 0)
             }
             else {
                 throw "Unable to parse header ('$_')"
             }
             $regexLine="(?<Revision>.{$($Header.Revision.Length)})"+
-                "(?<Size>.{$($Header.Size.Length)})"+
-                "(?<LastModified>.{$($Header.LastModified.Length)})"+
+                "(?<DisplaySize>.{$($Header.Size.Length)})"+
+                "(?<Age>.{$($Header.Age.Length)})"+
                 "(?<Path>.+?)\s*$"
         }
         else {
             if($_ -match $regexLine) {
                 if( $Matches.Revision.Trim() -eq '-') {
                     if($Directory) {
-                        # Revision, LastModified, and Size are not returned for a directory.
+                        # Revision, Age, and Size are not returned for a directory.
                         $item = ([PSCustomObject]($Matches | Select-Object -Property Path))
                         $item.Path = $item.Path+'/'
                         $item.PSObject.TypeNames.Insert(0,"Dbx.Directory")
@@ -90,15 +96,33 @@ Function Get-DbxItem {
                 }
                 else {
                     if($File) {
-                        $item = ([PSCustomObject]($Matches | Select-Object -ExcludeProperty '0'))
+                        $item = $Matches
+
+                        $item['Size'] = ConvertFrom-DisplaySize $Matches.DisplaySize
+
                         $item.PSObject.TypeNames.Insert(0,"Dbx.File")
                         # We ignore the '0' property
-                        Write-Output ([DbxFile]$item)
+                        Write-Output ([DbxFile]($item | Select-Object -ExcludeProperty '0'))
                     }
                 }
             }
         }
     }
+}
+Function Script:ConvertFrom-DisplaySize {
+    [CmdletBinding()]
+    [OutputType([int])]
+    param([Parameter(Mandatory)][string]$DisplaySize)
+    $converter=@{
+        B=1;
+        KiB=1000;
+        MiB=1000000;
+        GiB=1000000000;
+    }
+    if($DisplaySize -match '(?<Amount>\d*?\.?\d*?) (?<Unit>GiB|KiB|MiB|B)') {
+        return ([int]$Matches.Amount)*$converter.($Matches.Unit)
+    }
+    else { throw "Unable to parse size '$($Matches.DisplaySize)'"}
 }
 
 Function Save-DbxFile {
@@ -156,7 +180,7 @@ Function Get-DbxRevision {
     BEGIN {
         $regexLine="(?<Revision>.[0-9a-f]+?)\t"+
         "(?<Size>.+?)\t"+
-        "(?<LastModified>.+?)\t"+
+        "(?<Age>.+?)\t"+
         "(?<Path>.+?)\t"
     }
     PROCESS {
@@ -168,7 +192,7 @@ Function Get-DbxRevision {
                     [DbxFile]@{
                         'Revision'=$_.Groups['Revision'].Value;
                         'Size'=$_.Groups['Size'].Value;
-                        'LastModified'=$_.Groups['LastModified'].Value;
+                        'Age'=$_.Groups['Age'].Value;
                         'Path'=$_.Groups['Path'].Value;
                     }
                 }

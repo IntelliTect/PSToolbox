@@ -15,11 +15,18 @@ Describe 'Get-DbxItem' {
         $items | Select-Object -ExpandProperty Path | Should -BeLike '/*'
     }
     It 'Verify you can see a single file' {
-        $items = Get-DbxItem | Where-Object {
-            $_.GetType().Name -eq 'DbxFile'} # Use name as type may not always be yet.
+        $items = Get-DbxItem -File
         $path = ($items[(Get-Random -Maximum ($items.Count-1))]).Path
         $item = Get-DbxItem $path
         $item.Path | Should -Be $path
+        $converter=@{
+            B=1;
+            KiB=1000;
+            MiB=1000000;
+            GiB=1000000000;
+        }
+        $item.DisplaySize -match '(?<Unit>GiB|KiB|MiB|B)' | Should -BeTrue
+        $item.Size | Should -BeGreaterThan ($converter.($Matches.Unit))
     }
     It 'Return only files' {
         $items = Get-DbxItem -File
