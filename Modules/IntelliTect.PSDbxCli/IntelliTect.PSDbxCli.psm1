@@ -18,11 +18,11 @@ class DbxFile : DbxItem {
         return Get-DbxRevision -Path $this.Path
     }
 }
-$TypeData = @{
+$dbxFileTypeData = @{
     TypeName = 'DbxFile'
     DefaultDisplayPropertySet = 'Path','DisplaySize','Age'
 }
-Update-TypeData @TypeData
+Update-TypeData @dbxFileTypeData -Force
 
 Function Script:Invoke-DbxCli {
     [CmdletBinding()]
