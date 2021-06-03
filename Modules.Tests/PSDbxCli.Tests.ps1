@@ -1,4 +1,5 @@
 <#Header#>
+using module "IntelliTect.PSDbxCli"
 Set-StrictMode -Version "Latest"
 
 # Import IntelliTect.Commonn for suppot of Get-Temp stuff.
@@ -121,36 +122,38 @@ Describe 'DbxFile' {
 
 Describe 'Save-DbxFile' {
     It 'Save a file locally defaulting the target name to the name of the file' {
-        $items = Get-DbxItem -File
-        # ToDO: Size is still a string
-        $items = $items | Where-Object { $_.Size -like '* B*'} | Select-Object -First 2
-        if(@($items).Count -eq 0) {
-            Set-ItResult -Inconclusive -Because 'There were not items measured in bytes'
+        $file = Get-DbxItem -File | `
+            # Where-Object{ $_.DisplaySize -match '.+? (B|KiB)\s*'} | ` # Select the items measured in bytes or kb.
+            Sort-Object -Property 'Size' | Select-Object -First 1
+
+        if(-not $file) {
+            Set-ItResult -Inconclusive -Because 'There were no files smalle enough'
         }
-        $items | ForEach-Object{
-            [string]$fileName = $null
+        @($file) | ForEach-Object{
+            [string]$targetFileName = $null
             [string]$currentDirectory = Get-Location
             try {
                 Push-Location
                 Set-Location $env:Temp
-                $fileName = Join-Path $env:Temp $(Split-Path -Leaf $_.Path)
-                if(!(Test-Path $fileName)) {
+                $targetFileName = Join-Path $env:Temp $(Split-Path -Leaf $_.Path)
+                if(!(Test-Path $targetFileName)) {
                     try {
-                        Save-DbxFile $_.Path # | Select-Object -ExpandProperty Path | Should -Be $fileName
-                        Test-Path $fileName | Should -BeTrue
+                        # TODO: Determine out to make the explicit '-DropboxPath' parameter name
+                        Save-DbxFile -DroboxPath $_.Path # | Select-Object -ExpandProperty Path | Should -Be $targetFileName
+                        Test-Path $targetFileName | Should -BeTrue
                     }
                     finally {
-                        Get-Item $fileName -ErrorAction Ignore | Remove-Item -Force
+                        Get-Item $targetFileName -ErrorAction Ignore | Remove-Item -Force
                     }
                 }
                 else {
-                    Set-ItResult -Inconclusive -Because "The file ('$fileName') already existed"
+                    Set-ItResult -Inconclusive -Because "The file ('$targetFileName') already existed"
                 }
             }
             finally {
                 Pop-Location
             }
-            Test-Path $fileName | Should -BeFalse
+            Test-Path $targetFileName | Should -BeFalse
             Get-Location | Should -Be $currentDirectory
         }
     }
