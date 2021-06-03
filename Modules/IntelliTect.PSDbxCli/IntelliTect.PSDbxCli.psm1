@@ -208,10 +208,10 @@ Function Save-DbxFile {
     param (
         # The Dropbox path to the file to download
         [ValidateNotNullOrEmpty()][Parameter(ParameterSetName='Path',Mandatory,ValueFromPipeline,ValueFromPipelineByPropertyName)][Alias('Path')][string[]]$DroboxPath,
-        # The Revision ID for the file to be downloaded. 
+        # The Revision ID for the file to be downloaded.
         # (If not the most recent version of the file, a copy will be temporarily be placed in
         # Dropbox while downloading.)
-        [ValidateNotNullOrEmpty()][Parameter(ParameterSetName='Revision',Mandatory,ValueFromPipeline,ValueFromPipelineByPropertyName)][string]$Revision,
+        [ValidateNotNullOrEmpty()][Parameter(ParameterSetName='Revision',Mandatory,ValueFromPipeline,ValueFromPipelineByPropertyName)][string[]]$Revision,
         # The target path to download the file to.  The default
         # is the current directory with the same file name
         [Parameter()][string]$TargetPath,
