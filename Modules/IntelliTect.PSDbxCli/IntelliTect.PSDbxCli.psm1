@@ -33,25 +33,108 @@ Function Script:Invoke-DbxCli {
         $Command
     )
 
-    Invoke-Expression $command
+    $Command += ' 2>&1'
+
+    $result = Invoke-Expression $command -ErrorAction SilentlyContinue -ErrorVariable InvokeExpressionError
+    if($LASTEXITCODE -ne 0) {
+        Write-Error $InvokeExpressionError.ToString()
+    }
+    else {
+        @($result) | Foreach-Object {
+            if( $_ -like "Error: *" ) {
+                Write-Error $_
+            }
+            else {
+                Write-Output $_
+            }
+        }
+    }
+}
+Function Script:Format-DbxPath {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        # The path to format
+        [Parameter(Mandatory,ValueFromPipeline)][string[]]$Path
+    )
+    BEGIN {
+        $Path = $Path
+    }
+    PROCESS {
+        @($Path) | ForEach-Object {
+            $item = $_
+            $item=$item.Replace('\','/')
+            if($item[0] -ne '/') {
+                $item="/$item"
+            }
+            Write-Output $item
+        }
+    }
+
 }
 
+Function Test-DbxPath {
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param (
+        [Parameter(Mandatory)][string[]]$Path,
+        # Parameter help description
+        [Microsoft.PowerShell.Commands.TestPathType]$PathType = [Microsoft.PowerShell.Commands.TestPathType]::Any
+    )
+    BEGIN {
+        $PathType = $PathType
+    }
+    PROCESS {
+        @($Path) | ForEach-Object {
+            [string]$item = Format-DbxPath $_
+
+            if(($item[-1] -eq '/') -and ($PathType -eq 'Leaf')) {
+                throw 'Seaching for file but folder provided (remove trailing slash)'
+            }
+
+            if(-not ($item -match '(?<DirectoryPath>/.*?)(?<FileName>.+?)/?$')) {
+                throw "The path ('$item') is invalid."
+            }
+
+            # Handle root paths separately because you can't use a plain '/' for the "path-scope" (directory path) with dbxcli search
+            if($Matches.DirectoryPath -eq '/') {
+                # search for '*' in the $Path directory.  If no error, the folder exists.
+                # (Using dbxcli ls for a folder returns all the items in the folder which seems suboptimal for large folders.)
+                Invoke-DbxCli "dbxcli search * '$($item.TrimEnd('/'))'" `
+                    -ErrorAction SilentlyContinue -ErrorVariable InvokeDbxCliError > $null
+                [bool]$directoryExists = (-not [bool]$InvokeDbxCliError)
+                if( $directoryExists -and ($PathType -in 'Container','Any') ) {
+                    # We checked for the directory but it didn't exist
+                    return $true
+                }
+                elseif ( (-not $directoryExists) -and ($PathType -in 'Container') ) {
+                    # The item exists but it is a directory and we are looking for a leaf.
+                    return $false
+                }
+                else {
+                    # Check whether the file exists.
+                    return ([bool](Get-DbxItem -File $item))
+                }
+            }
+            $result = Invoke-DbxCli "dbxcli search '$($Matches.FileName)' '$($Matches.DirectoryPath)'" `
+                -ErrorAction SilentlyContinue -ErrorVariable InvokeDbxCliError
+            if($InvokeDbxCliError) {
+                Write-Output $false
+            }
+            else {
+                Write-Output ($result -eq $item)
+            }
+        }
+    }
+}
 
 Function Get-DbxItem {
     [CmdletBinding()]
     param (
-        [Parameter()]
-        [string]
-        $Path,
-        [Parameter()]
-        [switch]
-        $File,
-        [Parameter()]
-        [switch]
-        $Directory,
-        [Parameter()]
-        [switch]
-        $Recursive
+        [ValidateNotNullOrEmpty()][Parameter()][string]$Path = '/',
+        [Parameter()][switch]$File,
+        [Parameter()][switch]$Directory,
+        [Parameter()][switch]$Recursive
     )
     $Header=$null
     $regexLine=$null
@@ -62,12 +145,7 @@ Function Get-DbxItem {
         $File = [switch]$true
     }
 
-    if($Path) {
-        $Path=$Path.Replace('\','/')
-        if($Path[0] -ne '/') {
-            $Path="/$Path"
-        }
-    }
+    $Path = Format-DbxPath $Path
 
     Invoke-DbxCli $command | ForEach-Object{
         if(-not $Header) {
@@ -126,10 +204,14 @@ Function Script:ConvertFrom-DisplaySize {
 }
 
 Function Save-DbxFile {
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(SupportsShouldProcess,DefaultParameterSetName = 'Path')]
     param (
         # The Dropbox path to the file to download
-        [Parameter(Mandatory,ValueFromPipeline,ValueFromPipelineByPropertyName)][Alias('Path')][string]$DroboxPath,
+        [ValidateNotNullOrEmpty()][Parameter(ParameterSetName='Path',Mandatory,ValueFromPipeline,ValueFromPipelineByPropertyName)][Alias('Path')][string[]]$DroboxPath,
+        # The Revision ID for the file to be downloaded. 
+        # (If not the most recent version of the file, a copy will be temporarily be placed in
+        # Dropbox while downloading.)
+        [ValidateNotNullOrEmpty()][Parameter(ParameterSetName='Revision',Mandatory,ValueFromPipeline,ValueFromPipelineByPropertyName)][string]$Revision,
         # The target path to download the file to.  The default
         # is the current directory with the same file name
         [Parameter()][string]$TargetPath,
@@ -143,6 +225,7 @@ Function Save-DbxFile {
                 Write-Warning "'$TargetPath is not a container causing multiple files to overwrite each other."
             }
         }
+        #Get-DbxItem 'Apps'
         $TargetPath = $TargetPath
         $Force = $Force
     }
@@ -179,7 +262,7 @@ Function Get-DbxRevision {
     )
     BEGIN {
         $regexLine="(?<Revision>.[0-9a-f]+?)\t"+
-        "(?<Size>.+?)\t"+
+        "(?<DisplaySize>.+?)\t"+
         "(?<Age>.+?)\t"+
         "(?<Path>.+?)\t"
     }
@@ -191,7 +274,8 @@ Function Get-DbxRevision {
                 [Regex]::Matches($line, $regexLine) | ForEach-Object {
                     [DbxFile]@{
                         'Revision'=$_.Groups['Revision'].Value;
-                        'Size'=$_.Groups['Size'].Value;
+                        'DisplaySize'=$_.Groups['DisplaySize'].Value;
+                        'Size'=ConvertFrom-DisplaySize $_.Groups['DisplaySize'].Value
                         'Age'=$_.Groups['Age'].Value;
                         'Path'=$_.Groups['Path'].Value;
                     }
