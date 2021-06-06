@@ -4,6 +4,7 @@ Set-StrictMode -Version "Latest"
 
 # Import IntelliTect.Commonn for suppot of Get-Temp stuff.
 Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.Common
+Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.File
 
 Get-Module IntelliTect.PSDbxCli | Remove-Module
 Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.PSDbxCli -Force
@@ -135,6 +136,7 @@ Describe 'Save-DbxFile' {
             try {
                 Push-Location
                 Set-Location $env:Temp
+                
                 $targetFileName = Join-Path $env:Temp $(Split-Path -Leaf $_.Path)
                 if(!(Test-Path $targetFileName)) {
                     try {
