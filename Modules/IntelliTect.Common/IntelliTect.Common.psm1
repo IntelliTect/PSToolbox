@@ -204,13 +204,15 @@ Set-Alias Using Register-AutoDispose
 
 Function Script:Get-FileSystemTempItem {
     [CmdletBinding()]
-    [OutputType('System.IO.FileSystemInfo')]
+    [OutputType([System.IO.FileSystemInfo])]
     param (
         [Parameter(ValueFromPipelineByPropertyName)]
         [string[]]$Path = [System.IO.Path]::GetTempPath(),
         [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)]
         [AllowNull()][AllowEmptyString()][string[]]${Name},
-        [ValidateSet('File', 'Directory')][string]$ItemType = 'File'
+        [ValidateSet('File', 'Directory')][string]$ItemType = 'File',
+        # Do not create the actual file/directory but do delete when Dispose is called.
+        [switch] $DoNotCreateItem
     )
 
     PROCESS {
@@ -237,15 +239,26 @@ Function Script:Get-FileSystemTempItem {
             }
 
             $fullName | ForEach-Object {
-                # If we fail to create the item (for example the name was specified and the the file already exists)
-                # then we stop further execution.
-                $file = New-Item $_ -ItemType $ItemType -ErrorAction Stop
+                [string]$item = $_
+                $fileSystemInfo = $null
+                if(!$DoNotCreateItem) {
+                    # If we fail to create the item (for example the name was specified and the the file already exists)
+                    # then we stop further execution.
+                    $fileSystemInfo = New-Item $item -ItemType $ItemType -ErrorAction Stop
+                }
+                else {
+                    $fileSystemInfo = switch ($itemType) { 
+                        'File' { [System.IO.FileInfo] $item }
+                        'Directory' { [System.IO.DirectoryInfo] $item }
+                        default { throw 'Invalid Operation'}
+                    }
+                }
 
-                $file | Add-DisposeScript -DisposeScript {
+                $fileSystemInfo | Add-DisposeScript -DisposeScript {
                     Remove-Item -Path $this.FullName -Force -Recurse -ErrorVariable failed # Recurse is allowed on both files and directoriese
                     if($failed) { throw $failed }
                 }
-                Write-Output $file
+                Write-Output $fileSystemInfo
 
             }
         }
@@ -260,12 +273,12 @@ Function Get-TempDirectory {
         [Parameter(ValueFromPipelineByPropertyName)]
         [string[]]$Path = [System.IO.Path]::GetTempPath(),
         [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)]
-        [AllowNull()][AllowEmptyString()][string[]]$Name
+        [AllowNull()][AllowEmptyString()][string[]]$Name,
+        [switch] $DoNotCreateDirectory
     )
 
     PROCESS {
-        $Path | ForEach-Object{
-            Get-FileSystemTempItem -Path $_ -Name $Name -ItemType Directory }
+            Get-FileSystemTempItem -Path $Path -Name $Name -ItemType Directory -DoNotCreateItem:$DoNotCreateDirectory
     }
 }
 
@@ -276,10 +289,12 @@ Function Get-TempFile {
         [Parameter(ValueFromPipelineByPropertyName)]
         [string[]]$Path = [System.IO.Path]::GetTempPath(),
         [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)]
-        [AllowNull()][AllowEmptyString()][string[]]${Name}
+        [AllowNull()][AllowEmptyString()][string[]]$Name,
+        # Do not create the actual file but do delete when Dispose is called.
+        [switch] $DoNotCreateFile
     )
 
-    Get-FileSystemTempItem -Path $Path -Name $Name -ItemType File
+        Get-FileSystemTempItem -Path $Path -ItemType File -Name $Name -DoNotCreateItem:$DoNotCreateFile
 }
 
 <#
@@ -296,10 +311,10 @@ Function Get-FileSystemTempItemPath {
     [OutputType([String])]
     param (
         [Parameter(ValueFromPipeLine, ValueFromPipelineByPropertyName)]
-        [string[]]${Path} = [System.IO.Path]::GetTempPath()
+        [string[]]$Path = [System.IO.Path]::GetTempPath()
     )
 
-    $path | ForEach-Object {
+    $Path | ForEach-Object {
         [string]$eachName = $null
         [string]$tempItemPath = $null
         do {
