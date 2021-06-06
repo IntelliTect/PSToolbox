@@ -107,32 +107,29 @@ function Initialize-Array {
 Function Add-DisposeScript {
     [CmdletBinding()]
     param(
-        [ValidateNotNull()][Parameter(Mandatory, ValueFromPipeline)][object[]]$InputObject,
+        [ValidateNotNull()][Parameter(Mandatory, ValueFromPipeline)][object]$InputObject,
         [ValidateNotNull()][Parameter(Mandatory)][ScriptBlock]$DisposeScript,
         [switch]$Force
     )
     PROCESS {
-        $inputObject | Foreach-Object {
-            if($_.GetType() -eq [string]) { throw 'Add-DisposeScript will not work with [string] type $InputObjects'}
-            $eachInputObject = $_
-            if($eachInputObject.PSObject.Members.Name -notcontains 'IsDisposed') {
-                $eachInputObject | Add-Member -MemberType NoteProperty -Name 'IsDisposed' -Value $false
-            }
-
-            $eachInputObject | Add-Member -MemberType ScriptMethod -Name InternalDispose -Value $DisposeScript -Force:$Force
-
-            # TODO: Figure out a way to combine ScriptBlocgs without making them strings.                            
-            [ScriptBlock]$localDisposeScript = [scriptblock]::Create(
-                # Set the IsDisposed property to true when Dispose() is called.
-                "`n$DisposeScript; `n`$this.IsDisposed = `$true; "
-            )
-            $eachInputObject | Add-Member -MemberType ScriptMethod -Name Dispose -Value $localDisposeScript -Force:$Force
-
-            # $eachInputObject | Add-Member -MemberType ScriptMethod -Name Dispose -Value {
-            #     Invoke-Command -ScriptBlock $DisposeScript
-            #     $this.IsDisposed = $true
-            # }.GetNewClosure() -Force:$Force
+        if($InputObject.GetType() -eq [string]) { throw 'Add-DisposeScript will not work with [string] type $InputObjects'}
+        if($inputObject.PSObject.Members.Name -notcontains 'IsDisposed') {
+            $inputObject | Add-Member -MemberType NoteProperty -Name 'IsDisposed' -Value $false
         }
+
+        $inputObject | Add-Member -MemberType ScriptMethod -Name InternalDispose -Value $DisposeScript -Force:$Force
+
+        # TODO: Figure out a way to combine ScriptBlocgs without making them strings.                            
+        [ScriptBlock]$localDisposeScript = [scriptblock]::Create(
+            # Set the IsDisposed property to true when Dispose() is called.
+            "`n$DisposeScript; `n`$this.IsDisposed = `$true; "
+        )
+        $inputObject | Add-Member -MemberType ScriptMethod -Name Dispose -Value $localDisposeScript -Force:$Force
+
+        # $eachInputObject | Add-Member -MemberType ScriptMethod -Name Dispose -Value {
+        #     Invoke-Command -ScriptBlock $DisposeScript
+        #     $this.IsDisposed = $true
+        # }.GetNewClosure() -Force:$Force
     }
 }
 
@@ -175,7 +172,7 @@ Function Register-AutoDispose {
     param(
         [ValidateScript( {$_.PSobject.Members.Name -contains "Dispose"})]
             [ValidateNotNull()][Parameter(Position = 0, Mandatory, ValueFromPipeline)]
-            [Object[]]$InputObject,
+            [Object]$InputObject,
 
         [Parameter(Position = 1, Mandatory)]
             [ScriptBlock]$ScriptBlock
@@ -186,14 +183,11 @@ Function Register-AutoDispose {
             Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $InputObject
         }
         finally {
-            $InputObject | ForEach-Object {
-                if($_-eq $null) { throw '$inputOject contains items that are null.'}
-                try {
-                    $_.Dispose()
-                }
-                catch {
-                    Write-Error $_
-                }
+            try {
+                $InputObject.Dispose()
+            }
+            catch {
+                Write-Error $InputObject
             }
         }
     }
@@ -207,61 +201,49 @@ Function Script:Get-FileSystemTempItem {
     [OutputType([System.IO.FileSystemInfo])]
     param (
         [Parameter(ValueFromPipelineByPropertyName)]
-        [string[]]$Path = [System.IO.Path]::GetTempPath(),
+        [string]$Path = [System.IO.Path]::GetTempPath(),
         [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)]
-        [AllowNull()][AllowEmptyString()][string[]]${Name},
+        [AllowNull()][AllowEmptyString()][string]$Name,
         [ValidateSet('File', 'Directory')][string]$ItemType = 'File',
         # Do not create the actual file/directory but do delete when Dispose is called.
         [switch] $DoNotCreateItem
     )
 
     PROCESS {
-        $Path | ForEach-Object {
-
-            [string]$fullName = $null
-            # If the directory doesn't exist then Resolve-Path will report an error.
-            $eachPath = Resolve-Path $_ -ErrorAction Stop
-            if ((!$Name) -or ([string]::IsNullOrEmpty($Name))) {
-                $fullName = Get-FileSystemTempItemPath $_
+        [string]$fullName = $null
+        # If the directory doesn't exist then Resolve-Path will report an error.
+        $Path = Resolve-Path $Path -ErrorAction Stop
+        if ((!$Name) -or ([string]::IsNullOrEmpty($Name))) {
+            $fullName = Get-FileSystemTempItemPath $Path
+        }
+        else {
+            if ([string]::IsNullOrEmpty($Name)) {
+                    $fullName = Join-Path $Path ([System.IO.Path]::GetRandomFileName())
             }
             else {
-                $fullName = $Name | ForEach-Object {
-                    if ([string]::IsNullOrEmpty($_)) {
-                        do {
-                            $eachFullName = Join-Path $eachPath ([System.IO.Path]::GetRandomFileName())
-                        } while (Test-Path $eachFullName)
-                        Write-Output $eachFullName
-                    }
-                    else {
-                        Write-Output (Join-Path $eachPath $_)
-                    }
-                }
-            }
-
-            $fullName | ForEach-Object {
-                [string]$item = $_
-                $fileSystemInfo = $null
-                if(!$DoNotCreateItem) {
-                    # If we fail to create the item (for example the name was specified and the the file already exists)
-                    # then we stop further execution.
-                    $fileSystemInfo = New-Item $item -ItemType $ItemType -ErrorAction Stop
-                }
-                else {
-                    $fileSystemInfo = switch ($itemType) { 
-                        'File' { [System.IO.FileInfo] $item }
-                        'Directory' { [System.IO.DirectoryInfo] $item }
-                        default { throw 'Invalid Operation'}
-                    }
-                }
-
-                $fileSystemInfo | Add-DisposeScript -DisposeScript {
-                    Remove-Item -Path $this.FullName -Force -Recurse -ErrorVariable failed # Recurse is allowed on both files and directoriese
-                    if($failed) { throw $failed }
-                }
-                Write-Output $fileSystemInfo
-
+                $fullName =  (Join-Path $Path $Name)
             }
         }
+
+        $fileSystemInfo = $null
+        if(!$DoNotCreateItem) {
+            # If we fail to create the item (for example the name was specified and the the file already exists)
+            # then we stop further execution.
+            $fileSystemInfo = New-Item $fullName -ItemType $ItemType -ErrorAction Stop
+        }
+        else {
+            $fileSystemInfo = switch ($itemType) { 
+                'File' { [System.IO.FileInfo] $fullName }
+                'Directory' { [System.IO.DirectoryInfo] $fullName }
+                default { throw 'Invalid Operation'}
+            }
+        }
+
+        $fileSystemInfo | Add-DisposeScript -DisposeScript {
+            Remove-Item -Path $this.FullName -Force -Recurse -ErrorVariable failed # Recurse is allowed on both files and directoriese
+            if($failed) { throw $failed }
+        }
+        Write-Output $fileSystemInfo
     }
 }
 
@@ -271,9 +253,9 @@ Function Get-TempDirectory {
     [OutputType('System.IO.DirectoryInfo')]
     param (
         [Parameter(ValueFromPipelineByPropertyName)]
-        [string[]]$Path = [System.IO.Path]::GetTempPath(),
+        [string]$Path = [System.IO.Path]::GetTempPath(),
         [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)]
-        [AllowNull()][AllowEmptyString()][string[]]$Name,
+        [AllowNull()][AllowEmptyString()][string]$Name,
         [switch] $DoNotCreateDirectory
     )
 
@@ -287,9 +269,9 @@ Function Get-TempFile {
     [OutputType('System.IO.FileInfo')]
     param (
         [Parameter(ValueFromPipelineByPropertyName)]
-        [string[]]$Path = [System.IO.Path]::GetTempPath(),
+        [string]$Path = [System.IO.Path]::GetTempPath(),
         [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)]
-        [AllowNull()][AllowEmptyString()][string[]]$Name,
+        [AllowNull()][AllowEmptyString()][string]$Name,
         # Do not create the actual file but do delete when Dispose is called.
         [switch] $DoNotCreateFile
     )
@@ -311,17 +293,12 @@ Function Get-FileSystemTempItemPath {
     [OutputType([String])]
     param (
         [Parameter(ValueFromPipeLine, ValueFromPipelineByPropertyName)]
-        [string[]]$Path = [System.IO.Path]::GetTempPath()
+        [string]$Path = [System.IO.Path]::GetTempPath()
     )
 
-    $Path | ForEach-Object {
-        [string]$eachName = $null
-        [string]$tempItemPath = $null
-        do {
-            $eachName = [System.IO.Path]::GetRandomFileName()
-            $tempItemPath = Join-Path $_ $eachName
-        } while (Test-Path $tempItemPath)
-        Write-Output $tempItemPath
+    PROCESS {
+        $fullName = Join-Path $Path ([System.IO.Path]::GetRandomFileName())
+        Write-Output $fullName
     }
 }
 Set-Alias -Name Get-TempItemPath -Value Get-FileSystemTempItemPath
@@ -352,14 +329,12 @@ Specifies a command to be tested. Wildcard characters are permitted. If the comm
 Filter Test-Command {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory, ValueFromPipeline)][string[]]$Command
+        [Parameter(Mandatory, ValueFromPipeline)][string]$Command
 
     )
 
     PROCESS {
-        $Command | Foreach-Object {
-            Write-Output ([bool](get-command $_ -ErrorAction Ignore))
-        }
+        Write-Output ([bool](get-command $Command -ErrorAction Ignore))
     }
 }
 
@@ -380,18 +355,15 @@ The name(s) of the property to look for.
 Function Test-Property {
     [CmdLetBinding()]
     param(
-        [Parameter(ValueFromPipeline, Mandatory)][object[]] $InputObject,
+        [Parameter(ValueFromPipeline, Mandatory)][object] $InputObject,
         [Parameter(Mandatory)][string[]]$Name
     )
 
     PROCESS {
         # TODO: Add support for hashtable name checks as well
-        $Name = $Name # $Name shows a warning on the parameter if we don't refer to it.
-        $InputObject | ForEach-Object {
-            $item = $_
-            $Name | ForEach-Object {
-                $_ -in $item.PSobject.Properties.Name | Write-Output
-            }
+        $item = $InputObject
+        $Name | ForEach-Object {
+            $_ -in $item.PSobject.Properties.Name | Write-Output
         }
     }
 }
@@ -399,9 +371,11 @@ Function Test-Property {
 #[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "")]
 Function Test-VariableExists {
     [CmdletBinding()]
-    param([Parameter(Mandatory, ValueFromPipeline)][string[]]$name)
+    param([Parameter(Mandatory, ValueFromPipeline)][string]$Name)
 
-    $name | ForEach-Object { Test-Path Variable:\$_ }
+    PROCESS {
+        Test-Path Variable:\$Name
+    }
 }
 
 Function Get-IsWindowsPlatform {
@@ -454,7 +428,7 @@ General notes
 
 Function Wait-ForCondition {
     [CmdletBinding(DefaultParametersetname='TimeoutInMilliseconds')] param(
-        [Parameter(Mandatory,ValueFromPipeline)][object[]]$InputObject,
+        [Parameter(Mandatory,ValueFromPipeline)][object]$InputObject,
         [Parameter(Mandatory)][ScriptBlock]$Condition,
         [ValidateScript({$_.TotalMilliseconds -ne 0})][Parameter(ParameterSetName = "TimeSpan")][TimeSpan]$TimeSpan,
         [ValidateScript({$_ -ge 0})][Parameter(ParameterSetName = "TimeoutInMilliseconds")][long]$TimeoutInMilliseconds=0,
