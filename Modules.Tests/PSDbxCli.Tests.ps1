@@ -158,3 +158,43 @@ Describe 'Save-DbxFile' {
         $tempDirectory.Dispose()
     }
 }
+
+
+Describe 'Save-DbxFile -Revision' {
+    BeforeAll {
+        [DbxFile]$script:dropboxFile = Get-DbxItem -File | `
+            # Where-Object{ $_.DisplaySize -match '.+? (B|KiB)\s*'} | ` # Select the items measured in bytes or kb.
+            Sort-Object -Property 'Size' | `
+            Where-Object{ $_.GetRevisions().Count -gt 1} | `
+            Select-Object -First 1
+        [string]$script:currentDirectory = Get-Location
+        $script:tempDirectory = Get-TempDirectory
+        Push-Location
+        Set-Location $tempDirectory
+    }
+    BeforeEach {
+        $script:targetFileName = Get-TempFile -Path $tempDirectory -DoNotCreateFile
+    }
+    It 'Save a file locally defaulting the target name to the name of the file' {
+        $targetFileName = Get-TempFile -Path $tempDirectory -Name $(Split-Path -Leaf $dropboxFile.Path) -DoNotCreateFile
+        # TODO: Determine how to drop the explicit '-DropboxPath' parameter name
+        Save-DbxFile -DroboxPath $dropboxFile.Path -Revision $dropboxFile.GetRevisions()[-1].Revision # | Select-Object -ExpandProperty Path | Should -Be $targetFileName
+        Test-Path $targetFileName | Should -BeTrue
+    }
+    # It 'Save a file locally with the specific target name' {
+
+    #     # TODO: Determine how to drop the explicit '-DropboxPath' parameter name
+    #     Save-DbxFile -DroboxPath $dropboxFile.Path -TargetPath $targetFileName.FullName
+    #     Test-Path $targetFileName | Should -BeTrue
+    # }
+    AfterEach {
+        $targetFileName.Dispose()
+        # Get-Item $targetFileName -ErrorAction Ignore | Remove-Item -Force
+        Test-Path $targetFileName | Should -BeFalse
+    }
+    AfterAll {
+        Pop-Location
+        Get-Location | Should -Be $currentDirectory
+        $tempDirectory.Dispose()
+    }
+}

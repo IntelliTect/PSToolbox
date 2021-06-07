@@ -11,11 +11,15 @@ class DbxDirectory : DbxItem {
 class DbxFile : DbxItem {
     [ValidateNotNullOrEmpty()][string]$Revision;
     [ValidateNotNullOrEmpty()][int]$Size;
-    [ValidateNotNullOrEmpty()]hidden[string]$DisplaySize
-    [ValidateNotNullOrEmpty()][string]$Age
+    [ValidateNotNullOrEmpty()]hidden[string]$DisplaySize;
+    [ValidateNotNullOrEmpty()][string]$Age;
+    [DbxItem[]]hidden $Revisions;
 
     [DbxItem[]]GetRevisions() {
-        return Get-DbxRevision -Path $this.Path
+        if(-not $this.Revisions) {
+            $this.Revisions = Get-DbxRevision -Path $this.Path
+        }
+        return $this.Revisions
     }
 }
 $dbxFileTypeData = @{
@@ -37,6 +41,7 @@ Function Script:Invoke-DbxCli {
 
     $result = Invoke-Expression $command -ErrorAction SilentlyContinue -ErrorVariable InvokeExpressionError
     if($LASTEXITCODE -ne 0) {
+        $InvokeExpressionError = $InvokeExpressionError | Where-Object{ -not [string]::IsNullOrWhiteSpace($_) }
         Write-Error $InvokeExpressionError.ToString()
     }
     else {
@@ -207,11 +212,13 @@ Function Save-DbxFile {
     [CmdletBinding(SupportsShouldProcess,DefaultParameterSetName = 'Path')]
     param (
         # The Dropbox path to the file to download
-        [ValidateNotNullOrEmpty()][Parameter(ParameterSetName='Path',Mandatory,ValueFromPipeline,ValueFromPipelineByPropertyName)][Alias('Path')][string[]]$DroboxPath,
+        [Parameter(Mandatory,ValueFromPipeline,ValueFromPipelineByPropertyName)]
+        [ValidateNotNullOrEmpty()][Alias('Path')][string]$DroboxPath,
         # The Revision ID for the file to be downloaded.
         # (If not the most recent version of the file, a copy will be temporarily be placed in
         # Dropbox while downloading.)
-        [ValidateNotNullOrEmpty()][Parameter(ParameterSetName='Revision',Mandatory,ValueFromPipeline,ValueFromPipelineByPropertyName)][string[]]$Revision,
+        [Parameter(ParameterSetName='Revision',Mandatory,ValueFromPipelineByPropertyName)]
+        [ValidateNotNullOrEmpty()][string]$Revision,
         # The target path to download the file to.  The default
         # is the current directory with the same file name
         [Parameter()][string]$TargetPath,
@@ -225,26 +232,39 @@ Function Save-DbxFile {
                 Write-Warning "'$TargetPath is not a container causing multiple files to overwrite each other."
             }
         }
-        #Get-DbxItem 'Apps'
-        $TargetPath = $TargetPath
-        $Force = $Force
     }
 
     PROCESS {
-        if(!$TargetPath) {
-            $TargetPath = Join-Path (Get-Location) (Split-Path $DroboxPath -Leaf)
-        }
-        elseif(Test-Path $TargetPath -PathType Container) {
-            $TargetPath = Join-Path ($TargetPath) (Split-Path $DroboxPath -Leaf)
-        }
+        try {
+            if($Revision) {
+                [string]$dbxAppDirectory = '/Apps/IntelliTect.PSDbxCli'
+                if(-not (Test-DbxPath -Path $dbxAppDirectory -PathType Container)) {
+                    Invoke-DbxCli "dbxcli mkdir $dbxAppDirectory"
+                }
+                $DroboxPath = "$dbxAppDirectory/$(Split-Path $DroboxPath -Leaf)"
+                Invoke-DbxCli "dbxcli restore '$DroboxPath' '$Revision'"
+            }
 
-        if((Test-Path $TargetPath) -and !$Force) {
-            throw "Cannot download file when that file ('$TargetPath') already exists. Use -Force to override."
-        }
+            if(!$TargetPath) {
+                $TargetPath = Join-Path (Get-Location) (Split-Path $DroboxPath -Leaf)
+            }
+            elseif(Test-Path $TargetPath -PathType Container) {
+                $TargetPath = Join-Path ($TargetPath) (Split-Path $DroboxPath -Leaf)
+            }
 
-        if($PSCmdlet.ShouldProcess("$DroboxPath", "Save-DbxFile '$DroboxPath' to '$TargetPath'")) {
-            Invoke-DbxCli "dbxcli get '$DroboxPath' '$TargetPath'"
-            Write-Output (Get-Item $TargetPath)
+            if((Test-Path $TargetPath) -and !$Force) {
+                throw "Cannot download file when that file ('$TargetPath') already exists. Use -Force to override."
+            }
+
+            if($PSCmdlet.ShouldProcess("$DroboxPath", "Save-DbxFile '$DroboxPath' to '$TargetPath'")) {
+                Invoke-DbxCli "dbxcli get '$DroboxPath' '$TargetPath'"
+                Write-Output (Get-Item $TargetPath)
+            }
+        }
+        finally {
+            if($Revision) {
+                Invoke-DbxCli "dbxcli rm $DroboxPath --force"
+            }
         }
     }
 }
@@ -264,18 +284,16 @@ Function Get-DbxRevision {
         "(?<Path>.+?)\t"
     }
     PROCESS {
-        $Path | ForEach-Object {
-            $command = "dbxcli revs -l '$Path'"
-            Invoke-DbxCli $command | Select-Object -Skip 1 | ForEach-Object {
-                [string]$line=$_
-                [Regex]::Matches($line, $regexLine) | ForEach-Object {
-                    [DbxFile]@{
-                        'Revision'=$_.Groups['Revision'].Value;
-                        'DisplaySize'=$_.Groups['DisplaySize'].Value;
-                        'Size'=ConvertFrom-DisplaySize $_.Groups['DisplaySize'].Value
-                        'Age'=$_.Groups['Age'].Value;
-                        'Path'=$_.Groups['Path'].Value;
-                    }
+        $command = "dbxcli revs -l '$Path'"
+        Invoke-DbxCli $command | Select-Object -Skip 1 | ForEach-Object {
+            [string]$line=$_
+            [Regex]::Matches($line, $regexLine) | ForEach-Object {
+                [DbxFile]@{
+                    'Revision'=$_.Groups['Revision'].Value;
+                    'DisplaySize'=$_.Groups['DisplaySize'].Value;
+                    'Size'=ConvertFrom-DisplaySize $_.Groups['DisplaySize'].Value
+                    'Age'=$_.Groups['Age'].Value;
+                    'Path'=$_.Groups['Path'].Value;
                 }
             }
         }
