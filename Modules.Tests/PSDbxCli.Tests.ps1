@@ -123,41 +123,38 @@ Describe 'DbxFile' {
 
 
 Describe 'Save-DbxFile' {
-    It 'Save a file locally defaulting the target name to the name of the file' {
-        $file = Get-DbxItem -File | `
+    BeforeAll {
+        [DbxFile]$script:dropboxFile = Get-DbxItem -File | `
             # Where-Object{ $_.DisplaySize -match '.+? (B|KiB)\s*'} | ` # Select the items measured in bytes or kb.
             Sort-Object -Property 'Size' | Select-Object -First 1
+        [string]$script:currentDirectory = Get-Location
+        $script:tempDirectory = Get-TempDirectory
+        Push-Location
+        Set-Location $tempDirectory
+    }
+    BeforeEach {
+        $script:targetFileName = Get-TempFile -Path $tempDirectory -DoNotCreateFile
+    }
+    It 'Save a file locally defaulting the target name to the name of the file' {
+        $targetFileName = Get-TempFile -Path $tempDirectory -Name $(Split-Path -Leaf $dropboxFile.Path) -DoNotCreateFile
+        # TODO: Determine how to drop the explicit '-DropboxPath' parameter name
+        Save-DbxFile -DroboxPath $dropboxFile.Path # | Select-Object -ExpandProperty Path | Should -Be $targetFileName
+        Test-Path $targetFileName | Should -BeTrue
+    }
+    It 'Save a file locally with the specific target name' {
 
-        if(-not $file) {
-            Set-ItResult -Inconclusive -Because 'There were no files smalle enough'
-        }
-        @($file) | ForEach-Object{
-            [string]$targetFileName = $null
-            [string]$currentDirectory = Get-Location
-            try {
-                Push-Location
-                Set-Location $env:Temp
-                
-                $targetFileName = Join-Path $env:Temp $(Split-Path -Leaf $_.Path)
-                if(!(Test-Path $targetFileName)) {
-                    try {
-                        # TODO: Determine out to make the explicit '-DropboxPath' parameter name
-                        Save-DbxFile -DroboxPath $_.Path # | Select-Object -ExpandProperty Path | Should -Be $targetFileName
-                        Test-Path $targetFileName | Should -BeTrue
-                    }
-                    finally {
-                        Get-Item $targetFileName -ErrorAction Ignore | Remove-Item -Force
-                    }
-                }
-                else {
-                    Set-ItResult -Inconclusive -Because "The file ('$targetFileName') already existed"
-                }
-            }
-            finally {
-                Pop-Location
-            }
-            Test-Path $targetFileName | Should -BeFalse
-            Get-Location | Should -Be $currentDirectory
-        }
+        # TODO: Determine how to drop the explicit '-DropboxPath' parameter name
+        Save-DbxFile -DroboxPath $dropboxFile.Path -TargetPath $targetFileName.FullName
+        Test-Path $targetFileName | Should -BeTrue
+    }
+    AfterEach {
+        $targetFileName.Dispose()
+        # Get-Item $targetFileName -ErrorAction Ignore | Remove-Item -Force
+        Test-Path $targetFileName | Should -BeFalse
+    }
+    AfterAll {
+        Pop-Location
+        Get-Location | Should -Be $currentDirectory
+        $tempDirectory.Dispose()
     }
 }

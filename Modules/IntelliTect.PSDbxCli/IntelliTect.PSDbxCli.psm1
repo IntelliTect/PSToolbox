@@ -231,23 +231,20 @@ Function Save-DbxFile {
     }
 
     PROCESS {
-        $DroboxPath | ForEach-Object {
-            $item = $_
-            if(!$TargetPath) {
-                $itemTargetPath = Join-Path (Get-Location) (Split-Path $item -Leaf)
-            }
-            elseif(Test-Path $TargetPath -PathType Container) {
-                $itemTargetPath = Join-Path ($TargetPath) (Split-Path $item -Leaf)
-            }
+        if(!$TargetPath) {
+            $TargetPath = Join-Path (Get-Location) (Split-Path $DroboxPath -Leaf)
+        }
+        elseif(Test-Path $TargetPath -PathType Container) {
+            $TargetPath = Join-Path ($TargetPath) (Split-Path $DroboxPath -Leaf)
+        }
 
-            if((Test-Path $itemTargetPath) -and !$Force) {
-                throw "Cannot download file when that file ('$itemTargetPath') already exists. Use -Force to override."
-            }
+        if((Test-Path $TargetPath) -and !$Force) {
+            throw "Cannot download file when that file ('$TargetPath') already exists. Use -Force to override."
+        }
 
-            if($PSCmdlet.ShouldProcess("$item", "Save-DbxFile '$item' to '$itemTargetPath'")) {
-                Invoke-DbxCli "dbxcli get '$item' '$itemTargetPath'"
-                Write-Output (Get-Item $itemTargetPath)
-            }
+        if($PSCmdlet.ShouldProcess("$DroboxPath", "Save-DbxFile '$DroboxPath' to '$TargetPath'")) {
+            Invoke-DbxCli "dbxcli get '$DroboxPath' '$TargetPath'"
+            Write-Output (Get-Item $TargetPath)
         }
     }
 }
