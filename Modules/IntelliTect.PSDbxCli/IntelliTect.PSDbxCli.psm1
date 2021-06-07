@@ -42,12 +42,13 @@ Function Script:Invoke-DbxCli {
     $result = Invoke-Expression $command -ErrorAction SilentlyContinue -ErrorVariable InvokeExpressionError
     if($LASTEXITCODE -ne 0) {
         $InvokeExpressionError = $InvokeExpressionError | Where-Object{ -not [string]::IsNullOrWhiteSpace($_) }
+        # TODO: Consider throwing an error instead so that execution stops when it unexpectedly errors.
         Write-Error $InvokeExpressionError.ToString()
     }
     else {
         @($result) | Foreach-Object {
             if( $_ -like "Error: *" ) {
-                Write-Error $_
+                throw $_
             }
             else {
                 Write-Output $_
@@ -203,6 +204,22 @@ Function Script:ConvertFrom-DisplaySize {
     else { throw "Unable to parse size '$($Matches.DisplaySize)'"}
 }
 
+Function Restore-DbxFile {
+    [CmdletBinding()]
+    param (
+        # The revision ID of the file to be restored.
+        [Parameter(Mandatory)][string]$Revision,
+        # The target location to restore the file in Dropbox
+        [Parameter(Mandatory)][string]$DbxTargetLocation,
+        [switch]$PassThru
+    )
+
+    Invoke-DbxCli "dbxcli restore '$DbxTargetLocation' '$Revision'"
+    if($PassThru) {
+        Write-Output (Get-DbxItem -Path $DbxTargetLocation)
+    }
+}
+
 Function Save-DbxFile {
     [CmdletBinding(SupportsShouldProcess,DefaultParameterSetName = 'Path')]
     param (
@@ -237,7 +254,7 @@ Function Save-DbxFile {
                     Invoke-DbxCli "dbxcli mkdir $dbxAppDirectory"
                 }
                 $DroboxPath = "$dbxAppDirectory/$(Split-Path $DroboxPath -Leaf)"
-                Invoke-DbxCli "dbxcli restore '$DroboxPath' '$Revision'"
+                Restore-DbxFile -Revision $Revision -DbxTargetLocation $DroboxPath
             }
 
             if(!$TargetPath) {
