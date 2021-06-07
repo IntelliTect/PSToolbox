@@ -82,53 +82,48 @@ Function Test-DbxPath {
     [CmdletBinding()]
     [OutputType([bool])]
     param (
-        [Parameter(Mandatory)][string[]]$Path,
+        [Parameter(Mandatory)][string]$Path,
         # Parameter help description
         [Microsoft.PowerShell.Commands.TestPathType]$PathType = [Microsoft.PowerShell.Commands.TestPathType]::Any
     )
-    BEGIN {
-        $PathType = $PathType
-    }
     PROCESS {
-        @($Path) | ForEach-Object {
-            [string]$item = Format-DbxPath $_
+        $Path = Format-DbxPath $Path
 
-            if(($item[-1] -eq '/') -and ($PathType -eq 'Leaf')) {
-                throw 'Seaching for file but folder provided (remove trailing slash)'
-            }
+        if(($Path[-1] -eq '/') -and ($PathType -eq 'Leaf')) {
+            throw 'Seaching for file but folder provided (remove trailing slash)'
+        }
 
-            if(-not ($item -match '(?<DirectoryPath>/.*?)(?<FileName>.+?)/?$')) {
-                throw "The path ('$item') is invalid."
-            }
+        if(-not ($Path -match '(?<DirectoryPath>/.*?)(?<FileName>.+?)/?$')) {
+            throw "The path ('$Path') is invalid."
+        }
 
-            # Handle root paths separately because you can't use a plain '/' for the "path-scope" (directory path) with dbxcli search
-            if($Matches.DirectoryPath -eq '/') {
-                # search for '*' in the $Path directory.  If no error, the folder exists.
-                # (Using dbxcli ls for a folder returns all the items in the folder which seems suboptimal for large folders.)
-                Invoke-DbxCli "dbxcli search * '$($item.TrimEnd('/'))'" `
-                    -ErrorAction SilentlyContinue -ErrorVariable InvokeDbxCliError > $null
-                [bool]$directoryExists = (-not [bool]$InvokeDbxCliError)
-                if( $directoryExists -and ($PathType -in 'Container','Any') ) {
-                    # We checked for the directory but it didn't exist
-                    return $true
-                }
-                elseif ( (-not $directoryExists) -and ($PathType -in 'Container') ) {
-                    # The item exists but it is a directory and we are looking for a leaf.
-                    return $false
-                }
-                else {
-                    # Check whether the file exists.
-                    return ([bool](Get-DbxItem -File $item))
-                }
+        # Handle root paths separately because you can't use a plain '/' for the "path-scope" (directory path) with dbxcli search
+        if($Matches.DirectoryPath -eq '/') {
+            # search for '*' in the $Path directory.  If no error, the folder exists.
+            # (Using dbxcli ls for a folder returns all the items in the folder which seems suboptimal for large folders.)
+            Invoke-DbxCli "dbxcli search * '$($Path.TrimEnd('/'))'" `
+                -ErrorAction SilentlyContinue -ErrorVariable InvokeDbxCliError > $null
+            [bool]$directoryExists = (-not [bool]$InvokeDbxCliError)
+            if( $directoryExists -and ($PathType -in 'Container','Any') ) {
+                # We checked for the directory but it didn't exist
+                return $true
             }
-            $result = Invoke-DbxCli "dbxcli search '$($Matches.FileName)' '$($Matches.DirectoryPath)'" `
-                -ErrorAction SilentlyContinue -ErrorVariable InvokeDbxCliError
-            if($InvokeDbxCliError) {
-                Write-Output $false
+            elseif ( (-not $directoryExists) -and ($PathType -in 'Container') ) {
+                # The item exists but it is a directory and we are looking for a leaf.
+                return $false
             }
             else {
-                Write-Output ($result -eq $item)
+                # Check whether the file exists.
+                return ([bool](Get-DbxItem -File $Path))
             }
+        }
+        $result = Invoke-DbxCli "dbxcli search '$($Matches.FileName)' '$($Matches.DirectoryPath)'" `
+            -ErrorAction SilentlyContinue -ErrorVariable InvokeDbxCliError
+        if($InvokeDbxCliError) {
+            Write-Output $false
+        }
+        else {
+            Write-Output ($result -eq $Path)
         }
     }
 }
