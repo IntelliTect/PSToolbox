@@ -51,7 +51,8 @@ Description = 'Shortcut module to install all of IntelliTect''s PowerShell modul
 RequiredModules = @('IntelliTect.Common',
                     'IntelliTect.Google',
                     'IntelliTect.CredentialManager',
-                    'IntelliTect.ResharperNugetSearch')
+                    'IntelliTect.ResharperNugetSearch',
+                    'IntelliTect.PSRestore')
 
 # Assemblies that must be loaded prior to importing this module
 # RequiredAssemblies = @()
