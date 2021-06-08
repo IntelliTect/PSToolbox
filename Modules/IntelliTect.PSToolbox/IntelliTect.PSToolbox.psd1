@@ -48,10 +48,22 @@ Description = 'Shortcut module to install all of IntelliTect''s PowerShell modul
 # ProcessorArchitecture = ''
 
 # Modules that must be imported into the global environment prior to importing this module
-RequiredModules = @('IntelliTect.Google',
-                    'IntelliTect.CredentialManager',
-                    'IntelliTect.ResharperNugetSearch',
-                    'IntelliTect.PSRestore')
+RequiredModules = @(
+    @{
+        ModuleName="Intellitect.Common";
+    },
+    @{
+        ModuleName="Intellitect.Google";
+    },
+    @{
+        ModuleName="Intellitect.CredentialManager";
+    },
+    @{
+        ModuleName="Intellitect.ResharperNugetSearch";
+    },
+    @{
+        ModuleName="Intellitect.PSRestore";
+    })
 
 # Assemblies that must be loaded prior to importing this module
 # RequiredAssemblies = @()
@@ -120,4 +132,3 @@ PrivateData = @{
 # DefaultCommandPrefix = ''
 
 }
-
