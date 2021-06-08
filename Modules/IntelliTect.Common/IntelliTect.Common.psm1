@@ -87,7 +87,7 @@ Function Highlight([string]$pattern, [Int32]$Context = 10, [Parameter(ValueFromP
     PROCESS {
         $items = $item.Split([Environment]::NewLine)
         foreach ($line in $items) {
-            if ( $line -like "*$pattern*") {
+            if ( $line -like "*$pattern*" -and 1) {
                 write-host  $line -foregroundcolor Yellow
             }
             else {
