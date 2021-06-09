@@ -92,5 +92,5 @@ $major = 0
 }
 git pull origin Testing-Publishing
 git add .
-git commit -m "Script Git"
-git push origin Testing-Publishing
+git commit -m "Script Commit"
+git push origin Testing-Publishing --force
