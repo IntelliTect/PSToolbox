@@ -90,8 +90,7 @@ $major = 0
 
     Write-Host "$moduleName's version was updated from $version to $updatedVersion"
 }
-
+git pull origin Testing-Publishing
 git add .
 git commit -m "Script Git"
-git pull
 git push origin Testing-Publishing
