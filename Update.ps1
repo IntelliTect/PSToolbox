@@ -1,6 +1,6 @@
 #Copy
-$commitOne = "11a20cc36ffa1dc757c825817ff1dab85d45c8cb"
-$commitTwo = "ce92506e540abf910f5ebddfb7a28938a0d886d0"
+$commitOne = "4bd918851257ba18f3339bb459836fcda9ad61f3"
+$commitTwo = "f36875c6f7e4be9e4b6792914352a391d4cefc51"
 
 $changedFiles = $(git diff $commitOne $commitTwo --name-only)
 $changedFiles
@@ -90,6 +90,7 @@ $major = 0
 
     Write-Host "$moduleName's version was updated from $version to $updatedVersion"
 }
+git pull
 git add .
 git commit -m "Script Git"
 git push origin Testing-Publishing
