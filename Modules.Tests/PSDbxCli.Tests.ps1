@@ -13,7 +13,7 @@ Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.PSDbxCli -Force
 # Using BeforeDiscovery rather than BeforAll because variables are used in the It Name.
 BeforeDiscovery {
     $rootFiles = Get-DbxItem -File
-    if(-not $rootFiles) { throw 'There are no exisint sample files at the root folder to test with.' }
+    if(-not $rootFiles) { throw 'There are no sample files at the root folder to test with.' }
     $rootDirectories = Get-DbxItem -Directory
     if(-not $rootFiles) { throw 'There are no exisint sample directories at the root folder to test with.' }
     $script:sampleFileAtRootPath = $rootFiles[(Get-Random -Maximum ($rootFiles.Count-1))].Path
@@ -97,30 +97,58 @@ Describe 'DbxDirectory' {
     }
 }
 
-Describe 'Get-DbxRevision' {
-    It 'Retrieve a simple revision' {
-        $items = Get-DbxItem -File
-        $items | Select-Object -First 2 | ForEach-Object{
-            $expectedPath = $_.Path
-            $revisions = @($_ | Get-DbxRevision)
-            $revisions.Count | Should -BeGreaterOrEqual 1
-            $revisions | Select-Object -ExpandProperty 'Path' | Should -Be $expectedPath
+Describe 'Get-DbxRevision: ' {
+    BeforeAll {
+        $script:dropboxFile = Get-DbxItem -File | Select-Object -First 1
+        $script:tempFile = $script:dropboxFile
+    }
+    It 'Find a DbxFile with multiple revisions' {
+        # Rather than use Get-DbxRevisions in BeforeAll, use this test to
+        # update $dropboxFile to contain a DbxFile that has more than
+        # one revision.
+        $dbxFileRevisions = Get-DbxItem -File | ` # Retrieve all the files in the root dropbox directory
+            Where-Object {
+                Write-Progress -Activity 'Get-DbxRevision tests: Finding file with multiple revisions' `
+                    -Status "Examining'$($_.Path)'..."
+                $tempRevisions = Get-DbxRevision $_
+                @($tempRevisions).Count -gt 1
+            } | ` # Select the dropbox files with more than one revision and save the revisions to $tempRevisions
+            Select-Object -First 1 | ` # Select just the first file
+            ## Tee-Object -Variable dropboxFile | ` # Update the $dropboxFile to be this item with more than one revision
+            ForEach-Object {
+                $script:dropboxFile = $_
+                $tempRevisions
+            } # Return the previously retrieved revisions
+        $dbxFileRevisions | Should -Not -BeNullOrEmpty
+        @($dbxFileRevisions).Count | Should -BeGreaterOrEqual 1
+        $dbxFileRevisions | ForEach-Object {
+            $_.Revision | Should -Not -BeNullOrEmpty
+        }
+        $dbxFileRevisions | ForEach-Object {
+            $_.Path | Should -Be $dropboxFile.Path
         }
     }
-}
-
-Describe 'DbxFile' {
+    It 'Pipe Get-DbxItem -File to Get-DbxRevision' {
+        $dbxFileRevisions = $dropboxFile  | Get-DbxRevision
+        @($dbxFileRevisions).Count | Should -BeGreaterOrEqual 1
+        $dbxFileRevisions | ForEach-Object {
+            $_.Revision | Should -Not -BeNullOrEmpty
+        }
+        $dbxFileRevisions | ForEach-Object {
+            $_.Path | Should -Be $dropboxFile.Path
+        }
+    }
     It 'Retrieve using DbxFile.GetRevisions()' {
-        $items = Get-DbxItem -File
-        $items | Select-Object -First 2 | ForEach-Object{
-            $expectedPath = $_.Path
-            $revisions = $_.GetRevisions()
-            $revisions.Count | Should -BeGreaterOrEqual 1
-            $revisions | Select-Object -ExpandProperty 'Path' | Should -Be $expectedPath
+        $dbxFileRevisions = $dropboxFile.GetRevisions()
+        @($dbxFileRevisions).Count | Should -BeGreaterOrEqual 1
+        $dbxFileRevisions | ForEach-Object {
+            $_.Revision | Should -Not -BeNullOrEmpty
+        }
+        $dbxFileRevisions | ForEach-Object {
+            $_.Path | Should -Be $dropboxFile.Path
         }
     }
 }
-
 
 Describe 'Save-DbxFile' {
     BeforeAll {
@@ -138,14 +166,21 @@ Describe 'Save-DbxFile' {
     It 'Save a file locally defaulting the target name to the name of the file' {
         $targetFileName = Get-TempFile -Path $tempDirectory -Name $(Split-Path -Leaf $dropboxFile.Path) -DoNotCreateFile
         # TODO: Determine how to drop the explicit '-DropboxPath' parameter name
-        Save-DbxFile -DroboxPath $dropboxFile.Path # | Select-Object -ExpandProperty Path | Should -Be $targetFileName
+        Save-DbxFile -DropboxPath $dropboxFile.Path # | Select-Object -ExpandProperty Path | Should -Be $targetFileName
         Test-Path $targetFileName | Should -BeTrue
     }
     It 'Save a file locally with the specific target name' {
-
         # TODO: Determine how to drop the explicit '-DropboxPath' parameter name
-        Save-DbxFile -DroboxPath $dropboxFile.Path -TargetPath $targetFileName.FullName
+        Save-DbxFile -DropboxPath $dropboxFile.Path -TargetPath $targetFileName.FullName
         Test-Path $targetFileName | Should -BeTrue
+    }
+    It 'Pipe Get-DbxFile -File into Save-DbxFile' {
+        # Save off the expected target file name so that it can be disposed.
+        $targetFileName = Get-TempFile -Path $tempDirectory -Name $(Split-Path -Leaf $dropboxFile.Path) -DoNotCreateFile
+        $savedFileInfo = Get-DbxItem -File -Path $dropboxFile.Path | Save-DbxFile
+        $savedFileInfo | Should -Not -BeNullOrEmpty
+        Test-Path $savedFileInfo | Should -BeTrue
+        $savedFileInfo.FullName | Should -Be $targetFileName.FullName -Because "$($savedFileInfo.FullName) -ne $targetFileName"
     }
     AfterEach {
         $targetFileName.Dispose()
@@ -178,13 +213,13 @@ Describe 'Save-DbxFile -Revision' {
     It 'Save a file locally defaulting the target name to the name of the file' {
         $targetFileName = Get-TempFile -Path $tempDirectory -Name $(Split-Path -Leaf $dropboxFile.Path) -DoNotCreateFile
         # TODO: Determine how to drop the explicit '-DropboxPath' parameter name
-        Save-DbxFile -DroboxPath $dropboxFile.Path -Revision $dropboxFile.GetRevisions()[-1].Revision # | Select-Object -ExpandProperty Path | Should -Be $targetFileName
+        Save-DbxFile -DropboxPath $dropboxFile.Path -Revision $dropboxFile.GetRevisions()[-1].Revision # | Select-Object -ExpandProperty Path | Should -Be $targetFileName
         Test-Path $targetFileName | Should -BeTrue
     }
     # It 'Save a file locally with the specific target name' {
 
     #     # TODO: Determine how to drop the explicit '-DropboxPath' parameter name
-    #     Save-DbxFile -DroboxPath $dropboxFile.Path -TargetPath $targetFileName.FullName
+    #     Save-DbxFile -DropboxPath $dropboxFile.Path -TargetPath $targetFileName.FullName
     #     Test-Path $targetFileName | Should -BeTrue
     # }
     AfterEach {

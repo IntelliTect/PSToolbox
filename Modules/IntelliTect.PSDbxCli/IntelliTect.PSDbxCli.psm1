@@ -9,12 +9,15 @@ class DbxDirectory : DbxItem {
     }
 }
 class DbxFile : DbxItem {
-    [ValidateNotNullOrEmpty()][string]$Revision;
+    [string]$Revision;
     [ValidateNotNullOrEmpty()][int]$Size;
     [ValidateNotNullOrEmpty()]hidden[string]$DisplaySize;
     [ValidateNotNullOrEmpty()][string]$Age;
     [DbxItem[]]hidden $Revisions;
 
+    [string]ToString() {
+        return $this.Path
+    }
     [DbxItem[]]GetRevisions() {
         if(-not $this.Revisions) {
             $this.Revisions = Get-DbxRevision -Path $this.Path
@@ -39,21 +42,21 @@ Function Script:Invoke-DbxCli {
 
     $Command += ' 2>&1'
 
-    $result = Invoke-Expression $command -ErrorAction SilentlyContinue -ErrorVariable InvokeExpressionError
+    Invoke-Expression $command -ErrorAction SilentlyContinue `
+            -ErrorVariable InvokeExpressionError | Where-Object {
+        Write-Output ($_ -and (![string]::IsNullOrWhiteSpace($_)))
+    } | ForEach-Object {
+        if( $_ -like "Error: *" ) {
+            throw $_
+        }
+        else {
+            Write-Output $_
+        }
+    }
     if($LASTEXITCODE -ne 0) {
         $InvokeExpressionError = $InvokeExpressionError | Where-Object{ -not [string]::IsNullOrWhiteSpace($_) }
         # TODO: Consider throwing an error instead so that execution stops when it unexpectedly errors.
         Write-Error $InvokeExpressionError.ToString()
-    }
-    else {
-        @($result) | Foreach-Object {
-            if( $_ -like "Error: *" ) {
-                throw $_
-            }
-            else {
-                Write-Output $_
-            }
-        }
     }
 }
 Function Script:Format-DbxPath {
@@ -150,15 +153,15 @@ Function Get-DbxItem {
 
     Invoke-DbxCli $command | ForEach-Object{
         if(-not $Header) {
-            if($_ -match '(?<Revision>Revision\s*)(?<Size>Size\s*)(?<Age>Last Modified\s*)(?<Path>Path)') {
+            if($_ -match '(?<Revision>Revision\s*?) (?<Size>Size\s*?) (?<Age>Last Modified\s*?) (?<Path>Path)\s*') {
                 $Header = [PSCustomObject]($Matches | Select-Object -ExcludeProperty 0)
             }
             else {
                 throw "Unable to parse header ('$_')"
             }
-            $regexLine="(?<Revision>.{$($Header.Revision.Length)})"+
-                "(?<DisplaySize>.{$($Header.Size.Length)})"+
-                "(?<Age>.{$($Header.Age.Length)})"+
+            $regexLine="(?<Revision>.{$($Header.Revision.Length)}) "+
+                "(?<DisplaySize>.{$($Header.Size.Length)}) "+
+                "(?<Age>.{$($Header.Age.Length)}) "+
                 "(?<Path>.+?)\s*$"
         }
         else {
@@ -168,7 +171,7 @@ Function Get-DbxItem {
                         # Revision, Age, and Size are not returned for a directory.
                         $item = ([PSCustomObject]($Matches | Select-Object -Property Path))
                         $item.Path = $item.Path+'/'
-                        $item.PSObject.TypeNames.Insert(0,"Dbx.Directory")
+                        $item.PSObject.TypeNames.Insert(0,"DbxDirectory")
                         Write-Output ([DbxDirectory]$item)
                     }
                     #else ignore
@@ -178,8 +181,10 @@ Function Get-DbxItem {
                         $item = $Matches
 
                         $item['Size'] = ConvertFrom-DisplaySize $Matches.DisplaySize
-
-                        $item.PSObject.TypeNames.Insert(0,"Dbx.File")
+                        $item.Revision = '' # The Revision is blanked out for the most recent verstion
+                                               # so that when calling Save-File the revision is not used.
+                                               # i.e Get-DbxItem -File | Save-DbxFile
+                        $item.PSObject.TypeNames.Insert(0,"DbxFile")
                         # We ignore the '0' property
                         Write-Output ([DbxFile]($item | Select-Object -ExcludeProperty '0'))
                     }
@@ -225,12 +230,11 @@ Function Save-DbxFile {
     param (
         # The Dropbox path to the file to download
         [Parameter(Mandatory,ValueFromPipeline,ValueFromPipelineByPropertyName)]
-        [ValidateNotNullOrEmpty()][Alias('Path')][string]$DroboxPath,
+        [ValidateNotNullOrEmpty()][Alias('Path')][string]$DropboxPath,
         # The Revision ID for the file to be downloaded.
-        # (If not the most recent version of the file, a copy will be temporarily be placed in
-        # Dropbox while downloading.)
-        [Parameter(ParameterSetName='Revision',Mandatory,ValueFromPipelineByPropertyName)]
-        [ValidateNotNullOrEmpty()][string]$Revision,
+        # If not the most recent version of the file (the Revision property is set), a copy 
+        # will be temporarily be placed in Dropbox while downloading.)
+        [Parameter(ValueFromPipelineByPropertyName)][string]$Revision,
         # The target path to download the file to.  The default
         # is the current directory with the same file name
         [Parameter()][string]$TargetPath,
@@ -238,7 +242,7 @@ Function Save-DbxFile {
         [Parameter()][switch]$Force
     )
     BEGIN {
-        if(@($DroboxPath).Count -gt 1) {
+        if(@($DropboxPath).Count -gt 1) {
             # The $TargetPath should be a directory
             if(!(Test-Path $TargetPath -PathType Container)) {
                 Write-Warning "'$TargetPath is not a container causing multiple files to overwrite each other."
@@ -253,29 +257,38 @@ Function Save-DbxFile {
                 if(-not (Test-DbxPath -Path $dbxAppDirectory -PathType Container)) {
                     Invoke-DbxCli "dbxcli mkdir $dbxAppDirectory"
                 }
-                $DroboxPath = "$dbxAppDirectory/$(Split-Path $DroboxPath -Leaf)"
-                Restore-DbxFile -Revision $Revision -DbxTargetLocation $DroboxPath
+                $DropboxPath = "$dbxAppDirectory/$(Split-Path $DropboxPath -Leaf)"
+                Write-Progress -Activity "Save-File '$DropboxPath' ($Revision)" -Status "Restoring..."
+                Restore-DbxFile -Revision $Revision -DbxTargetLocation $DropboxPath
             }
 
             if(!$TargetPath) {
-                $TargetPath = Join-Path (Get-Location) (Split-Path $DroboxPath -Leaf)
+                $TargetPath = Join-Path (Get-Location) (Split-Path $DropboxPath -Leaf)
             }
             elseif(Test-Path $TargetPath -PathType Container) {
-                $TargetPath = Join-Path ($TargetPath) (Split-Path $DroboxPath -Leaf)
+                $TargetPath = Join-Path ($TargetPath) (Split-Path $DropboxPath -Leaf)
             }
 
             if((Test-Path $TargetPath) -and !$Force) {
                 throw "Cannot download file when that file ('$TargetPath') already exists. Use -Force to override."
             }
 
-            if($PSCmdlet.ShouldProcess("$DroboxPath", "Save-DbxFile '$DroboxPath' to '$TargetPath'")) {
-                Invoke-DbxCli "dbxcli get '$DroboxPath' '$TargetPath'"
+            if($PSCmdlet.ShouldProcess("$DropboxPath", "Save-DbxFile '$DropboxPath' to '$TargetPath'")) {
+                Invoke-DbxCli "dbxcli get '$DropboxPath' '$TargetPath'" | ForEach-Object {
+                    if($_ -match 'Downloading (?<SizeDownloaded>.+?)/(?<SizeTotal>.+?)$') {
+                        $sizeDownloaded,$sizeTotal=(ConvertFrom-DisplaySize $Matches.SizeDownloaded),(ConvertFrom-DisplaySize $Matches.SizeTotal)
+                        Write-Progress -Activity "Save-File '$DropboxPath' ($Revision)" -Status $_ -PercentComplete (($sizeDownloaded*100)/$sizeTotal)
+                    }
+                    else {
+                        Write-Progress -Activity "Save-File '$DropboxPath' ($Revision)" -Status $_
+                    }
+                }
                 Write-Output (Get-Item $TargetPath)
             }
         }
         finally {
             if($Revision) {
-                Invoke-DbxCli "dbxcli rm $DroboxPath --force"
+                Invoke-DbxCli "dbxcli rm $DropboxPath --force"
             }
         }
     }
