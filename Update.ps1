@@ -91,6 +91,18 @@ $major = 0
     Write-Host "$moduleName's version was updated from $version to $updatedVersion"
 }
 git pull origin Testing-Publishing
+# git add Modules/\*.psd1
 git add .
-git commit -m "Script Commit"
-git push origin Testing-Publishing --force
+git commit -m "[skip ci] Commit from build agent"
+git merge Testing-Publishing -m "[skip ci] Merge from build agent"
+
+#Publish
+$moduleFolders = Get-ChildItem C:\Users\TylerJones\Testing\PipeLine\ChangedModules
+
+if(!$moduleFolders) {
+    throw "No modules to update."
+}
+
+foreach ($item in $moduleFolders){
+    Publish-Module -Path $item.FullName -Repository localPsRepo -NuGetApiKey password
+}
