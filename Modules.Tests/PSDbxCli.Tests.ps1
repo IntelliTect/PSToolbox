@@ -106,19 +106,23 @@ Describe 'Get-DbxRevision: ' {
         # Rather than use Get-DbxRevisions in BeforeAll, use this test to
         # update $dropboxFile to contain a DbxFile that has more than
         # one revision.
+        # TODO: Upload file an make multipe revisions rather than searching for an existing file.
+        $foundFileWithMultipleRevisions = $false
         $dbxFileRevisions = Get-DbxItem -File | ` # Retrieve all the files in the root dropbox directory
-            Where-Object {
-                Write-Progress -Activity 'Get-DbxRevision tests: Finding file with multiple revisions' `
-                    -Status "Examining'$($_.Path)'..."
-                $tempRevisions = Get-DbxRevision $_
-                @($tempRevisions).Count -gt 1
-            } | ` # Select the dropbox files with more than one revision and save the revisions to $tempRevisions
-            Select-Object -First 1 | ` # Select just the first file
-            ## Tee-Object -Variable dropboxFile | ` # Update the $dropboxFile to be this item with more than one revision
-            ForEach-Object {
-                $script:dropboxFile = $_
-                $tempRevisions
-            } # Return the previously retrieved revisions
+            Foreach-Object {
+                if(-not $foundFileWithMultipleRevisions) {
+                    # ToDo: Switch to use 'break' statement instead but initial attempt
+                    # produced a BreakException and 'return' didn't short circuit
+                    Write-Progress -Activity 'Get-DbxRevision tests: Finding file with multiple revisions' `
+                        -Status "Examining'$($_.Path)'..."
+                    $tempRevisions = Get-DbxRevision $_
+                    if(@($tempRevisions).Count -gt 1) {
+                        $foundFileWithMultipleRevisions  = $true
+                        $script:dropboxFile = $_
+                        Write-Output $tempRevisions
+                    }
+                }
+            } # Select the dropbox files with more than one revision and save the revisions to $tempRevisions
         $dbxFileRevisions | Should -Not -BeNullOrEmpty
         @($dbxFileRevisions).Count | Should -BeGreaterOrEqual 1
         $dbxFileRevisions | ForEach-Object {
