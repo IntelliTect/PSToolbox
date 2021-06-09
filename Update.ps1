@@ -72,37 +72,29 @@ $major = 0
     if($version.Minor -gt 0){$minor = $version.Minor}
     if($version.Build -gt 0){$build = $version.Build}
     if($version.MinorRevision -gt 0){$minorRev = $version.MinorRevision + 1}
-
+    
     $updatedVersion = New-Object -TypeName system.Version -ArgumentList $major, $minor, $build, $minorRev
 
-    # $tempManifest = $content | ForEach-Object{
-    #     if ($_ -match "ModuleVersion"){
-    #         "ModuleVersion = '$($updatedVersion.ToString())'"
-    #     }
-    #     else {
-    #         $_
-    #     }
-    # }
+    $BuiltPath = "yes" + "\Modules\" +($manifest.PSChildName).Substring(0, $manifest.PSChildName.length - 5 ) +  "\"+ ($manifest.PSChildName)
+    $BuiltPath
 
-    # $tempManifest | Set-Content $manifest.PSPath
-    Update-ModuleManifest -Path "C:\Users\TylerJones\source\repos\Main PSToolBox\PSToolbox\Modules\IntelliTect.PSToolbox\IntelliTect.PSToolbox.psd1" -ModuleVersion $updatedVersion
+    #Update-ModuleManifest -Path $(Build.ArtifactStagingDirectory)\Modules\($manifest.PSPath -ModuleVersion $updatedVersion
 
 
     Write-Host "$moduleName's version was updated from $version to $updatedVersion"
 }
-git pull origin Testing-Publishing
+# git pull origin Testing-Publishing
 # git add Modules/\*.psd1
-git add .
-git commit -m "[skip ci] Commit from build agent"
-git merge Testing-Publishing -m "[skip ci] Merge from build agent"
+# git commit -m "[skip ci] Commit from build agent"
+# git push origin Testing-Publishing
 
-#Publish
-$moduleFolders = Get-ChildItem C:\Users\TylerJones\Testing\PipeLine\ChangedModules
+# #Publish
+# $moduleFolders = Get-ChildItem C:\Users\TylerJones\Testing\PipeLine\ChangedModules
 
-if(!$moduleFolders) {
-    throw "No modules to update."
-}
+# if(!$moduleFolders) {
+#     throw "No modules to update."
+# }
 
-foreach ($item in $moduleFolders){
-    Publish-Module -Path $item.FullName -Repository localPsRepo -NuGetApiKey password
-}
+# foreach ($item in $moduleFolders){
+#     Publish-Module -Path $item.FullName -Repository localPsRepo -NuGetApiKey password
+# }
