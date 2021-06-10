@@ -15,7 +15,7 @@ Function Add-PathToEnvironmentVariable {
         }
     }
 }
-
+#
 <#
 .SYNOPSIS
 Invokes $PSCmdlet.ShouldProcess
