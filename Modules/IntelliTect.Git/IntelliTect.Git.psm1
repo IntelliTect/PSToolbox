@@ -2,7 +2,7 @@
 #Requires -Modules IntelliTect.Common
 
 . $PSScriptRoot\New-DynamicParam.ps1
-
+#
 # TODO: Using straight enum is not getting imported into other scripts.
  Enum GitAction {
     Untracked
