@@ -5,7 +5,7 @@ try {
 catch {
     throw "Unable to find 'Microsoft.Office.Interop.Word' assembly."
 }
-########ooooogaSs
+########ooooogaSss
 #TODO: Remove and use dependency on File.ps1 (module needed) instead.
 Function Test-FileIsLocked {
     [CmdletBinding()]
