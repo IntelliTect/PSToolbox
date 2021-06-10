@@ -1,4 +1,4 @@
-
+#
 Function Add-PathToEnvironmentVariable {
     [CmdletBinding(SupportsShouldProcess)]
     param(

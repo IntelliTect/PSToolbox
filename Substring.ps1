@@ -31,24 +31,27 @@ $changedFiles = $(git diff HEAD HEAD~$commitNum --name-only)
 $files = $changedFiles -split ' ' | ForEach-Object{[System.IO.FileInfo] $_}
 $modules = @()
 
-Write-Host "Changed files ($($files.Count)):"
+#Write-Host "Changed files ($($files.Count)):"
 foreach ($file in $files) 
 {
     $file.FullName
     if((Test-Path $file.FullName)){
         $fileDirectoryParent = $file.Directory.Parent
-        Write-Host "`t$($file.Name)"
+        #Write-Host "`t$($file.Name)"
+
+        #$fileDirectoryParent
+        $fileDirectoryParent.Name
 
         if ($fileDirectoryParent -and $fileDirectoryParent.Name -eq "Modules") {
             $modules += $file.Directory
         }
     }
     else {
-        Write-Host "$($file.Name) was deleted"
+        #Write-Host "$($file.Name) was deleted"
     }
 }
 
-Write-Host "##vso[task.setvariable variable=CHANGED_MODULES_COUNT]$modules.Count"
+#Write-Host "##vso[task.setvariable variable=CHANGED_MODULES_COUNT]$modules.Count"
 
 if($modules.Count -eq 0){
     Write-Host "There are no modules that are changed"
