@@ -3,11 +3,13 @@
 # $yes
 
 $logs = git log --pretty=format:"%s"
-$commitNum = 1
+$commitNum = 0
 foreach ($log in $logs) {
     if($log.Contains("[skip ci]")){
         break
     }
-    $commitNum++
+    if(!($log.Contains("Merge Branch") -or $log.Contains("of https://github.com/IntelliTect/PSToolbox"))){
+        $commitNum++
+    }
 }
-$commitNum
+git diff HEAD HEAD~$commitNum --name-only
