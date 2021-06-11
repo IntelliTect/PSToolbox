@@ -7,12 +7,12 @@
 #
 
 @{
-#
+
 # Script module or binary module file associated with this manifest.
 # RootModule = ''
 
 # Version number of this module.
-ModuleVersion = '1.4.2.2'
+ModuleVersion = '1.4.2.3'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
