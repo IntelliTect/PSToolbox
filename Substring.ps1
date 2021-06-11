@@ -30,10 +30,11 @@ foreach ($log in $logs) {
     }
 }
 $beforeMerge = $mergeCommit - 1
+$afterMerge = $mergeCommit + 1
 #$changedFiles = $(git diff HEAD HEAD~$beforeMerge)
 $changedFiles = @()
 $changedFiles += $(git diff HEAD HEAD~$beforeMerge --name-only)
-$changedFiles += $(git diff HEAD~$mergeCommit HEAD~$finalCommit --name-only)
+$changedFiles += $(git diff HEAD~$afterMerge HEAD~$finalCommit --name-only)
 $files = $changedFiles -split ' ' | ForEach-Object{[System.IO.FileInfo] $_}
 $modules = @()
 
