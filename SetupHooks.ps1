@@ -1,0 +1,1 @@
+Copy-Item  ".\.github\hooks\post-commit" -Destination ".\.git\hooks"

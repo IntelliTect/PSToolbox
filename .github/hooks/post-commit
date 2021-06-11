@@ -1,0 +1,5 @@
+#!C:/Program\ Files/Git/usr/bin/sh.exe
+#The file path is assuming that we are in the .git/hooks directory
+echo 
+exec powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\.github\hooks\PostCommit.ps1"
+exit
