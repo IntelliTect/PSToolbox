@@ -17,17 +17,24 @@
 Write-Host "Determining modules that have changed since last run of pipeline"
 
 $logs = git log --pretty=format:"%s"
-$commitNum = 0
+$mergeCommit = 2
+$finalCommit = 1
 foreach ($log in $logs) {
     if($log.Contains("[skip ci]")){
         break
     }
-    if(!($log.Contains("Merge Branch") -or $log.Contains("of https://github.com/IntelliTect/PSToolbox"))){
-        $commitNum++
+    if($log.Contains("Merge Branch") -and $log.Contains("of https://github.com/IntelliTect/PSToolbox")){
+        $mergeCommit = $finalCommit
+    } else{
+        $finalCommit++
     }
 }
-
-$changedFiles = $(git diff HEAD HEAD~$commitNum --name-only)
+$beforeMerge = $mergeCommit - 1
+$afterMerge = $mergeCommit + 1
+#$changedFiles = $(git diff HEAD HEAD~$beforeMerge)
+$afterMerge
+$finalCommit
+$changedFiles = $(git diff HEAD~$afterMerge HEAD~$finalCommit --name-only)
 $files = $changedFiles -split ' ' | ForEach-Object{[System.IO.FileInfo] $_}
 $modules = @()
 
