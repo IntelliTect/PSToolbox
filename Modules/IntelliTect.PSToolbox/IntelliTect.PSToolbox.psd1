@@ -12,7 +12,7 @@
 # RootModule = ''
 
 # Version number of this module.
-ModuleVersion = '1.4.2.1'
+ModuleVersion = '1.4.2.2'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -54,7 +54,7 @@ Description = 'Shortcut module to install all of IntelliTect''s PowerShell modul
 RequiredModules = @('IntelliTect.Common', 
                'IntelliTect.Google', 
                'IntelliTect.CredentialManager', 
-               'IntelliTect.ResharperNugetSearch',
+               'IntelliTect.ResharperNugetSearch', 
                'IntelliTect.PSRestore')
 
 # Assemblies that must be loaded prior to importing this module
