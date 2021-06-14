@@ -35,6 +35,8 @@ Function Script:Set-EnvironmentVariable {
      setx.exe $Name $Value $scopeArgs | Out-Null
      Set-Item -Path Env:$Name -Value $Value
 }
+#Setup Githook
+./SetupHooks.ps1
 
 
 $PSToolboxPath=Join-Path $PSScriptRoot Modules
