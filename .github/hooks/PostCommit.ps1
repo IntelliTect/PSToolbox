@@ -17,4 +17,5 @@ For ($i=0; $i -lt $modules.Length; $i++)
     Copy-Item -Path $module.FullName -Destination $changedModulesPath -Recurse -Force
 }
 git add .
-git commit -m "[skip ci] Githook ChangedModules Generation"
+git commit -m "Githook ChangedModules Generation"
+#git commit -m "[skip ci] Githook ChangedModules Generation"
