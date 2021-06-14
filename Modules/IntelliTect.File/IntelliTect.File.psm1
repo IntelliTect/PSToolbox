@@ -1,6 +1,6 @@
 Set-Alias Open Invoke-Item -Scope Global
 Set-Alias Open-File Invoke-Item -Scope Global
-#
+##
 # TODO: Publish the fact that a string path implicitly converts to a FileInfo/DirectoryInfo so functions needing files should use [IO.FileInfo]/[IO.DirectoryInfo]
 
 <#TODO: Resolve name clash with PSCX
