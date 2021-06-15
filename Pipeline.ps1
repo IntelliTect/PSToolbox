@@ -30,7 +30,12 @@ $major = 0
 
     $updatedVersion = New-Object -TypeName system.Version -ArgumentList $major, $minor, $build, $minorRev
 
-    $BuiltPath = "$(System.DefaultWorkingDirectory)" + "\Modules\" +($manifest.PSChildName).Substring(0, $manifest.PSChildName.length - 5 ) +  "\"+ ($manifest.PSChildName)
+    $BuiltPath =  ".\Modules\" +($manifest.PSChildName).Substring(0, $manifest.PSChildName.length - 5 ) +  "\"+ ($manifest.PSChildName)
+    $BuiltPath
+
+        Update-ModuleManifest -Path $BuiltPath -ModuleVersion $updatedVersion
+
+    $BuiltPath =  ".\ChangedModules\" +($manifest.PSChildName).Substring(0, $manifest.PSChildName.length - 5 ) +  "\"+ ($manifest.PSChildName)
     $BuiltPath
 
         Update-ModuleManifest -Path $BuiltPath -ModuleVersion $updatedVersion
