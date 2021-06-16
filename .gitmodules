@@ -4,3 +4,6 @@
 [submodule "submodules/RamblingCookieMonster/PowerShell"]
 	path = submodules/RamblingCookieMonster/PowerShell
 	url = git@github.com:RamblingCookieMonster/PowerShell.git
+[submodule "PSDropbin"]
+	path = PSDropbin
+	url = https://github.com/IntelliTect/PSDropbin.git
