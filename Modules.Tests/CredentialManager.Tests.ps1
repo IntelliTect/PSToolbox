@@ -1,10 +1,10 @@
 
 BeforeAll{
     Set-StrictMode -Version "Latest"
-    . $PSCommandPath.Replace('.Tests.ps1','.ps1')
+
     Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.Common
 
-    Get-Module IntelliTect.CredentialManager | Remove-Module
+    Get-Module IntelliTect.CredentialManager | Remove-Module -Force
     Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.CredentialManager -Force
     $targetName = 'tempCredentialManagerCredential.Test'
 }
