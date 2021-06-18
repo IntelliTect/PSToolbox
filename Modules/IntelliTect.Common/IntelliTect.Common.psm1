@@ -392,7 +392,7 @@ Function Test-VariableExists {
 Function Get-IsWindowsPlatform {
     [OutputType([bool])]
     [CmdletBinding()]param()
-    return ($IsWindows || ('PSEdition' -in $PSVersionTable.Keys) `
+    return ($IsWindows -or ('PSEdition' -in $PSVersionTable.Keys) `
         -and ($PSVersionTable.PSEdition -eq 'Desktop') `
         -and ($PSVersionTable.Clrversion.Major -ge 4))
 }

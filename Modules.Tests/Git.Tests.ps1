@@ -1,33 +1,34 @@
 
+BeforeAll{
+    Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.Common -Force
+    Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.Git -Force
 
-Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.Common -Force
-Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.Git -Force
+    Function Script:Initialize-TestGitRepo {
+        [CmdletBinding()]
+        param (
+            [switch]$IsBare
+        )
+        $tempDirectory = Get-TempDirectory
 
-Function Script:Initialize-TestGitRepo {
-    [CmdletBinding()]
-    param (
-        [switch]$IsBare
-    )
-    $tempDirectory = Get-TempDirectory
+        $currentLocation = Get-Location  # Save the current location.  Note, Pop-Location don't work from inside the Dispose Script.
+        Push-Location $tempDirectory
 
-    $currentLocation = Get-Location  # Save the current location.  Note, Pop-Location don't work from inside the Dispose Script.
-    Push-Location $tempDirectory
+        # Take the existing dispose script and add Pop-Location at the beginning.
+        [ScriptBlock]$DisposeScript = [scriptblock]::Create(
+            "
+                Set-Location $currentLocation  # Move out of the location before deleting it. (Pop-Location doesn't work.
+                $($tempDirectory.Dispose.Script);
+            "
+        )
+        $tempDirectory | Add-DisposeScript -DisposeScript $DisposeScript -Force
+        Invoke-GitCommand -ActionMessage "Initialize a temporary repository in '$tempDirectory'." `
+            -Command "git init $(if($IsBare){'--bare '})",`
+            'git config user.name "Inigo.Montoya"','git config user.email "Inigo.Montoya@PrincessBride.com"' | Where-Object{ $_ -ne $null } | Write-Verbose
+        return $tempDirectory
+    }
 
-    # Take the existing dispose script and add Pop-Location at the beginning.
-    [ScriptBlock]$DisposeScript = [scriptblock]::Create(
-        "
-            Set-Location $currentLocation  # Move out of the location before deleting it. (Pop-Location doesn't work.
-            $($tempDirectory.Dispose.Script);
-        "
-    )
-    $tempDirectory | Add-DisposeScript -DisposeScript $DisposeScript -Force
-    Invoke-GitCommand -ActionMessage "Initialize a temporary repository in '$tempDirectory'." `
-        -Command "git init $(if($IsBare){'--bare '})",`
-        'git config user.name "Inigo.Montoya"','git config user.email "Inigo.Montoya@PrincessBride.com"' | Where-Object{ $_ -ne $null } | Write-Verbose
-    return $tempDirectory
+    $script:TestGitRepo = $null;
 }
-
-$script:TestGitRepo = $null;
 
 Describe 'Get-GitRepo' {
     It 'Returns a repo object where IsBare==false' { 
