@@ -1,19 +1,20 @@
+BeforeAll{
+    Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.CredentialManager -Force
+    Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.Common -Force
+    
+    Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.Google -Force
 
-Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.CredentialManager
-Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.Common
-
-Import-Module -Name $PSScriptRoot\..\Modules\IntelliTect.Google -Force
-
-Function Get-TestCredential {
-    $credentialName = "IntelliTect.Google.Tests"
-
-    [PSCredential]$credential = Get-CredentialManagerCredential $credentialName -ErrorAction SilentlyContinue
-    if ($credential -eq $null) {
-        # Future versions (post 3.0) of Pester include 'Set-TestInconclusive' that should be used here.
-        # For now, we just throw an error to discontinue the test while providing instructions on how to correctly configure the test.
-        Write-Warning -Message "Couldn't find a credential named $credentialName. Add it using 'Set-CredentialManagerCredential $credentialName'. You will be prompted for a Google email account and password, which will be stored in the Windows credential manager."
+    Function Get-TestCredential {
+        $credentialName = "IntelliTect.Google.Tests"
+    
+        [PSCredential]$credential = Get-CredentialManagerCredential $credentialName -ErrorAction SilentlyContinue
+        if ($credential -eq $null) {
+            # Future versions (post 3.0) of Pester include 'Set-TestInconclusive' that should be used here.
+            # For now, we just throw an error to discontinue the test while providing instructions on how to correctly configure the test.
+            Write-Warning -Message "Couldn't find a credential named $credentialName. Add it using 'Set-CredentialManagerCredential $credentialName'. You will be prompted for a Google email account and password, which will be stored in the Windows credential manager."
+        }
+        return $credential
     }
-    return $credential
 }
 
 Describe "Get-GoogleSessionVariable" {
