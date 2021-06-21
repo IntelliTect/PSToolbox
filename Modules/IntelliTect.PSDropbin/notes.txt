@@ -1,0 +1,22 @@
+Once we start a new provider, we want individual providers in a subdirectory.
+
+
+chocolatey pacakge.
+
+
+
+1. Create package:
+  Release Make Repo public
+  Create release package - all items in bin
+  Create Build.ps1
+    If not upgraded, upgrade to VS2015
+    msbuild.exe (this will build the solution)
+  PushRelease.ps1
+    git add bing\release
+    git tag
+  setup.ps1 drive name (e.g. dbx1 but default to dbx), PSCredential (obtained by Get-Credential)
+    
+
+
+Chocolatey
+    
