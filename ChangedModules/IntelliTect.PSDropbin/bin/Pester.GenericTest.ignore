@@ -1,5 +1,0 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
-<GenericTest name="Pester" storage="c:\data\scc\spunk\intellitect.vs.com\2\spideation\dev\psideation\psdropbin.tests\pester.generictest" id="2ac64a24-a411-4164-a709-742447a7013e" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
-  <Command filename="%WINDIR%\system32\WindowsPowerShell\v1.0\powershell.exe" arguments="-NonInteractive -NoProfile -ExecutionPolicy unrestricted -WindowStyle Hidden -Command &quot;&amp; Get-ChildItem $('{0}\..\packages' -f $env:testlocation) Pester.psm1 -recurse | select -first 1 | %{import-module $_.FullName -verbose};   &amp; { Invoke-Pester -OutputXml Test.xml -EnableExit -verbose} &quot;" workingDirectory="%TestLocation%" />
-  <SummaryXmlFile path="%TestOutputDirectory%\&lt;Enter summary file name here&gt;" />
-</GenericTest>
