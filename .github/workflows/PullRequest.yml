@@ -31,10 +31,10 @@ jobs:
           # PowerShell script to execute in Actions-hydrated context
           script: |
             
-            echo "IsWindows: $IsWindows"
-            echo "PSVersionTable.Keys: $PSVersionTable.Keys" 
-            echo "PSVersionTable.PSEdition: $PSVersionTable.PSEdition"
-            echo "PSVersionTable.Clrversion.Major: $PSVersionTable.Clrversion.Major"          
+            "IsWindows: ${IsWindows}"
+            "PSVersionTable.Keys: ${PSVersionTable.Keys}" 
+            "PSVersionTable.PSEdition: ${PSVersionTable.PSEdition}"
+            "PSVersionTable.Clrversion.Major: ${PSVersionTable.Clrversion.Major}"          
             $ConfirmPreference = "None"
 
             $testResults = Invoke-Pester -Script .\Modules.Tests\  -OutputFile ${{env.GITHUB_WORKSPACE}}\Test-Pester.XML -OutputFormat NUnitXML -PassThru
