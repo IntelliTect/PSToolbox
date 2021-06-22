@@ -22,7 +22,6 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
-      - uses: NuGet/setup-nuget@v1.0.5
       
       - name: Pester Test
         # You may pin to the exact commit or the version.
@@ -32,10 +31,6 @@ jobs:
           # PowerShell script to execute in Actions-hydrated context
           script: |
             $ConfirmPreference = "None"
-
-            Import-Module PackageManagement -RequiredVersion 1.0.0.1
-            Install-PackageProvider -Name NuGet -Force
-            Install-Module -Name Pester -Force -Verbose -Scope CurrentUser
 
             $testResults = Invoke-Pester -Script .\Modules.Tests\  -OutputFile $(System.DefaultWorkingDirectory)\Test-Pester.XML -OutputFormat NUnitXML -PassThru
             if($testResults.FailedCount -ne 0) { 
