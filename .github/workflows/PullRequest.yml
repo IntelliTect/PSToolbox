@@ -32,7 +32,7 @@ jobs:
           script: |
             $ConfirmPreference = "None"
 
-            $testResults = Invoke-Pester -Script .\Modules.Tests\  -OutputFile ${{GITHUB_WORKSPACE}}\Test-Pester.XML -OutputFormat NUnitXML -PassThru
+            $testResults = Invoke-Pester -Script .\Modules.Tests\  -OutputFile ${{env.GITHUB_WORKSPACE}}\Test-Pester.XML -OutputFormat NUnitXML -PassThru
             if($testResults.FailedCount -ne 0) { 
                  Write-Error "$($testResults.FailedCount) test failed."
                  exit $LASTEXITCODE 
