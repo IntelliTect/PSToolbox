@@ -30,10 +30,10 @@ jobs:
         with:
           # PowerShell script to execute in Actions-hydrated context
           script: |
-            "IsWindows: ${IsWindows}"
+            Write-Host "IsWindows: ${IsWindows}"
             Write-Host "PSVersionTable.Keys: ${PSVersionTable.Keys}" 
-            Write-Output "PSVersionTable.PSEdition: ${PSVersionTable.PSEdition}"
-            echo "PSVersionTable.Clrversion.Major: ${PSVersionTable.Clrversion.Major}"        
+            Write-Host "PSVersionTable.PSEdition: ${PSVersionTable.PSEdition}"
+            Write-Host "PSVersionTable.Clrversion.Major: ${PSVersionTable.Clrversion.Major}"        
       
       - name: Pester Test
         if: ${{false}}
