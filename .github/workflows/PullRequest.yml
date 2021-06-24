@@ -1,0 +1,40 @@
+name: Pull Request
+
+on:
+  pull_request:
+    branches: [ main ]
+
+  workflow_dispatch:
+defaults:
+  run:
+    shell: powershell
+jobs:
+  PesterTest:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2      
+      
+      - name: Pester Test
+        run: |
+          $ConfirmPreference = "None"
+          $testResults = Invoke-Pester -Script .\Modules.Tests\  -OutputFile ${{env.GITHUB_WORKSPACE}}\Test-Pester.XML -OutputFormat NUnitXML -PassThru
+          if($testResults.FailedCount -ne 0) { 
+               Write-Error "$($testResults.FailedCount) test failed."
+               exit $LASTEXITCODE 
+          }
+  DotNetBuild:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2      
+      - name: DotNet Build
+        run: |
+          $items = Get-ChildItem -Include *.sln -Recurse
+          foreach ($item in $items){
+              dotnet build $item
+          }
+      - name: DotNet Test
+        run: |
+          $items = Get-ChildItem -Include *.sln -Recurse
+          foreach ($item in $items){
+              dotnet test $item
+          }

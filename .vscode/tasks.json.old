@@ -9,7 +9,7 @@
 {
     // See https://go.microsoft.com/fwlink/?LinkId=733558
     // for the documentation about the tasks.json format
-	"version": "2.0.0",
+	"version": "0.1.0",
 
 	// Start PowerShell
     "windows": {
@@ -22,6 +22,12 @@
         "command": "/usr/local/bin/powershell"
     },
 
+	// The command is a shell script
+	"isShellCommand": true,
+
+	// Show the output window always
+	"showOutput": "always",
+
     "args": [
         "-NoProfile", "-ExecutionPolicy", "Bypass"
     ],
@@ -29,21 +35,18 @@
     // Associate with test task runner
     "tasks": [
         {
-            "label": "Test",
-            "type": "shell",
+            "taskName": "Test",
+            "suppressTaskName": true,
+            "isTestCommand": true,
+            "showOutput": "always",
             "args": [
-                "-NoProfile",
-                "-ExecutionPolicy",
-                "Bypass",
                 "Write-Host 'Invoking Pester'; Import-Module Pester; Invoke-Pester -PesterOption @{IncludeVSCodeMarker=$true};",
                 "Invoke-Command { Write-Host 'Completed Test task in task runner.' }"
             ],
             "problemMatcher": [
                 {
                     "owner": "powershell",
-                    "fileLocation": [
-                        "absolute"
-                    ],
+                    "fileLocation": ["absolute"],
                     "severity": "error",
                     "pattern": [
                         {
@@ -57,8 +60,7 @@
                         }
                     ]
                 }
-            ],
-            "group": "test"
+            ]
         }
-    ]
+	]
 }
