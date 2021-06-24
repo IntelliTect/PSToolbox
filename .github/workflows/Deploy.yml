@@ -14,10 +14,10 @@ jobs:
     steps:
     - uses: actions/checkout@v2   
       with:
-        fetch-depth: 2
+        fetch-depth: 3
     - name: Discover Changes
       run: |
-        $changedModules = $(git diff --name-only HEAD HEAD~)
+        $changedModules = $(git diff --name-only HEAD HEAD~2)
         $changedModules
         $files = $changedModules -split ' ' | ForEach-Object{[System.IO.FileInfo] $_}
         $modules = @()
@@ -30,10 +30,10 @@ jobs:
                 }
             }
         }
-        if($modules.Length -gt 0){
-          $env:CHANGES_MADE = $TRUE
+        if($modules.Length -eq 0){
           exit
         }
+        $env:CHANGES_MADE = $TRUE
         $changedModulesPath = mkdir -Name "StagingChangedModules\" -Force
         For ($i=0; $i -lt $modules.Length; $i++)
         {
