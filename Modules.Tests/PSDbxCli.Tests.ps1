@@ -47,7 +47,7 @@ Describe 'Test-DbxPath' {
     }
 }
 
-Describe 'Get-DbxItem' {
+Describe 'Get-DbxItem (mainly with files)' {
     It 'Verify you can see the root' {
         $items = Get-DbxItem
         $items.Count | Should -BeGreaterOrEqual 0
@@ -72,29 +72,6 @@ Describe 'Get-DbxItem' {
         $items | ForEach-Object{
             $_.GetType().Name | Should -Be 'DbxFile' }
     }
-    It 'Return only directories' {
-        $items = Get-DbxItem -Directory
-        $items | ForEach-Object{
-            $_.GetType().Name | Should -Be 'DbxDirectory' }
-    }
-    It 'Retrieve a single directory by name' {
-        $items = Get-DbxItem -Directory
-        $items | Select-Object -First 1 | ForEach-Object{
-            $path = $_.Path
-            Get-DbxItem $_.Path | Select-Object -ExpandProperty Path | Should -BeLike "$path*"
-        }
-    }
-}
-
-Describe 'DbxDirectory' {
-    It 'Retrieve childe items using DbxDirectory.GetChildItems()' {
-        $items = Get-DbxItem -Directory
-        $items | Select-Object -First 2 | ForEach-Object{
-            $expectedPath = $_.Path
-            $childItems = $_.GetChildItems()
-            $childItems | Select-Object -ExpandProperty 'Path' | Should -BeLike "$expectedPath*"
-        }
-    }
 }
 
 Describe 'Get-DbxRevision: ' {
@@ -111,7 +88,7 @@ Describe 'Get-DbxRevision: ' {
         $dbxFileRevisions = Get-DbxItem -File | ` # Retrieve all the files in the root dropbox directory
             Foreach-Object {
                 if(-not $foundFileWithMultipleRevisions) {
-                    # ToDo: Switch to use 'break' statement instead but initial attempt
+                    # TODO: Switch to use 'break' statement instead but initial attempt
                     # produced a BreakException and 'return' didn't short circuit
                     Write-Progress -Activity 'Get-DbxRevision tests: Finding file with multiple revisions' `
                         -Status "Examining'$($_.Path)'..."
@@ -151,6 +128,59 @@ Describe 'Get-DbxRevision: ' {
         $dbxFileRevisions | ForEach-Object {
             $_.Path | Should -Be $dropboxFile.Path
         }
+    }
+}
+
+Describe 'Write-DbxFile: ' {
+    BeforeAll {
+        $script:tempFile = Get-TempFile
+    }
+    It 'Upload a simple file' {
+        [DbxFile]$dbxFile = Write-DbxFile $tempFile '/Apps/IntelliTect.PSDbxCli/.Temp'
+        $dbxFile | Should -Not -BeNullOrEmpty
+        $dbxFile.Path | Should -Be "/Apps/IntelliTect.PSDbxCli/.Temp/$(Split-Path -Leaf $tempFile)"
+    }
+}
+
+Describe 'New-DbxDirectory/Remove-DbxDirectory: ' {
+    BeforeAll {
+        [string]$script:tempDbxDirectoryPath = '/Apps/IntelliTect.PSDbxCli/.Temp/SampleDirectoryDeleteMe'
+        $directory = Get-DbxItem $tempDbxDirectoryPath -Directory
+        $directory | Remove-DbxDirectory
+    }
+    It 'Return only directories' {
+        $items = Get-DbxItem -Directory
+        $items | ForEach-Object{
+            $_.GetType().Name | Should -Be 'DbxDirectory' }
+    }
+    It 'Retrieve the items in a specific directory' {
+        $items = Get-DbxItem -Directory
+        $items | Select-Object -First 1 | ForEach-Object{
+            $path = $_.Path
+            Get-DbxItem $path | Select-Object -ExpandProperty Path | Should -BeLike "$path*"
+        }
+    }
+    It 'Retrieve child items using DbxDirectory.GetChildItems()' {
+        # Retrieve 2 directories at the root level.
+        $items = Get-DbxItem -Directory
+        $items | Select-Object -First 2 | ForEach-Object{
+            $expectedPath = $_.Path
+            $childItems = $_.GetChildItems()
+            $childItems | Select-Object -ExpandProperty 'Path' | Should -BeLike "$expectedPath*"
+        }
+    }
+    It 'Create a new DbxDirectory' {
+        $newDbxDirectory = New-DbxDirectory $tempDbxDirectoryPath
+        $newDbxDirectory.Path | Should -Be $tempDbxDirectoryPath
+        Remove-DbxDirectory $newDbxDirectory | Should -BeNullOrEmpty
+    }
+    It 'Pipe New-DbxDirectory into Remove-DbxDirectory' {
+        $newDbxDirectory = New-DbxDirectory $tempDbxDirectoryPath
+        $newDbxDirectory.Path | Should -Be $tempDbxDirectoryPath
+        $newDbxDirectory | Remove-DbxDirectory | Should -BeNullOrEmpty
+    }
+    AfterEach {
+        Get-DbxItem -Directory $tempDbxDirectoryPath | Remove-DbxDirectory
     }
 }
 

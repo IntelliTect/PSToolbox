@@ -53,7 +53,7 @@ Function Script:Invoke-DbxCli {
             Write-Output $_
         }
     }
-    if($LASTEXITCODE -ne 0) {
+    if( ($LASTEXITCODE -ne 0) -and $InvokeExpressionError) {
         $InvokeExpressionError = $InvokeExpressionError | Where-Object{ -not [string]::IsNullOrWhiteSpace($_) }
         # TODO: Consider throwing an error instead so that execution stops when it unexpectedly errors.
         Write-Error $InvokeExpressionError.ToString()
@@ -118,7 +118,7 @@ Function Test-DbxPath {
             }
             else {
                 # Check whether the file exists.
-                return ([bool](Get-DbxItem -File $Path))
+                return ([bool](Get-DbxItem -File $Path -ErrorAction Ignore))
             }
         }
         $result = Invoke-DbxCli "dbxcli search '$($Matches.FileName)' '$($Matches.DirectoryPath)'" `
@@ -135,23 +135,25 @@ Function Test-DbxPath {
 Function Get-DbxItem {
     [CmdletBinding()]
     param (
-        [ValidateNotNullOrEmpty()][Parameter()][string]$Path = '/',
+        [ValidateNotNullOrEmpty()][Parameter()][Alias('Path')][string]$DropboxPath = '/',
         [Parameter()][switch]$File,
         [Parameter()][switch]$Directory,
         [Parameter()][switch]$Recursive
     )
     $Header=$null
     $regexLine=$null
-    $command = "dbxcli ls -l '$Path' $(if($Recursive){'-R'})"
+
+    $DropboxPath = Format-DbxPath $DropboxPath
+    $command = "dbxcli ls -l '$DropboxPath' $(if($Recursive){'-R'})"
 
     if(!$Directory -and !$File) {
         $Directory = [switch]$true
         $File = [switch]$true
     }
 
-    $Path = Format-DbxPath $Path
-
+    [bool]$itemsReturned = $false
     Invoke-DbxCli $command | ForEach-Object{
+        $itemsReturned = $true
         if(-not $Header) {
             if($_ -match '(?<Revision>Revision\s*?) (?<Size>Size\s*?) (?<Age>Last Modified\s*?) (?<Path>Path)\s*') {
                 $Header = [PSCustomObject]($Matches | Select-Object -ExcludeProperty 0)
@@ -192,6 +194,12 @@ Function Get-DbxItem {
             }
         }
     }
+    if(-not $itemsReturned) {
+        # We have an empty directory.
+        [DbxDirectory]$dbxDirectory = [DbxDirectory]::new()
+        $dbxDirectory.Path = $DropboxPath
+        Write-Output $dbxDirectory
+    }
 }
 Function Script:ConvertFrom-DisplaySize {
     [CmdletBinding()]
@@ -225,8 +233,83 @@ Function Restore-DbxFile {
     }
 }
 
+Function New-DbxDirectory {
+    [CmdletBinding(SupportsShouldProcess)]
+    [OutputType([DbxDirectory])]
+    param (
+        # The Dropbox path to the file to download
+        [Parameter(Mandatory,ValueFromPipeline,ValueFromPipelineByPropertyName)]
+        [ValidateNotNullOrEmpty()][Alias('Path')][string]$DropboxPath
+    )
+
+    PROCESS {
+        $DropboxPath = Format-DbxPath $DropboxPath
+        if ($PSCmdlet.ShouldProcess("New-DbxDirectory ('$DropboxPath')", "Create new directory '$DropboxPath'.")) {
+            Invoke-DbxCli "dbxcli mkdir $DropboxPath"
+            Write-Output (Get-DbxItem -Directory $DropboxPath)
+        }
+    }
+}
+
+Function Remove-DbxDirectory {
+    [CmdletBinding(SupportsShouldProcess)]
+    [OutputType([DbxDirectory])]
+    param (
+        # The Dropbox path to the file to download
+        [Parameter(Mandatory,ValueFromPipeline,ValueFromPipelineByPropertyName)]
+        [ValidateNotNullOrEmpty()][Alias('Path')][string]$DropboxPath
+    )
+
+    PROCESS {
+        $DropboxPath = Format-DbxPath $DropboxPath
+        if ($PSCmdlet.ShouldProcess("Remove-DbxDirectory '$DropboxPath'", "Removing Dropbox directory ('$DropboxPath')")) {
+            Invoke-DbxCli "dbxcli rm '$DropboxPath'"
+        }
+    }
+}
+
+# Upload a file into Dropbox
+Function Write-DbxFile {
+    [CmdletBinding(SupportsShouldProcess)]
+    param (
+        # The local path to that will be copied into Dropbox.
+        [Parameter(Mandatory,ValueFromPipelineByPropertyName)]
+        [ValidateNotNullOrEmpty()][Alias('FullName')][string]$SourcePath,
+        # The Dropbox path to the file to download
+        [Parameter(Mandatory,ValueFromPipeline,ValueFromPipelineByPropertyName)]
+        [ValidateNotNullOrEmpty()][Alias('Path')][string]$DropboxPath,
+        # Force the file to download even if it already exists.
+        [Parameter()][switch]$Force
+    )
+
+    PROCESS {
+        $DropboxPath = Format-DbxPath $DropboxPath
+        if((-not $Force) -and (Test-DbxPath $DropboxPath -PathType Leaf) ) {
+            throw "The Dropbox file ('$DropboxPath') already exists."
+        }
+        elseif (-not (Test-Path $SourcePath)) {
+            throw "Unable to find the source file ('$SourcePath')."
+        }
+        elseif(Test-DbxPath $DropboxPath -PathType Container) {
+            $DropboxPath = "$DropboxPath/$(Split-Path -Leaf $SourcePath)"
+        }
+
+        Invoke-DbxCli "dbxcli put '$SourcePath' '$DropboxPath'"  | ForEach-Object {
+            if($_ -match 'Uploading (?<SizeUploaded>.+?)/(?<SizeTotal>.+?)$') {
+                $sizeUploaded,$sizeTotal=(ConvertFrom-DisplaySize $Matches.SizeUploaded),(ConvertFrom-DisplaySize $Matches.SizeTotal)
+                Write-Progress -Activity "Save-File '$DropboxPath' ($Revision)" -Status $_ -PercentComplete (($sizeUploaded*100)/$sizeTotal)
+            }
+            else {
+                Write-Progress -Activity "Write-File '$DropboxPath' ($Revision)" -Status $_
+            }
+        }
+        Write-Output (Get-DbxItem $DropboxPath)
+    }
+}
+
+# Download a Dropbox file to a local destination.
 Function Save-DbxFile {
-    [CmdletBinding(SupportsShouldProcess,DefaultParameterSetName = 'Path')]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         # The Dropbox path to the file to download
         [Parameter(Mandatory,ValueFromPipeline,ValueFromPipelineByPropertyName)]
@@ -253,11 +336,11 @@ Function Save-DbxFile {
     PROCESS {
         try {
             if($Revision) {
-                [string]$dbxAppDirectory = '/Apps/IntelliTect.PSDbxCli'
+                [string]$dbxAppDirectory = '/Apps/IntelliTect.PSDbxCli/.Temp'
                 if(-not (Test-DbxPath -Path $dbxAppDirectory -PathType Container)) {
                     Invoke-DbxCli "dbxcli mkdir $dbxAppDirectory"
                 }
-                $DropboxPath = "$dbxAppDirectory/$(Split-Path $DropboxPath -Leaf)"
+                $DropboxPath = Format-DbxPath "$dbxAppDirectory/$(Split-Path $DropboxPath -Leaf)"
                 Write-Progress -Activity "Save-File '$DropboxPath' ($Revision)" -Status "Restoring..."
                 Restore-DbxFile -Revision $Revision -DbxTargetLocation $DropboxPath
             }
