@@ -16,6 +16,7 @@ using Newtonsoft.Json;
 using Dropbox.Api.Files;
 using Dropbox.Api;
 using System.Threading;
+using System.Runtime.ExceptionServices;
 
 namespace IntelliTect.PSDropbin
 {
@@ -57,12 +58,12 @@ namespace IntelliTect.PSDropbin
 
         protected override PSDriveInfo NewDrive(PSDriveInfo drive)
         {
-            WriteDebugMessage("Invoking NewDrive({0}) ... {0}", drive.DisplayRoot);
-
             if (drive == null)
             {
                 throw new ArgumentNullException(nameof(drive));
             }
+
+            WriteDebugMessage("Invoking NewDrive({0}) ... {0}", drive.DisplayRoot);
 
             string credentialName = DropboxDriveInfo.GetDropboxCredentialName(drive.Name);
 
@@ -171,7 +172,7 @@ namespace IntelliTect.PSDropbin
 
                 var item = DropboxFileHelper.GetItem(normalizedPath, _client);
 
-                return item != null && item.IsFolder;                
+                return item != null && item.IsFolder;
             });
         }
         #endregion
@@ -229,7 +230,7 @@ namespace IntelliTect.PSDropbin
 
             if (string.IsNullOrEmpty(normalizedPath)) return;
 
-            MetaData item = Invoke(() => 
+            MetaData item = Invoke(() =>
             {
                 return DropboxFileHelper.GetItem(normalizedPath, _client);
             });
@@ -462,6 +463,12 @@ namespace IntelliTect.PSDropbin
                 try
                 {
                     result = func();
+                }
+                catch (AggregateException exception)
+                {
+                    exception = exception.Flatten();
+                    ExceptionDispatchInfo.Capture(
+                    exception.InnerException).Throw();
                 }
                 catch (Exception exception)
                 {

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation.Provider;
 using System.Net;
+using System.Runtime.ExceptionServices;
 using System.Text.RegularExpressions;
 
 namespace IntelliTect.PSDropbin
@@ -55,13 +56,24 @@ namespace IntelliTect.PSDropbin
 
                 return _fileCache[normalizedPath];
             }
+            catch(AggregateException exception)
+            {
+                exception = exception.Flatten();
+                foreach (var e in exception.InnerExceptions)
+                {
+                    // Dropbox Api returns the following exception if the file is not found.
+                    if (e.GetType() == typeof(ApiException<GetMetadataError>))
+                    {
+                        return null;
+                    }
+                }
+                ExceptionDispatchInfo.Capture(
+                exception.InnerException).Throw();
+                return null;
+            }
             catch (HttpException he) when (he.StatusCode == (int)HttpStatusCode.NotFound)
             {
                 return null;
-            }
-            catch
-            {
-                throw;
             }
         }
 

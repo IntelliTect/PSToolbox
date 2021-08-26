@@ -236,30 +236,46 @@ namespace IntelliTect.Management.Automation.UnitTesting
             {
                 using (new PSTempItem(destination))
                 {
-                    // ReSharper disable PossibleMultipleEnumeration
-                    RemoveItem(destination);
-                    IEnumerable<string> fileNames = Enumerable.Range(0, 3).Select(count => "Item" + count + ".item");
-
-                    if (path.EndsWith("\\"))
-                    {
-                        foreach (string name in fileNames)
-                        {
-                            NewItem(Path.Combine(path, name));
-                        }
-                    }
-                    CopyItem(path, destination);
-                    AttemptAssertion(() => TestPath(destination));
-                    if (path.EndsWith("\\"))
-                    {
-                        Assert.IsTrue(IsItemContainer(destination));
-                        foreach (string name in fileNames)
-                        {
-                            Assert.IsTrue(TestPath(Path.Combine(destination, name)));
-                        }
-                    }
-                    // ReSharper restore PossibleMultipleEnumeration
+                    CopyItemTestBody(path, destination);
                 }
             }
+        }
+
+        protected virtual void CopyItemTest(string path, string parentPath, string destination, string parentDestination)
+        {
+            using (new PSTempItem(path, parentPath))
+            {
+                using (new PSTempItem(destination, parentDestination))
+                {
+                    CopyItemTestBody(path, destination);
+                }
+            }
+        }
+
+        private void CopyItemTestBody(string path, string destination)
+        {
+            // ReSharper disable PossibleMultipleEnumeration
+            RemoveItem(destination);
+            IEnumerable<string> fileNames = Enumerable.Range(0, 3).Select(count => "Item" + count + ".item");
+
+            if (path.EndsWith("\\"))
+            {
+                foreach (string name in fileNames)
+                {
+                    NewItem(Path.Combine(path, name));
+                }
+            }
+            CopyItem(path, destination);
+            AttemptAssertion(() => TestPath(destination));
+            if (path.EndsWith("\\"))
+            {
+                Assert.IsTrue(IsItemContainer(destination));
+                foreach (string name in fileNames)
+                {
+                    Assert.IsTrue(TestPath(Path.Combine(destination, name)));
+                }
+            }
+            // ReSharper restore PossibleMultipleEnumeration
         }
 
         // for when the first attempt may or may not work due to latency

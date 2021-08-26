@@ -125,7 +125,7 @@ namespace IntelliTect.PSDropbin.Tests
         public void ItemExists_GivenExistentItem_ReturnsTrue()
         {
             Assert.IsTrue((bool)PowerShellInvoke(
-                    string.Format("Test-Path {0}:/Public", TestDriveName))
+                    string.Format("Test-Path {0}:", TestDriveName))
                     .First()
                     .ImmediateBaseObject);
         }
@@ -140,7 +140,6 @@ namespace IntelliTect.PSDropbin.Tests
         public void TestPath_ValidDirectoryPaths_ReturnsTrue()
         {
             Assert.IsTrue(TestPath(PrependProviderDefaultDrive("\\")));
-            Assert.IsTrue(TestPath(PrependProviderDefaultDrive("\\Public")));
         }
 
         [TestMethod]
@@ -165,11 +164,11 @@ namespace IntelliTect.PSDropbin.Tests
         [TestMethod]
         public void SetLocation_ValidPaths_Successful()
         {
-            ICollection<PSObject> results = PowerShellInvoke(@"Set-Location ""DropboxTestDrive:\Public"";
+            ICollection<PSObject> results = PowerShellInvoke(@"Set-Location ""DropboxTestDrive:"";
                  Get-Location");
             Assert.IsNotNull(results);
             Assert.AreEqual(1, results.Count);
-            Assert.AreEqual(@"DropboxTestDrive:\Public", results.First().ImmediateBaseObject.ToString());
+            Assert.AreEqual(@"DropboxTestDrive:", results.First().ImmediateBaseObject.ToString().TrimEnd('\\'));
         }
 
         [TestMethod]
@@ -237,10 +236,13 @@ namespace IntelliTect.PSDropbin.Tests
         [TestMethod]
         public void CopyDirectory_GivenMultilevelDirectoryOnLfs_CopyItemToDropbox()
         {
-            const string name = "CopyDirectory_GivenMultilevelDirectoryOnLfs_CopyItemToDropbox-delete\\Subdirectory";
-            string path = Path.Combine(Path.GetTempPath(), name + "\\");
-            string destination = PrependProviderDefaultDrive("Copied-" + name + "\\");
-            CopyItemTest(path, destination);
+            const string parentDirectoryName = "CopyDirectory_GivenMultilevelDirectoryOnLfs_CopyItemToDropbox-delete\\";
+            const string subDirectoryName = "Subdirectory";
+            string parentPath = Path.Combine(Path.GetTempPath(), parentDirectoryName);
+            string path = Path.Combine(parentPath, subDirectoryName + "\\");
+            string parentDestination = PrependProviderDefaultDrive("Copied-" + parentDirectoryName);
+            string destination = Path.Combine(parentDestination, subDirectoryName + "\\");
+            CopyItemTest(path, parentPath, destination, parentDestination);
         }
 
         [TestMethod]
@@ -308,9 +310,10 @@ namespace IntelliTect.PSDropbin.Tests
             Assert.IsTrue(PowerShell.HadErrors);
             IEnumerable<ErrorRecord> errors = PowerShell.Streams.Error.ReadAll();
             string errorText = string.Join(Environment.NewLine, errors);
-            Assert.AreEqual(
-                    string.Format("Path '/{0}' not found", itemName),
-                    errorText);
+
+            // Expected error text from Dropbox.Api.Files.DeleteError
+            string expectedErrorText = "path_lookup/not_found/";
+            Assert.AreEqual(expectedErrorText, errorText.TrimEnd('.'));
         }
 
         [TestMethod]
