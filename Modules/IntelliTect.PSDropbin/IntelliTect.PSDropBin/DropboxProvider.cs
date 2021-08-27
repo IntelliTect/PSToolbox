@@ -6,16 +6,11 @@ using System.IO;
 using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Provider;
-using System.Net;
-using System.Reflection;
-using System.Security;
 using System.Text.RegularExpressions;
 using IntelliTect.Management.Automation;
 using IntelliTect.Security;
-using Newtonsoft.Json;
 using Dropbox.Api.Files;
 using Dropbox.Api;
-using System.Threading;
 using System.Runtime.ExceptionServices;
 
 namespace IntelliTect.PSDropbin
@@ -249,7 +244,7 @@ namespace IntelliTect.PSDropbin
 
             MetaData result = Invoke(() =>
             {
-                return new MetaData(_client.Files.CopyAsync(normalizedPath, normalizedCopyPath).Result);
+                return new MetaData(_client.Files.CopyV2Async(normalizedPath, normalizedCopyPath).Result.Metadata);
             });
 
             WriteMetaData(result, normalizedCopyPath, IsItemContainer(copyPath));
@@ -265,7 +260,7 @@ namespace IntelliTect.PSDropbin
 
             MetaData result = Invoke(() =>
             {
-                return new MetaData(_client.Files.MoveAsync(normalizedFromPath, normalizedToPath).Result);
+                return new MetaData(_client.Files.MoveV2Async(normalizedFromPath, normalizedToPath).Result.Metadata);
             });
 
             WriteMetaData(result, normalizedToPath, IsItemContainer(toPath));
@@ -280,7 +275,7 @@ namespace IntelliTect.PSDropbin
 
             MetaData result = Invoke(() =>
             {
-                return new MetaData(_client.Files.DeleteAsync(normalizedPath).Result);
+                return new MetaData(_client.Files.DeleteV2Async(normalizedPath).Result.Metadata);
             });
 
             WriteMetaData(result);
@@ -316,7 +311,7 @@ namespace IntelliTect.PSDropbin
                     {
                         Invoke(() =>
                        {
-                           var result = new MetaData(_client.Files.CreateFolderAsync(normalizedPath).Result);
+                           var result = new MetaData(_client.Files.CreateFolderV2Async(normalizedPath).Result.Metadata);
                            WriteMetaData(result, normalizedPath, false);
                        });
                     }
