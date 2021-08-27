@@ -1,11 +1,12 @@
-﻿using System;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Provider;
 using System.Threading;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using static IntelliTect.PSDropbin.GetRevisions;
 
 namespace IntelliTect.Management.Automation.UnitTesting
 {
@@ -200,12 +201,12 @@ namespace IntelliTect.Management.Automation.UnitTesting
                     testContext).First().ImmediateBaseObject;
         }
 
-        public static void RemoveItem(string path, bool ignoreMissingItem = false, TestContext testContext = null)
+        public static void RemoveItem(string path, bool ignoreErrors = false, TestContext testContext = null)
         {
             //PowerShellInvoke(ignoreMissingItem, "Remove-Item {0} -verbose -recurse", path);
             PowerShellInvoke(
                     string.Format("Remove-Item {0} -verbose -recurse", path),
-                    ignoreMissingItem,
+                    ignoreErrors,
                     testContext);
         }
 
@@ -219,6 +220,16 @@ namespace IntelliTect.Management.Automation.UnitTesting
         protected virtual dynamic GetItem(string path)
         {
             return PowerShellInvoke("Get-Item {0};", path);
+        }
+
+        protected virtual dynamic GetRevisions(string path, bool ignoreErrors = false)
+        {
+            return PowerShellInvoke(string.Format("Get-Revisions {0};", path), ignoreErrors);
+        }
+
+        protected virtual dynamic SetRevision(string path, string revisionId, bool ignoreErrors = false)
+        {
+            return PowerShellInvoke(string.Format("Set-Revision {0} {1};", path, revisionId), ignoreErrors);
         }
 
         protected virtual bool IsItemContainer(string path)
@@ -341,5 +352,135 @@ namespace IntelliTect.Management.Automation.UnitTesting
                 }
             }
         }
+
+
+        protected virtual void GetFileRevisionsTest(string path, string fileName, int numRevisions, bool createTestFile = true)
+        {
+            if (createTestFile)
+            {
+                using (new PSTempItem(Path.Combine(path, fileName)))
+                {
+
+                    FileRevisionsTestBody(path, fileName, numRevisions);
+
+                }
+            }
+            else
+            {
+                FileRevisionsFileNotExistTestBody(path, fileName, numRevisions);
+            }
+        }
+
+        private void FileRevisionsFileNotExistTestBody(string path, string fileName, int numRevisions)
+        {
+            string fullPath = Path.Combine(path, fileName);
+            ICollection<PSObject> results = GetRevisions(fullPath, ignoreErrors: true);
+
+            Assert.IsTrue(PowerShell.HadErrors);
+            IEnumerable<ErrorRecord> errors = PowerShell.Streams.Error.ReadAll();
+            string errorText = string.Join(Environment.NewLine, errors);
+
+            // Expected error text from Dropbox.Api.Files.ListRevisionsError {Dropbox.Api.Files.ListRevisionsError.Path}
+            string expectedErrorText = "path/not_found/";
+            Assert.AreEqual(expectedErrorText, errorText.TrimEnd('.'));
+        }
+
+        private void FileRevisionsTestBody(string path, string fileName, int numRevisions)
+        {
+
+            string fullPath = Path.Combine(path, fileName);
+            NewItem(fullPath);
+            //create revisions by removing and adding the same file
+            for (int i = 1; i < numRevisions; i++)
+            {
+                RemoveItem(fullPath);
+                NewItem(fullPath);
+            }
+
+            ICollection<PSObject> results = GetRevisions(fullPath);
+
+            Assert.IsTrue(results.Count == numRevisions);
+        }
+
+
+        protected virtual void SetRevisionTest(string dropboxPath, string fileName, bool createTestFile = true)
+        {
+
+            string localPath = Path.Combine(Path.GetTempPath(), "psdropbintests", fileName);
+
+
+            if (createTestFile)
+            {
+
+                using (new PSTempItem(localPath, Path.Combine(Path.GetTempPath(), "psdropbintests")))
+                {
+                    SetRevisionTestBody(localPath, dropboxPath);
+                }
+
+            }
+            else
+            {
+                // SetRevisionFileNotExistTestBody(completDropBoxPath, fileName, numRevisions);
+                //todo
+            }
+        }
+
+       
+
+        private void SetRevisionTestBody(string localPath, string dropBoxPath)
+        {
+            string intialRevContent = "0";
+            Random random = new Random();
+            int numRevisions = random.Next(2, 5);
+
+            PowerShellInvoke("Set-Content {0} '{1}' ", localPath, intialRevContent);
+            CopyItem(localPath, dropBoxPath);
+            using (new PSTempItem(dropBoxPath))
+            {
+                //setup
+                ICollection<PSObject> results = GetRevisions(dropBoxPath);
+                Assert.IsTrue(results.Count == 1); // one for the adding of the file
+
+                string originalRev = (string)results.ToArray()[0].Properties.First(x => x.Name.StartsWith(nameof(RevisionEntry.Revision))).Value;
+                //create revisions by modifying local file and uploading it dropbox under the same name (remove the file from dropbox before each upload)
+                for (int i = 1; i < numRevisions; i++)
+                {
+                    RemoveItem(dropBoxPath); //remove so that Copy-Item does append a number in parenthesis like filename(1).txt
+                    PowerShellInvoke("Set-Content {0} '{1}' ", localPath, i);
+                    CopyItem(localPath, dropBoxPath);
+                }
+
+                ICollection<PSObject> afterRevisions = GetRevisions(dropBoxPath);
+
+                Assert.IsTrue(afterRevisions.Count == numRevisions);
+
+                //action
+                ICollection<PSObject> outputFileMetaData = SetRevision(dropBoxPath, originalRev);
+
+
+                // get result
+                string currentRev = (string)outputFileMetaData.First().Properties.First(x => x.Name.StartsWith("Rev")).Value;
+                ICollection<PSObject> currentRevEntries = GetRevisions(dropBoxPath);
+                Assert.IsTrue(currentRevEntries.Count == numRevisions+1); 
+
+
+                //copy the current version from dropbox to clean file 
+                string resultFileName = "resultFile.txt";
+                string resultFilePath = Path.Combine(Path.GetTempPath(), "psdropbintests", resultFileName);
+
+                CopyItem(dropBoxPath, resultFilePath);
+
+                using (new PSTempItem(resultFilePath))
+                {
+                    ICollection<PSObject> finalContentPso = PowerShellInvoke("Get-Content -Path {0} -TotalCount 1", resultFilePath);
+                    string finalContent = (string)finalContentPso.First().BaseObject;
+
+                    // assert on method under test
+                    Assert.AreEqual(intialRevContent, finalContent);
+                }
+            }
+
+        }
+
     }
 }

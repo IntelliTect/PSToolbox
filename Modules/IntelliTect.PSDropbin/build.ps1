@@ -21,7 +21,7 @@ param (
 Function Check-Path() {
     $fullPath = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot $path))
 	Write-Verbose "Solution Path - $fullPath"
-	$solution = Get-ChildItem $path *.sln -Recurse
+	$solution = Get-ChildItem $fullPath *.sln -Recurse
 	If(-not $solution) {
 		Write-Error "Solution File Not Found"
 	}

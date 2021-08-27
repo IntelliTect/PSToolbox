@@ -317,6 +317,80 @@ namespace IntelliTect.PSDropbin.Tests
         }
 
         [TestMethod]
+        public void GetRevisions_GivenFileWithNoRevisions_OneRevision()
+        {
+            var uniqueFileNameGuid = Guid.NewGuid();
+            //Dropbox remembers files (Thats part of revisions). So we need to create a new file to test revision history
+            string name = String.Format("newItem{0}.txt", uniqueFileNameGuid);
+            string path = PrependProviderDefaultDrive("");
+            //string destination = PrependProviderDefaultDrive("Copied-" + name + "\\");
+            GetFileRevisionsTest(path, name, 1);
+        }
+
+        [TestMethod]
+        public void GetRevisions_GivenFileWithThreeRevisions_ThreeRevisions()
+        {
+            var uniqueFileNameGuid = Guid.NewGuid();
+            //Dropbox remembers files (Thats part of revisions). So we need to create a new file to test revision history
+            string name = String.Format("newItem{0}.txt", uniqueFileNameGuid);
+            string path = PrependProviderDefaultDrive("");
+            //string destination = PrependProviderDefaultDrive("Copied-" + name + "\\");
+            GetFileRevisionsTest(path, name, 3);
+        }
+
+
+        [TestMethod]
+        public void GetRevisions_FileNotExist_PathNotFound()
+        {
+            var uniqueFileNameGuid = Guid.NewGuid();
+            string name = String.Format("newItem{0}.txt", uniqueFileNameGuid);
+            string path = PrependProviderDefaultDrive("");
+            GetFileRevisionsTest(path, name, 1, false);
+          
+        }
+
+        [TestMethod]
+        public void GetRevisions_Folder_Fails()
+        {
+            const string directoryName = "GetRevisions_Folder_Fails.delete";
+            string path = PrependProviderDefaultDrive(directoryName);
+            if (TestPath(path))
+            {
+                PowerShellInvoke("Remove-Item {0}", path);
+            }
+            PowerShellInvoke("New-Item {0} -ItemType Directory  ", path);
+            AttemptAssertion(() => TestPath(path));
+            PowerShellInvoke(string.Format("Get-Revisions {0};", path), ignoreErrors: true);
+
+            Assert.IsTrue(PowerShell.HadErrors);
+            IEnumerable<ErrorRecord> errors = PowerShell.Streams.Error.ReadAll();
+            string errorText = string.Join(Environment.NewLine, errors);
+
+            // Expected error text from Dropbox.Api.Files.ListRevisionsError {Dropbox.Api.Files.ListRevisionsError.Path}
+            string expectedErrorText = "path/not_file/";
+            Assert.AreEqual(expectedErrorText, errorText.TrimEnd('.'));
+
+            if (TestPath(path))
+            {
+                PowerShellInvoke("Remove-Item {0}", path);
+            }
+
+
+        }
+
+
+        [TestMethod]
+        public void SetRevision_GivenValidRevisionId_Success()
+        {
+            var uniqueFileNameGuid = Guid.NewGuid();
+            //Dropbox remembers files (Thats part of revisions). So we need to create a new file to test revision history
+            string name = String.Format("newItem{0}.txt", uniqueFileNameGuid);
+            string dropBoxPath = PrependProviderDefaultDrive(name);
+            SetRevisionTest(dropBoxPath, name);
+        }
+
+
+        [TestMethod]
         public void RemoveItem_ExistingItem_Success()
         {
             string path = PrependProviderDefaultDrive("IntelliTect.PSDropbin.Testing.delete");

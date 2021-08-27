@@ -28,16 +28,3 @@ This PowerShell module permits you to access Dropbox as if it were a local drive
 Use this Dropbox implementation to extract a more generic codebase. Due to the structure of the abstract `NavigationCmdletProvider` class, this may be fairly difficult. However, this could allow for the creation of additional cloud drive providers for services such as **Google Drive**, **OneDrive** and **Box**.
 
 
-### Dev Setup
-- Install Dropbox on your machine and log in.
-
-Unit Tests require a user token for a drive called "DropboxTestDrive", So before running them do the following to get a user token stored so that the tests can run:
-1. Run `Import-Module .\IntelliTect.PSDropbin.psd1` from the repo root.
-2. After importing the module, run `New-DropboxDrive DropboxTestDrive`
-   * your browser will open and prompt for access.
-   * paste the token back into the prompt and press the enter key
-   * The token will now be available when you go to run tests.
-
-When done with dev work you can remove the access token and unmount the test drive: 
-- To remove access tokens, run `Remove-DropboxCredential -Name DropboxTestDrive`.
-- To unmount a drive, run `Remove-PSDrive -Name DropboxTestDrive`.
