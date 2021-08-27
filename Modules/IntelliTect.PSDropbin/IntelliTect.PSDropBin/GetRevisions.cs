@@ -1,9 +1,10 @@
 ﻿using Dropbox.Api.Files;
+using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Management.Automation;
+using System.Runtime.ExceptionServices;
+
 namespace IntelliTect.PSDropbin
 {
     [Cmdlet(VerbsCommon.Get, Noun, SupportsShouldProcess = false)]
@@ -38,18 +39,28 @@ namespace IntelliTect.PSDropbin
             DropboxDriveInfo primaryDrive = dropboxProvider.Drives.Cast<DropboxDriveInfo>().First();
 
             ulong numberOfEntriesToReturn = Limit > _DefaultLimit ? Limit : _DefaultLimit;
-            
-            IList<FileMetadata> revisionHistory = primaryDrive.Client.Files.ListRevisionsAsync(dropBoxPath,numberOfEntriesToReturn).Result.Entries;
-
-            foreach(FileMetadata fileMetadata in revisionHistory)
+            try
             {
-            var entry = new RevisionEntry();
-                entry.ServerModified = fileMetadata.ServerModified;
-                entry.RevisionId = fileMetadata.Id;
-            base.WriteObject(entry);
 
+
+                IList<FileMetadata> revisionHistory = primaryDrive.Client.Files.ListRevisionsAsync(dropBoxPath, null, numberOfEntriesToReturn).Result.Entries;
+                IOrderedEnumerable<FileMetadata> sortedHistory = revisionHistory.OrderBy(entry => entry.ServerModified);
+
+                foreach (FileMetadata fileMetadata in sortedHistory)
+                {
+                    var entry = new RevisionEntry();
+                    entry.ServerModified = fileMetadata.ServerModified;
+                    entry.ClientModified = fileMetadata.ClientModified;
+                    entry.Revision = fileMetadata.Rev;
+                    base.WriteObject(entry);
+                }
             }
-
+            catch (AggregateException exception)
+            {
+                exception = exception.Flatten();
+                ExceptionDispatchInfo.Capture(
+                exception.InnerException).Throw();
+            }
 
         }
 
@@ -58,17 +69,17 @@ namespace IntelliTect.PSDropbin
         {
             public System.DateTime ServerModified { get; set; }
             public System.DateTime ClientModified { get; set; }
-            public string RevisionId { get; set; }
-            public string Four { get; set; }
+            public string Revision { get; set; }
+
 
             public static PSObject Get()
             {
 
-                var w = new RevisionEntry();
-                var pso = new PSObject(w);
-                var display = new PSPropertySet("DefaultDisplayPropertySet", new[] { "One", "Two" });
-                var mi = new PSMemberSet("PSStandardMembers", new[] { display });
-                pso.Members.Add(mi);
+                var entry = new RevisionEntry();
+                var pso = new PSObject(entry);
+                var display = new PSPropertySet("DefaultDisplayPropertySet", new[] { nameof(ServerModified), nameof(Revision) });
+                var standardMembers = new PSMemberSet("PSStandardMembers", new[] { display });
+                pso.Members.Add(standardMembers);
 
                 return pso;
             }

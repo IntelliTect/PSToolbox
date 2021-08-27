@@ -1,6 +1,9 @@
 ﻿using Dropbox.Api.Files;
+using System;
 using System.Linq;
 using System.Management.Automation;
+using System.Runtime.ExceptionServices;
+
 namespace IntelliTect.PSDropbin
 {
     [Cmdlet(VerbsCommon.Set, Noun, SupportsShouldProcess = true)]
@@ -27,11 +30,6 @@ namespace IntelliTect.PSDropbin
         [ValidateNotNullOrEmpty]
         public string Revision { get; set; }
 
-
-
-
-        private const ulong _DefaultLimit = 10;
-
         protected override void ProcessRecord()
         {
             ProviderInfo dropboxProvider;
@@ -39,36 +37,27 @@ namespace IntelliTect.PSDropbin
             string dropBoxPath = DropboxFileHelper.NormalizePath(resolvedPath);
             DropboxDriveInfo primaryDrive = dropboxProvider.Drives.Cast<DropboxDriveInfo>().First();
 
-            RestoreArg restoreArg = new RestoreArg(Path, Revision);
+            RestoreArg restoreArg = new RestoreArg(dropBoxPath, Revision);
 
-            FileMetadata fileMetadata = primaryDrive.Client.Files.RestoreAsync(restoreArg).Result;
+            base.WriteVerbose(string.Format("Restoring {0}, to version: {1}", dropBoxPath, Revision));
 
-            var entry = new RevisionEntry();
-            entry.ServerModified = fileMetadata.ServerModified;
-            base.WriteObject(entry);
-
-
-        }
-
-
-        public class RevisionEntry
-        {
-            public System.DateTime ServerModified { get; set; }
-            public System.DateTime ClientModified { get; set; }
-            public string Three { get; set; }
-            public string Four { get; set; }
-
-            public static PSObject Get()
+            
+            if (ShouldProcess(resolvedPath, "Set-Revision"))
             {
-
-                var w = new RevisionEntry();
-                var pso = new PSObject(w);
-                var display = new PSPropertySet("DefaultDisplayPropertySet", new[] { "One", "Two" });
-                var mi = new PSMemberSet("PSStandardMembers", new[] { display });
-                pso.Members.Add(mi);
-
-                return pso;
+                try
+                {
+                    FileMetadata fileMetadata = primaryDrive.Client.Files.RestoreAsync(restoreArg).Result;
+                    base.WriteVerbose(string.Format("Succesfully restored {0}, to version: {1}", dropBoxPath, Revision));
+                    base.WriteObject(fileMetadata);
+                }
+                catch (AggregateException exception)
+                {
+                    exception = exception.Flatten();
+                    ExceptionDispatchInfo.Capture(
+                    exception.InnerException).Throw();
+                }
             }
         }
+ 
     }
 }
