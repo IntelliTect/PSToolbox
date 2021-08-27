@@ -317,6 +317,29 @@ namespace IntelliTect.PSDropbin.Tests
         }
 
         [TestMethod]
+        public void GetRevisions_GivenFileWithNoRevisions_OneRevision()
+        {
+            var uniqueFileNameGuid = Guid.NewGuid();
+            //Dropbox remembers files (Thats part of revisions). So we need to create a new file to test revision history
+            string name = String.Format("newItem{0}.txt", uniqueFileNameGuid);
+            string path = PrependProviderDefaultDrive("");
+            //string destination = PrependProviderDefaultDrive("Copied-" + name + "\\");
+            ItemRevisionsTest(path, name, 1);
+        }
+
+        [TestMethod]
+        public void GetRevisions_GivenFileWithThreeRevisions_ThreeRevisions()
+        {
+            var uniqueFileNameGuid = Guid.NewGuid();
+            //Dropbox remembers files (Thats part of revisions). So we need to create a new file to test revision history
+            string name = String.Format("newItem{0}.txt", uniqueFileNameGuid);
+            string path = PrependProviderDefaultDrive("");
+            //string destination = PrependProviderDefaultDrive("Copied-" + name + "\\");
+            ItemRevisionsTest(path, name, 3);
+        }
+
+
+        [TestMethod]
         public void RemoveItem_ExistingItem_Success()
         {
             string path = PrependProviderDefaultDrive("IntelliTect.PSDropbin.Testing.delete");

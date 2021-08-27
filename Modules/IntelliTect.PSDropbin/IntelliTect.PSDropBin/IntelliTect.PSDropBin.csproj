@@ -66,6 +66,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CopyDropboxToLocal.cs" />
+    <Compile Include="SetRevision.cs" />
+    <Compile Include="GetRevisions.cs" />
     <Compile Include="MetaData.cs" />
     <Compile Include="PKCEHelper.cs" />
     <Compile Include="RemoveDropboxCredential.cs" />
@@ -98,9 +100,6 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
       <SubType>Designer</SubType>
-    </None>
-    <None Include="SetupProvider.ps1">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="ViewDefinition.ps1xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

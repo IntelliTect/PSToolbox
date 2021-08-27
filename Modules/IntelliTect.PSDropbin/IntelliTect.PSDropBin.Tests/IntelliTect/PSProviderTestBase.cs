@@ -1,11 +1,11 @@
-﻿using System;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Provider;
 using System.Threading;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace IntelliTect.Management.Automation.UnitTesting
 {
@@ -221,6 +221,11 @@ namespace IntelliTect.Management.Automation.UnitTesting
             return PowerShellInvoke("Get-Item {0};", path);
         }
 
+        protected virtual dynamic GetRevisions(string path)
+        {
+            return PowerShellInvoke("Get-Revisions {0};", path);
+        }
+
         protected virtual bool IsItemContainer(string path)
         {
             return
@@ -340,6 +345,34 @@ namespace IntelliTect.Management.Automation.UnitTesting
                     // ReSharper restore PossibleMultipleEnumeration
                 }
             }
+        }
+
+
+        protected virtual void ItemRevisionsTest(string path, string fileName, int numRevisions)
+        {
+            using (new PSTempItem(Path.Combine(path, fileName)))
+            {
+
+                ItemRevisionsTestBody(path, fileName, numRevisions);
+
+            }
+        }
+        
+        private void ItemRevisionsTestBody(string path, string fileName, int numRevisions)
+        {
+
+            string fullPath = Path.Combine(path, fileName);
+            NewItem(fullPath);
+            //create revisions by removing and adding the same file
+            for (int i = 1; i < numRevisions; i++)
+            {
+                RemoveItem(fullPath);
+                NewItem(fullPath);
+            }
+
+            ICollection<PSObject> results = GetRevisions(fullPath);
+
+            Assert.IsTrue(results.Count == numRevisions);
         }
     }
 }
