@@ -67,6 +67,7 @@
   <ItemGroup>
     <Compile Include="CopyDropboxToLocal.cs" />
     <Compile Include="MetaData.cs" />
+    <Compile Include="PKCEHelper.cs" />
     <Compile Include="RemoveDropboxCredential.cs" />
     <Compile Include="CopyLocalToDropbox.cs" />
     <Compile Include="DropboxDriveInfo.cs" />
@@ -104,6 +105,11 @@
     <None Include="ViewDefinition.ps1xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="index.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

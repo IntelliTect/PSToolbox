@@ -60,64 +60,19 @@ namespace IntelliTect.PSDropbin
 
             WriteDebugMessage("Invoking NewDrive({0}) ... {0}", drive.DisplayRoot);
 
-            string credentialName = DropboxDriveInfo.GetDropboxCredentialName(drive.Name);
-
-            // If the credential doesn't already exist, prompt for it.
-            if (CredentialManager.ReadCredential(credentialName) == null)
+            PKCEHelper helper = new PKCEHelper();
+            string accessToken = helper.GetOAuthTokens(null, IncludeGrantedScopes.None).Result;
+            if (string.IsNullOrEmpty(accessToken))
             {
-                WriteWarning($"Couldn't find Dropbox Credentials for drive {drive.Name}.");
-
-                if (!PromptForCredential(drive))
-                {
-                    WriteWarning("Couldn't get Dropbox Credentials. Run New-PSDrive again when ready.");
-
-                    return null;
-                }
-            }
-
-            return new DropboxDriveInfo(drive);
-        }
-
-        private bool PromptForCredential(PSDriveInfo driveInfo)
-        {
-            Uri authUri = DropboxOAuth2Helper.GetAuthorizeUri(Settings.Default.ApiKey);
-
-            Warn("Opening URL: " + authUri);
-
-            // open browser for authentication
-            try
-            {
-                Process.Start(authUri.ToString());
-            }
-            catch (Exception)
-            {
-                WriteWarning("An unexpected error occured while opening the browser.");
-            }
-
-            Warn("Waiting for authentication...");
-
-            Host.UI.WriteLine("Please enter your authorization code provided by DropBox");
-            Host.UI.Write(">>> ");
-            var authCode = Host.UI.ReadLine();
-
-            OAuth2Response response = null;
-            try
-            {
-                response = DropboxOAuth2Helper.ProcessCodeFlowAsync(authCode, Settings.Default.ApiKey, Settings.Default.AppSecret).Result;
-            }
-            catch (OAuth2Exception)
-            {
-                Warn("Authentication failed.");
-                return false;
+                return null;
             }
 
             CredentialManager.WriteCredential(
-                DropboxDriveInfo.GetDropboxCredentialName(driveInfo.Name),
-                response.AccessToken
+                DropboxDriveInfo.GetDropboxCredentialName(drive.Name),
+                accessToken
             );
 
-            Warn("Authentication successful. Run Remove-DropboxCredential to remove stored credentials.");
-            return true;
+            return new DropboxDriveInfo(drive);
         }
 
         protected override Collection<PSDriveInfo> InitializeDefaultDrives()

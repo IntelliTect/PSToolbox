@@ -2,11 +2,11 @@
 <SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="IntelliTect.PSDropbin" GeneratedClassName="Settings">
   <Profiles />
   <Settings>
-    <Setting Name="ApiKey" Type="System.String" Scope="User">
-      <Value Profile="(Default)">kit6sxnqgh4px6x</Value>
+    <Setting Name="AccessToken" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
     </Setting>
-    <Setting Name="AppSecret" Type="System.String" Scope="User">
-      <Value Profile="(Default)">rv7onruakbvxban</Value>
+    <Setting Name="ApiKey" Type="System.String" Scope="User">
+      <Value Profile="(Default)">mrxyfvzxlqtj4gd</Value>
     </Setting>
   </Settings>
 </SettingsFile>

@@ -25,25 +25,25 @@ namespace IntelliTect.PSDropbin {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("kit6sxnqgh4px6x")]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string AccessToken {
+            get {
+                return ((string)(this["AccessToken"]));
+            }
+            set {
+                this["AccessToken"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("mrxyfvzxlqtj4gd")]
         public string ApiKey {
             get {
                 return ((string)(this["ApiKey"]));
             }
             set {
                 this["ApiKey"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("rv7onruakbvxban")]
-        public string AppSecret {
-            get {
-                return ((string)(this["AppSecret"]));
-            }
-            set {
-                this["AppSecret"] = value;
             }
         }
     }
