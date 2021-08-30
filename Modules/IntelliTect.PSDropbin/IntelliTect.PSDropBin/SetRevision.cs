@@ -39,16 +39,22 @@ namespace IntelliTect.PSDropbin
 
             RestoreArg restoreArg = new RestoreArg(dropBoxPath, Revision);
 
-            base.WriteVerbose(string.Format("Restoring {0}, to version: {1}", dropBoxPath, Revision));
+            Console.WriteLine(string.Format("Restoring {0}, to version: {1}", dropBoxPath, Revision));
 
             
             if (ShouldProcess(resolvedPath, "Set-Revision"))
             {
                 try
-                {
+                {   
                     FileMetadata fileMetadata = primaryDrive.Client.Files.RestoreAsync(restoreArg).Result;
-                    base.WriteVerbose(string.Format("Succesfully restored {0}, to version: {1}", dropBoxPath, Revision));
-                    base.WriteObject(fileMetadata);
+                    Console.WriteLine(string.Format("Succesfully restored {0}, to version: {1}", dropBoxPath, Revision));
+                    Console.WriteLine(string.Format("Current File Info:"));
+                    var entry = new GetRevisions.RevisionEntry();
+                    entry.Revision = fileMetadata.Rev;
+                    entry.ServerModified = fileMetadata.ServerModified;
+                    entry.ClientModified = fileMetadata.ClientModified;
+                    //print new entry;
+                    base.WriteObject(entry);
                 }
                 catch (AggregateException exception)
                 {
