@@ -393,8 +393,7 @@ Function Get-IsWindowsPlatform {
     [OutputType([bool])]
     [CmdletBinding()]param()
     return ($IsWindows -or ('PSEdition' -in $PSVersionTable.Keys) `
-        -and ($PSVersionTable.PSEdition -eq 'Desktop') `
-        -and ($PSVersionTable.Clrversion.Major -ge 4))
+        -and (($PSVersionTable.PSEdition -eq 'Desktop') -or ($PSVersionTable.PSEdition -eq 'Core')))
 }
 
 Function Set-IsWindowsVariable {
