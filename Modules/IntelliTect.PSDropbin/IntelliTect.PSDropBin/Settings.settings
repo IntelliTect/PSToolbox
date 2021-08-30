@@ -8,5 +8,11 @@
     <Setting Name="ApiKey" Type="System.String" Scope="User">
       <Value Profile="(Default)">mrxyfvzxlqtj4gd</Value>
     </Setting>
+    <Setting Name="RefreshToken" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="ExpiresAt" Type="System.DateTime" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
   </Settings>
 </SettingsFile>

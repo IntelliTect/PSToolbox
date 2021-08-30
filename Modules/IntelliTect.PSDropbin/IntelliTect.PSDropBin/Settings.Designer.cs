@@ -46,5 +46,28 @@ namespace IntelliTect.PSDropbin {
                 this["ApiKey"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string RefreshToken {
+            get {
+                return ((string)(this["RefreshToken"]));
+            }
+            set {
+                this["RefreshToken"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        public global::System.DateTime ExpiresAt {
+            get {
+                return ((global::System.DateTime)(this["ExpiresAt"]));
+            }
+            set {
+                this["ExpiresAt"] = value;
+            }
+        }
     }
 }
