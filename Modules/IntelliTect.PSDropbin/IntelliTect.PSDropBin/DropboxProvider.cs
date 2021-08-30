@@ -61,7 +61,17 @@ namespace IntelliTect.PSDropbin
             WriteDebugMessage("Invoking NewDrive({0}) ... {0}", drive.DisplayRoot);
 
             PKCEHelper helper = new PKCEHelper();
-            string accessToken = helper.GetOAuthTokens(null, IncludeGrantedScopes.None).Result;
+            string accessToken = string.Empty;
+            try
+            {
+                accessToken = helper.GetOAuthTokensAsync(null, IncludeGrantedScopes.None).Result;
+            }
+            catch (AggregateException exception)
+            {
+                exception = exception.Flatten();
+                ExceptionDispatchInfo.Capture(
+                exception.InnerException).Throw();
+            }
             if (string.IsNullOrEmpty(accessToken))
             {
                 return null;

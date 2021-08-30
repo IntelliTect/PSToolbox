@@ -78,14 +78,25 @@ namespace IntelliTect.PSDropbin
         /// </para>
         /// </summary>
         /// <returns>A valid access token if successful otherwise null.</returns>
-        public async Task<string> GetOAuthTokens(string[] scopeList, IncludeGrantedScopes includeGrantedScopes)
+        public async Task<string> GetOAuthTokensAsync(string[] scopeList, IncludeGrantedScopes includeGrantedScopes)
         {
             bool accessExpiringSoon = false;
+            DateTime expireDate;
             Settings.Default.Upgrade();
-            if (Settings.Default.ExpiresAt <= DateTime.Now)
+
+            try
+            {
+                expireDate = Settings.Default.ExpiresAt;
+                if (expireDate <= DateTime.Now)
+                {
+                    accessExpiringSoon = true;
+                }
+            }
+            catch (Exception)
             {
                 accessExpiringSoon = true;
             }
+            
             if (string.IsNullOrEmpty(Settings.Default.AccessToken) || accessExpiringSoon)
             {
                 string apiKey = GetApiKey();
