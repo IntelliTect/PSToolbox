@@ -64,7 +64,7 @@ namespace IntelliTect.PSDropbin
             string accessToken = string.Empty;
             try
             {
-                accessToken = helper.GetOAuthTokensAsync(null, IncludeGrantedScopes.None).Result;
+                accessToken = helper.GetOAuthTokensAsync(null, IncludeGrantedScopes.None, drive.Name).Result;
             }
             catch (AggregateException exception)
             {
@@ -76,11 +76,6 @@ namespace IntelliTect.PSDropbin
             {
                 return null;
             }
-
-            CredentialManager.WriteCredential(
-                DropboxDriveInfo.GetDropboxCredentialName(drive.Name),
-                accessToken
-            );
 
             return new DropboxDriveInfo(drive);
         }

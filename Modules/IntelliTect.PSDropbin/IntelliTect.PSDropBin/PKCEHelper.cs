@@ -1,4 +1,5 @@
 ﻿using Dropbox.Api;
+using IntelliTect.Security;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -78,7 +79,7 @@ namespace IntelliTect.PSDropbin
         /// </para>
         /// </summary>
         /// <returns>A valid access token if successful otherwise null.</returns>
-        public async Task<string> GetOAuthTokensAsync(string[] scopeList, IncludeGrantedScopes includeGrantedScopes)
+        public async Task<string> GetOAuthTokensAsync(string[] scopeList, IncludeGrantedScopes includeGrantedScopes, string driveName)
         {
             bool accessExpiringSoon = false;
             DateTime expireDate;
@@ -86,7 +87,7 @@ namespace IntelliTect.PSDropbin
 
             try
             {
-                expireDate = Settings.Default.ExpiresAt;
+                expireDate = Settings.Default.AccessTokenExpiration;
                 if (expireDate <= DateTime.Now)
                 {
                     accessExpiringSoon = true;
@@ -96,8 +97,10 @@ namespace IntelliTect.PSDropbin
             {
                 accessExpiringSoon = true;
             }
-            
-            if (string.IsNullOrEmpty(Settings.Default.AccessToken) || accessExpiringSoon)
+
+            string credentialName = DropboxDriveInfo.GetDropboxCredentialName(driveName);
+
+            if (string.IsNullOrEmpty(CredentialManager.ReadCredential(credentialName)) || accessExpiringSoon)
             {
                 string apiKey = GetApiKey();
 
@@ -152,6 +155,10 @@ namespace IntelliTect.PSDropbin
                         }
                         Console.WriteLine("OAuth token acquire complete");
 
+                        CredentialManager.WriteCredential(
+                            DropboxDriveInfo.GetDropboxCredentialName(driveName),
+                            result.AccessToken
+                            );
                         UpdateSettings(result);
                     }
                     catch (Exception e)
@@ -161,7 +168,8 @@ namespace IntelliTect.PSDropbin
                     }
                 }
             }
-            return Settings.Default.AccessToken;
+
+            return CredentialManager.ReadCredential(credentialName);
         }
 
         private static void UpdateSettings(OAuth2Response result)
@@ -174,6 +182,8 @@ namespace IntelliTect.PSDropbin
                     Settings.Default[item.Name] = property.GetValue(result);
                 }
             }
+
+            Settings.Default.AccessTokenExpiration = result.ExpiresAt != null ? (DateTime)result.ExpiresAt : DateTime.Now;
 
             Settings.Default.Save();
             Settings.Default.Reload();

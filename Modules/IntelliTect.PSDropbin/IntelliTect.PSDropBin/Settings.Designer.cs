@@ -25,18 +25,6 @@ namespace IntelliTect.PSDropbin {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string AccessToken {
-            get {
-                return ((string)(this["AccessToken"]));
-            }
-            set {
-                this["AccessToken"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("mrxyfvzxlqtj4gd")]
         public string ApiKey {
             get {
@@ -49,24 +37,12 @@ namespace IntelliTect.PSDropbin {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string RefreshToken {
+        public global::System.DateTime AccessTokenExpiration {
             get {
-                return ((string)(this["RefreshToken"]));
+                return ((global::System.DateTime)(this["AccessTokenExpiration"]));
             }
             set {
-                this["RefreshToken"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        public global::System.DateTime ExpiresAt {
-            get {
-                return ((global::System.DateTime)(this["ExpiresAt"]));
-            }
-            set {
-                this["ExpiresAt"] = value;
+                this["AccessTokenExpiration"] = value;
             }
         }
     }
