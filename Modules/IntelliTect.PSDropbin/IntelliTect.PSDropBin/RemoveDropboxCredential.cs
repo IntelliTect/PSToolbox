@@ -23,7 +23,6 @@ namespace IntelliTect.PSDropbin
                 WriteObject(accessTokenResult && refreshTokenResult
                         ? "Credentials removed. You may wish to also revoke access in your Dropbox user profile."
                         : "No credential found.");
-                Settings.Default.Reset();
             }
             catch ( Exception e )
             {

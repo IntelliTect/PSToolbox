@@ -6,6 +6,7 @@ using System.Management.Automation;
 using IntelliTect.Management.Automation.UnitTesting;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ExposedObject;
+using IntelliTect.Security;
 
 namespace IntelliTect.PSDropbin.Tests
 {
@@ -398,6 +399,32 @@ namespace IntelliTect.PSDropbin.Tests
             AttemptAssertion(() => TestPath(path));
             RemoveItem(path);
             AttemptAssertion(() => TestPath(path), false);
+        }
+
+        [TestMethod]
+        public void RemoveCredentials_WithSavedCredentials_Success()
+        {
+            string credentialName = "RemoveCredentialsTest";
+            string accessTokenCredentialName = DropboxDriveInfo.GetDropboxAccessTokenName(credentialName);
+            CredentialManager.WriteCredential(accessTokenCredentialName, "TestAccessToken");
+            string refreshTokenCredentialName = DropboxDriveInfo.GetDropboxRefreshTokenName(credentialName);
+            CredentialManager.WriteCredential(refreshTokenCredentialName, "TestRefreshToken");
+
+            var result = PowerShellInvoke("Remove-DropboxCredential {0}", credentialName);
+
+            var actual = (string)result.First().BaseObject;
+            Assert.AreEqual("Credentials removed. You may wish to also revoke access in your Dropbox user profile.", actual);
+        }
+
+        [TestMethod]
+        public void RemoveCredentials_WithoutSavedCredentials_ReturnsNoCredentialsFound()
+        {
+            string credentialName = "RemoveCredentialsTest";
+
+            var result = PowerShellInvoke("Remove-DropboxCredential {0}", credentialName);
+
+            var actual = (string)result.First().BaseObject;
+            Assert.AreEqual("No credential found.", actual);
         }
     }
 }
