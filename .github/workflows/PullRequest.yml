@@ -30,7 +30,16 @@ jobs:
         run: |
           $items = Get-ChildItem -Include *.sln -Recurse
           foreach ($item in $items){
+           if ($item -notmatch 'PSDropBin'){
               dotnet build $item
+              }
+          }
+          #build PSDropBin.csproj only (not entire solution as test proj won't build)
+          $items = Get-ChildItem -Include *.csproj -Recurse
+          foreach ($item in $items){
+           if ($item -match 'PSDropBin' -and $item -notmatch 'Tests'){
+              dotnet build $item
+              }
           }
       - name: DotNet Test
         run: |

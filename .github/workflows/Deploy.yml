@@ -38,7 +38,7 @@ jobs:
         foreach ($module in $modules) {
             if ($module.FullName -match $powerShellDropboxProviderModuleName){
                 Write-Host "$($powerShellDropboxProviderModuleName) module was changed. Building latest version..."
-                $solutionPath = Join-Path $module.FullName "$($powerShellDropboxProviderModuleName).sln"
+                $solutionPath = Join-Path $module.FullName "IntelliTect.$($powerShellDropboxProviderModuleName)" "IntelliTect.$($powerShellDropboxProviderModuleName).csproj"
                 dotnet build $solutionPath
                 break
             }
