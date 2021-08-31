@@ -36,5 +36,7 @@ jobs:
         run: |
           $items = Get-ChildItem -Include *.sln -Recurse
           foreach ($item in $items){
-              dotnet test $item
+              if ($item -notmatch 'PSDropBin'){
+                dotnet test $item
+              }
           }
