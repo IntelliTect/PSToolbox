@@ -35,7 +35,10 @@
   - Otherwise, submit a pull request on Github with your changes. Whoever merges the pull request is responsible for publishing to PowerShell Gallery.
 
 
-## Deploying to PowerShell Gallery
+## GitHub Action Deploy
+On a push to Main, Deploy.yml will run. It will search through the git history and determine what modules have been changed. If a module has been changed (or added ( i.e. a new folder was created in the Modules folder)), the workflow will up the minor rev of the module by 1 in it's .psd1. Any module that has been changed will be published to PowerShell Gallery.
+
+## Manually Deploying to PowerShell Gallery
 
 ### Steps to Deploy
 - Sign in to powershellgallery.com using the IntelliTect account, and then get the API key from the user profile page.
