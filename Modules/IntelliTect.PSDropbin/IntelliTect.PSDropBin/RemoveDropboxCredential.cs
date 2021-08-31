@@ -16,11 +16,14 @@ namespace IntelliTect.PSDropbin
         {
             try
             {
-                string credentialName = DropboxDriveInfo.GetDropboxCredentialName(Name);
-                bool result = CredentialManager.DeleteCredential(credentialName);
-                WriteObject( result
-                        ? "Credential removed. You may wish to also revoke access in your Dropbox user profile."
-                        : "No credential found." );
+                string accessTokenName = DropboxDriveInfo.GetDropboxAccessTokenName(Name);
+                bool accessTokenResult = CredentialManager.DeleteCredential(accessTokenName);
+                string refreshTokenName = DropboxDriveInfo.GetDropboxRefreshTokenName(Name);
+                bool refreshTokenResult = CredentialManager.DeleteCredential(refreshTokenName);
+                WriteObject(accessTokenResult && refreshTokenResult
+                        ? "Credentials removed. You may wish to also revoke access in your Dropbox user profile."
+                        : "No credential found.");
+                Settings.Default.Reset();
             }
             catch ( Exception e )
             {

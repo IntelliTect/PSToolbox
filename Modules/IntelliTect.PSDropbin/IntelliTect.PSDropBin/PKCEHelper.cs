@@ -81,26 +81,11 @@ namespace IntelliTect.PSDropbin
         /// <returns>A valid access token if successful otherwise null.</returns>
         public async Task<string> GetOAuthTokensAsync(string[] scopeList, IncludeGrantedScopes includeGrantedScopes, string driveName)
         {
-            bool accessExpiringSoon = false;
-            DateTime expireDate;
             Settings.Default.Upgrade();
 
-            try
-            {
-                expireDate = Settings.Default.AccessTokenExpiration;
-                if (expireDate <= DateTime.Now)
-                {
-                    accessExpiringSoon = true;
-                }
-            }
-            catch (Exception)
-            {
-                accessExpiringSoon = true;
-            }
+            string accessTokencredentialName = DropboxDriveInfo.GetDropboxAccessTokenName(driveName);
 
-            string credentialName = DropboxDriveInfo.GetDropboxCredentialName(driveName);
-
-            if (string.IsNullOrEmpty(CredentialManager.ReadCredential(credentialName)) || accessExpiringSoon)
+            if (string.IsNullOrEmpty(CredentialManager.ReadCredential(accessTokencredentialName)))
             {
                 string apiKey = GetApiKey();
 
@@ -156,8 +141,12 @@ namespace IntelliTect.PSDropbin
                         Console.WriteLine("OAuth token acquire complete");
 
                         CredentialManager.WriteCredential(
-                            DropboxDriveInfo.GetDropboxCredentialName(driveName),
+                            DropboxDriveInfo.GetDropboxAccessTokenName(driveName),
                             result.AccessToken
+                            );
+                        CredentialManager.WriteCredential(
+                            DropboxDriveInfo.GetDropboxRefreshTokenName(driveName),
+                            result.RefreshToken
                             );
                         UpdateSettings(result);
                     }
@@ -169,7 +158,7 @@ namespace IntelliTect.PSDropbin
                 }
             }
 
-            return CredentialManager.ReadCredential(credentialName);
+            return CredentialManager.ReadCredential(accessTokencredentialName);
         }
 
         private static void UpdateSettings(OAuth2Response result)

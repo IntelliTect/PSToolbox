@@ -10,26 +10,38 @@ namespace IntelliTect.PSDropbin
     {
         private const string DropboxCredentialNameBase = "DropboxUserToken";
 
-        public static string GetDropboxCredentialName(string driveName)
+        private static string GetDropboxCredentialName(string driveName)
         {
             return $"{DropboxCredentialNameBase}-{driveName}";
+        }
+
+        public static string GetDropboxAccessTokenName(string driveName)
+        {
+            return $"{GetDropboxCredentialName(driveName)}-AccessToken";
+        }
+
+        public static string GetDropboxRefreshTokenName(string driveName)
+        {
+            return $"{GetDropboxCredentialName(driveName)}-RefreshToken";
         }
 
         public DropboxDriveInfo(PSDriveInfo driveInfo) 
             : base(driveInfo)
         {
-            string userToken;
+            string accessToken;
             if (driveInfo.Credential?.Password == null)
             {
-                string credentialName = GetDropboxCredentialName(driveInfo.Name);
-                userToken = CredentialManager.ReadCredential(credentialName);
+                string credentialName = GetDropboxAccessTokenName(driveInfo.Name);
+                accessToken = CredentialManager.ReadCredential(credentialName);
             }
             else
             {
-                userToken = driveInfo.Credential.GetNetworkCredential().Password;
+                accessToken = driveInfo.Credential.GetNetworkCredential().Password;
             }
 
-            Client = new DropboxClient(userToken);
+            string refreshToken = CredentialManager.ReadCredential(GetDropboxRefreshTokenName(driveInfo.Name));
+
+            Client = new DropboxClient(accessToken, refreshToken, Settings.Default.AccessTokenExpiration, Settings.Default.ApiKey);
         }
 
         public DropboxClient Client { get; private set; }
