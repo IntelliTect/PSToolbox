@@ -392,7 +392,7 @@ Function Invoke-GitDiff {
             [Parameter(Mandatory)] [System.IO.FileInfo]$rightFile
     )
 
-    Invoke-GitCommand -ActionMessage "Invoking Git Diff" -Command "git --no-pager diff --unified=0 $leftFile $rightFile" | Where-Object {
+    Invoke-GitCommand -ActionMessage "Invoking Git Diff" -Command "git --no-pager diff -w (--ignore-all-space) --unified=0 $leftFile $rightFile" | Where-Object {
         $_ -notmatch '@@.*|\-\-\-.*|\+\+\+.*|diff.*' 
     } | Foreach-Object {
         if($_ -match '\-.*') {

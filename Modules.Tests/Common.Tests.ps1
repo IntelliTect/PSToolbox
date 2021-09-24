@@ -133,14 +133,28 @@ Describe "Get-TempDirectory/Get-TempFile Support Dispose pattern" {
         }
     }
     It "Verify item is created with the correct path" {
-            Register-AutoDispose -InputObject  ($tempDirectory = Get-TempDirectory) -ScriptBlock {
-                $path = $tempDirectory.FullName
-                # Now that a temporary directory exists, call Get-TempDirectory and Get-TempFile
-                # and specify the above directory in which to place the temp directory/file.
-                (Get-TempDirectory -Path $path), (Get-TempFile $path) | ForEach-Object {
-                Register-AutoDispose $_ {}
-                Test-Path $_ | Should -Be $false
+        Register-AutoDispose -InputObject  ($tempDirectory = Get-TempDirectory) -ScriptBlock {
+            $path = $tempDirectory.FullName
+            # Now that a temporary directory exists, call Get-TempDirectory and Get-TempFile
+            # and specify the above directory in which to place the temp directory/file.
+            (Get-TempDirectory -Path $path), (Get-TempFile $path) | ForEach-Object {
+                [System.IO.FileSystemInfo]$item = $_
+                Split-Path -Parent $item.FullName | Should -Be $Path
+                Register-AutoDispose $item {}
+                Test-Path $item | Should -Be $false
             }
+        }
+    }
+    It "Verify item is not created with DoNotCreate*" {
+        (Get-TempDirectory -DoNotCreateDirectory), (Get-TempFile -DoNotCreateFile) | ForEach-Object {
+            Test-Path $_.FullName | Should -BeFalse
+            $ItemType = $null
+            if($_.GetType() -eq [System.IO.FileInfo]) {$ItemType = 'File'}
+            else { $ItemType = 'Directory'}
+            New-Item -ItemType $ItemType $_.FullName
+            Register-AutoDispose $_ {}
+            Test-Path $_ | Should -BeFalse
+            $_.IsDisposed | Should -BeTrue
         }
     }
     It 'Verify that the Dispose method removes the directory even if it contains files.' {
