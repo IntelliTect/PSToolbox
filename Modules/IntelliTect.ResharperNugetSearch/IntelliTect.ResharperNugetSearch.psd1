@@ -95,7 +95,7 @@ PrivateData = @{
          Tags = @('Nuget', 'JetBrains', 'Resharper', 'package', 'namespace', 'type')
 
         # A URL to the license for this module.
-         LicenseUri = 'https://raw.githubusercontent.com/IntelliTect/PSToolbox/master/LICENSE.txt'
+         LicenseUri = 'https://raw.githubusercontent.com/IntelliTect/PSToolbox/main/LICENSE.txt'
 
         # A URL to the main website for this project.
          ProjectUri = 'https://github.com/IntelliTect/PSToolbox'

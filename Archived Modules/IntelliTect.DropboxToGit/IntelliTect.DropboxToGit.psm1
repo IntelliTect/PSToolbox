@@ -489,9 +489,9 @@ try { $Activity = "$($PSCmdlet.MyInvocation.MyCommand.Name)";$parentId=[int]::Ma
                 }
             }
 
-            Function Merge-GitToMaster {
-                if(Get-CurrentGitBranch -ne "master") {
-                    git checkout master
+            Function Merge-GitToMain {
+                if(Get-CurrentGitBranch -ne "main") {
+                    git checkout main
                     git merge --no-commit --no-ff "$oldVersion" --strategy=recursive 
                     Get-ChildItem .\ * -Exclude $expectedManuscriptFiles | %{
                         git reset $_
@@ -501,17 +501,17 @@ try { $Activity = "$($PSCmdlet.MyInvocation.MyCommand.Name)";$parentId=[int]::Ma
                     git checkout -b $version
                 }
                 else {
-                    Write-Warning "Already on branch master"
+                    Write-Warning "Already on branch main"
                 }
             }
 
             if(([int]$version[1] -eq ([int]$oldVersion[1])+1) ) { 
-                Merge-GitToMaster
+                Merge-GitToMain
             }
             elseif(("$($entry.id),$($entry.rev)" -in @( 
                 ,'id:kX2lV54A50EAAAAAAABoIg,i36fb481c2c2e'                       # 22016-12-16 16:01:20 (v6.0 - Overwrites) - /EssentialCSharp/Michaelis_AppA.docx
                 )) ) {
-                Merge-GitToMaster
+                Merge-GitToMain
             }
             elseif($version -and ($version -ne $oldVersion)) {
                 git checkout $version
@@ -622,7 +622,7 @@ try { $Activity = "$($PSCmdlet.MyInvocation.MyCommand.Name)";$parentId=[int]::Ma
                 }
                 elseif($FoundAndrewOrDan) {
                     $version = "v6.0-Overwrites"
-                    #Merge-GitToMaster
+                    #Merge-GitToMain
                 }
             # Above
             ################################
