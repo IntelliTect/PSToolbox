@@ -12,7 +12,7 @@ IntelliTect's PowerShell scripts and modules hosted at [PowerShell Gallery](http
 [IntelliTect.ResharperNugetSearch](https://www.powershellgallery.com/packages/IntelliTect.ResharperNugetSearch/) - Provides functions for searching against Jet Brains' Resharper Nuget Search API.<br>
 
 ## Installation
-To install these modules, you need the latest version of the PowerShellGet module. If you have Windows 10, you already have it. Otherwise, Instructions may be found at https://www.powershellgallery.com/GettingStarted?section=Get%20Started, or you may also run Setup.ps1 inside this repository to attempt to automatically install needed dependencies.
+To install these modules, you need the latest version of the PowerShellGet module. If you have Windows 10, you already have it. Otherwise, Instructions may be found at https://docs.microsoft.com/powershell/scripting/gallery/getting-started, or you may also run Setup.ps1 inside this repository to attempt to automatically install needed dependencies.
 
 Once you are all set up, run `Install-Module IntelliTect.PSToolbox` to install the latest versions of these modules from PowerShell Gallery. 
 
