@@ -64,8 +64,8 @@ foreach ($item in $moduleFolders){
         }
 
         if($testModuleFailed) {}
-        elseif($moduleStatus -ne "") {-and !$testModuleFailed
-            Write-Warning "$($moduleName): $moduleStatus" testModuleFailed
+        elseif($moduleStatus -ne "") {
+            Write-Warning "$($moduleName): $moduleStatus"
         }
         else {
             $modulesToPublish += $item
@@ -77,13 +77,14 @@ if ($modulesToPublish.Count -gt 0){
 
     Import-Module (Join-Path $PSScriptRoot /Modules/IntelliTect.CredentialManager)
     $credential = Get-CredentialManagerCredential "pstoolbox" -ErrorAction SilentlyContinue
-    
-    if (!$PowerShellGalleryAPIKey) {
-        $PowerShellGalleryAPIKey = ([PSCredential]$credential).GetNetworkCredential().Password       
+
+    if (!$PowerShellGalleryAPIKey -and $credential) {
+        $PowerShellGalleryAPIKey = ([PSCredential]$credential).GetNetworkCredential().Password
     }
 
     if(!$PowerShellGalleryAPIKey) {
-        $PowerShellGalleryAPIKey = Read-Host "Enter your PS Gallery API Key"
+        $PowerShellGalleryAPIKey = Read-Host "Enter your PS Gallery API Key" -AsSecureString
+        $EncryptedInput = ConvertFrom-SecureString -String $PowerShellGalleryAPIKey
     }
 
     if (!$PowerShellGalleryAPIKey) {
@@ -92,12 +93,12 @@ if ($modulesToPublish.Count -gt 0){
 
     if ($SaveAPIKey) {
         if ($PowerShellGalleryAPIKey -and $SaveAPIKey) {
-            $cred = New-Object System.Management.Automation.PSCredential "intellitect", ($PowerShellGalleryAPIKey | ConvertTo-SecureString -AsPlainText -Force)
+            $cred = New-Object System.Management.Automation.PSCredential "intellitect", ($PowerShellGalleryAPIKey | ConvertTo-SecureString -String $EncryptedInput)
             Set-CredentialManagerCredential -TargetName "pstoolbox" -Credential $cred
         }
     }
-        
-    foreach ($item in $modulesToPublish) {    
+
+    foreach ($item in $modulesToPublish) {
         Publish-Module -Path $item.FullName -NuGetApiKey $PowerShellGalleryAPIKey
     }
     Write-Progress -Activity "Publish IntelliTect Module" -Completed
