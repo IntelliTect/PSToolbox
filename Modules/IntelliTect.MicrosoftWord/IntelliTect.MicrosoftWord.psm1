@@ -1,9 +1,21 @@
 
 try {
-    add-type -AssemblyName "Microsoft.Office.Interop.Word" 
+    add-type -AssemblyName 'Microsoft.Office.Interop.Word'
 }
 catch {
-    throw "Unable to find 'Microsoft.Office.Interop.Word' assembly."
+    try {
+        $wordAssemblyPath = Resolve-Path "$(${env:ProgramFiles(x86)})\Microsoft Visual Studio\Shared\Visual Studio Tools for Office\PIA\Office*\Microsoft.Office.Interop.Word.dll" | `
+            Sort-Object -Descending | Select-Object -First 1 
+        if($wordAssemblyPath -and (Test-Path $wordAssemblyPath)) {
+            add-type -Path $wordAssemblyPath
+        }
+        else {
+            throw;
+        }
+    }
+    catch {
+        throw  'Unable to find Microsoft.Office.Interop.Word package (see https://www.nuget.org/packages/Microsoft.Office.Interop.Word)'
+    }
 }
 
 #TODO: Remove and use dependency on File.ps1 (module needed) instead.
@@ -340,7 +352,8 @@ Function script:Invoke-WordDocumentInternalFindReplace {
         [bool]$MatchWholeWord = $false,
         [bool]$MatchWildcards = $false,
         [bool]$MatchSoundsLike = $false,
-        [bool]$MatchAllWordForms = $false
+        [bool]$MatchAllWordForms = $false,
+        [ScriptBlock] $OnFindCommand
     )
 
     [string] $whatIfMessage = $null
@@ -378,6 +391,7 @@ Function script:Invoke-WordDocumentInternalFindReplace {
     $format = $False
 
     $selection = $Document.Application.Selection
+
 
     for ($count = 0; $count -le $findValues.Length; $count++) {
         
@@ -438,6 +452,11 @@ Function script:Invoke-WordDocumentInternalFindReplace {
 
             [string]$findResult = $null;
 
+            # Invoke Callback
+            if($OnFindCommand) {
+                Invoke-Command $OnFindCommand -ArgumentList $selection
+            }
+
             if ($searchRegEx) {
                 $findResult = $selection.Text
                 if ($findResult -match $eachRegExFindValue) {
@@ -450,6 +469,7 @@ Function script:Invoke-WordDocumentInternalFindReplace {
             else {
                 $findResult = $selection.Text
             }
+
             [string]$before = Get-TextSnippet $selection
             [string]$after = $null
             if ($isActionReplacing) {
@@ -531,11 +551,6 @@ Function script:Invoke-WordDocumentInternalFindReplace {
             $selection.SetRange($selection.End, $selection.End)                
         }
     }
-
-    #    if($isActionReplacing) {
-    #        # Display What If Message
-    #        $PSCmdlet.ShouldProcess($whatIfMessage) > $null
-    #    }
 }
 
 <#
@@ -599,7 +614,8 @@ Function Invoke-WordDocumentFindReplace {
         [switch]$MatchWholeWord = $false,
         [switch]$MatchWildcards = $false,
         [switch]$MatchSoundsLike = $false,
-        [switch]$MatchAllWordForms = $false
+        [switch]$MatchAllWordForms = $false,
+        [ScriptBlock] $OnFindCommand
     )
     #TODO: Change to support reusing the same file (such as when searching for different things in the same file) and leaving the file open.
 
@@ -621,13 +637,15 @@ Function Invoke-WordDocumentFindReplace {
                 if ($PSCmdlet.ParameterSetName -eq 'MicrosoftWordReplace') {
                     $findReplaceResult = script:Invoke-WordDocumentInternalFindReplace -document $document -FindValue $FindValue -ReplaceValue $ReplaceValue `
                         -matchCase $matchCase -matchWholeWord $matchWholeWord -matchWildcards $matchWildcards `
-                        -matchSoundsLike $matchSoundsLike -matchAllWordForms $matchAllWordForms
+                        -matchSoundsLike $matchSoundsLike -matchAllWordForms $matchAllWordForms `
+                        -OnFindCommand $OnFindCommand
                 }
                 else {
                     $findReplaceResult = script:Invoke-WordDocumentInternalFindReplace -document $document -FindValue $FindValue `
                         -RegExFindValue $RegExFindValue -RegExReplaceValue $RegExReplaceValue `
                         -matchCase $matchCase -matchWholeWord $matchWholeWord -matchWildcards $matchWildcards `
-                        -matchSoundsLike $matchSoundsLike -matchAllWordForms $matchAllWordForms                    
+                        -matchSoundsLike $matchSoundsLike -matchAllWordForms $matchAllWordForms `
+                        -OnFindCommand $OnFindCommand
                 }
 
                 if (@($findReplaceResult).Count -gt 0) {
@@ -708,33 +726,35 @@ Function Invoke-WordDocumentFindReplace {
 #>
 Function Invoke-WordDocumentFind {
     [OutputType('WordDocument.FindResult')]
-    [CmdletBinding()] param(
+    [CmdletBinding(DefaultParameterSetName='Path')] param(
         [ValidateScript( { Test-Path $_ -PathType Leaf })]
-        [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position)]
+        [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position, ParameterSetName='Path')]
         [Alias("FullName", "InputObject")]
-        [string[]]$Path, #FullName alias added to support pipeline from Get-ChildItem
+        [string[]]$Path,
+        # An open instance of a word document (returned from Open-WordDocument)
+        [Parameter(Mandatory, ValueFromPipeline, Position, ParameterSetName = 'Document')]
+        [object[]]$WordDocument,
         [Parameter(Mandatory)][string]$value,
         [switch]$LeaveOpen,
         [switch]$matchCase = $false,
         [switch]$matchWholeWord = $false,
         [switch]$matchWildcards = $false,
         [switch]$matchSoundsLike = $false,
-        [switch]$matchAllWordForms = $false
+        [switch]$matchAllWordForms = $false,
+        # Callback command each time the find is successful
+        # e.g. function Invoke-FindCallback ($selection) { Write-Output $selection.Text }
+        #      Invoke-WordDocumentFind ... -OnFindCommand ${function:Invoke-FindCallback}
+        [ScriptBlock]$OnFindCommand
     )
 
     PROCESS {
+        Function Invoke-Find {
+        [CmdletBinding()]
+        param([object]$EachDocument)
 
-        Write-Progress -Activity "Invoke-WordDocumentFind" -PercentComplete 0
-        $Path | ForEach-Object {
 
             Write-Progress -Activity "Invoke-WordDocumentFind" -Status $_
             Write-Progress -Activity "Invoke-WordDocumentFind" -Status $_ -CurrentOperation "Find: $Value"
-
-            $document = $null
-            try {
-                $documentPath = $_
-                $document = Open-WordDocument $documentPath -ReadWrite:(!$LeaveOpen)
-                $document.Application.Visible = $leaveOpen -or $PSCmdlet.MyInvocation.BoundParameters["Debug"]
 
                 <#
                     BLOG-THIS: 
@@ -754,30 +774,49 @@ Function Invoke-WordDocumentFind {
                 
 
                 # Use empty string for replace value since we are not replacing with anything.
-                $findResults = script:Invoke-WordDocumentInternalFindReplace -document $document -findValue $value `
-                    -matchCase $matchCase -matchWholeWord $matchWholeWord -matchWildcards $matchWildcards -matchSoundsLike $matchSoundsLike -matchAllWordForms $matchAllWordForms
+                $findResults = script:Invoke-WordDocumentInternalFindReplace -document $EachDocument `
+                    -findValue $value -matchCase $matchCase -matchWholeWord $matchWholeWord `
+                    -matchWildcards $matchWildcards -matchSoundsLike $matchSoundsLike `
+                    -matchAllWordForms $matchAllWordForms -OnFindCommand $OnFindCommand
 
                 if (@($findResults).Count -gt 0) {
                     #$result = ([pscustomobject]@{Document = Get-Item $documentPath; Snippets = $textSnippets.Before})
                     #$textSnippets | Get-Member
                     $findResults | Write-Output
                 }
-            }
-            finally {
-                if ((Test-Path variable:document) -and ($document -ne $null) -and (!$leaveOpen) ) {
+        }
 
-                    $application = $document.Application
-                    try {
-                        #TODO: Add support to close only if the document wasn't open prior to calling this method.
-                        $document.Close()
+        Write-Progress -Activity "Invoke-WordDocumentFind" -PercentComplete 0
+
+        if($PSCmdlet.ParameterSetName -eq 'Document') {
+            $WordDocument | ForEach-Object{
+                Invoke-Find -EachDocument $_
+            } 
+        }
+        else {
+            $Path | ForEach-Object {
+                try {
+                    $documentPath = $_
+                    $eachDocument = Open-WordDocument $documentPath -ReadWrite:(!$LeaveOpen)
+                    $eachDocument.Application.Visible = $leaveOpen -or $PSCmdlet.MyInvocation.BoundParameters["Debug"]
+                    Invoke-Find -EachDocument $eachDocument
+                }
+                finally {
+                    if ((Test-Path variable:eachDocument) -and ($null -ne $eachDocument) -and (!$leaveOpen) ) {
+
+                        $application = $eachDocument.Application
+                        try {
+                            #TODO: Add support to close only if the document wasn't open prior to calling this method.
+                            $eachDocument.Close()
+                        }
+                        finally {
+                            $application.Quit()
+                        }
                     }
-                    finally {
-                        $application.Quit()
-                    }
-                    
                 }
             }
         }
+
         Write-Progress -Activity "Invoke-WordDocumentFind" -Completed
     }
 }
