@@ -503,7 +503,9 @@ Function script:Invoke-WordDocumentInternalFindReplace {
                         FindResult    = $findResult;
                         ReplaceResult = $replaceResult;
                         PSTypeName    = "WordDocument.FindReplaceResult";
-                        Path          = (Get-Item $Document.FullName)
+                        # With OneDrive, the path could be a https URL, which won't work with Get-Item.
+                        # TODO: Figure out how to get the local path when using OneDrive
+                        Path          = (Get-Item $Document.Path -ErrorAction Ignore)
                     }
 
                     Write-Output $result
@@ -538,7 +540,9 @@ Function script:Invoke-WordDocumentInternalFindReplace {
                     FindValue   = $eachFindValue;  
                     FindResult  = $findResult;
                     PSTypeName  = "WordDocument.FindResult";
-                    Path        = (Get-Item $Document.FullName)
+                    # With OneDrive, the path could be a https URL, which won't work with Get-Item.
+                    # TODO: Figure out how to get the local path when using OneDrive
+                    Path        = (Get-Item $Document.Path -ErrorAction Ignore)
                 }                
 
                 Write-Output $result
@@ -1002,7 +1006,7 @@ Function Get-WordDocumentTemplate {
                 Write-Output $document.AttachedTemplate.FullName
             }
             finally {
-                if ( (Test-Path variable:document) -and ($document -ne $null) ) {
+                if ( (Test-Path variable:document) -and ($null -ne $document) ) {
                     $application = $document.Application
                     try {
                         $document.Close() > $null
