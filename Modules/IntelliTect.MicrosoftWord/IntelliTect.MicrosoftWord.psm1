@@ -1,23 +1,3 @@
-
-try {
-    add-type -AssemblyName 'Microsoft.Office.Interop.Word'
-}
-catch {
-    try {
-        $wordAssemblyPath = Resolve-Path "$(${env:ProgramFiles(x86)})\Microsoft Visual Studio\Shared\Visual Studio Tools for Office\PIA\Office*\Microsoft.Office.Interop.Word.dll" | `
-            Sort-Object -Descending | Select-Object -First 1 
-        if($wordAssemblyPath -and (Test-Path $wordAssemblyPath)) {
-            add-type -Path $wordAssemblyPath
-        }
-        else {
-            throw;
-        }
-    }
-    catch {
-        throw  'Unable to find Microsoft.Office.Interop.Word package (see https://www.nuget.org/packages/Microsoft.Office.Interop.Word)'
-    }
-}
-
 #TODO: Remove and use dependency on File.ps1 (module needed) instead.
 Function Test-FileIsLocked {
     [CmdletBinding()]
@@ -453,7 +433,7 @@ Function script:Invoke-WordDocumentInternalFindReplace {
             [string]$findResult = $null;
 
             # Invoke Callback
-            if($OnFindCommand) {
+            if ($OnFindCommand) {
                 Invoke-Command $OnFindCommand -ArgumentList $selection
             }
 
@@ -730,9 +710,9 @@ Function Invoke-WordDocumentFindReplace {
 #>
 Function Invoke-WordDocumentFind {
     [OutputType('WordDocument.FindResult')]
-    [CmdletBinding(DefaultParameterSetName='Path')] param(
+    [CmdletBinding(DefaultParameterSetName = 'Path')] param(
         [ValidateScript( { Test-Path $_ -PathType Leaf })]
-        [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position, ParameterSetName='Path')]
+        [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position, ParameterSetName = 'Path')]
         [Alias("FullName", "InputObject")]
         [string[]]$Path,
         # An open instance of a word document (returned from Open-WordDocument)
@@ -753,14 +733,14 @@ Function Invoke-WordDocumentFind {
 
     PROCESS {
         Function Invoke-Find {
-        [CmdletBinding()]
-        param([object]$EachDocument)
+            [CmdletBinding()]
+            param([object]$EachDocument)
 
 
             Write-Progress -Activity "Invoke-WordDocumentFind" -Status $_
             Write-Progress -Activity "Invoke-WordDocumentFind" -Status $_ -CurrentOperation "Find: $Value"
 
-                <#
+            <#
                     BLOG-THIS: 
                     We wasnt to set visible to true when debugging or when -Debug specified.
                     Unfortunately, the following doesn't work:
@@ -777,23 +757,23 @@ Function Invoke-WordDocumentFind {
                 #>
                 
 
-                # Use empty string for replace value since we are not replacing with anything.
-                $findResults = script:Invoke-WordDocumentInternalFindReplace -document $EachDocument `
-                    -findValue $value -matchCase $matchCase -matchWholeWord $matchWholeWord `
-                    -matchWildcards $matchWildcards -matchSoundsLike $matchSoundsLike `
-                    -matchAllWordForms $matchAllWordForms -OnFindCommand $OnFindCommand
+            # Use empty string for replace value since we are not replacing with anything.
+            $findResults = script:Invoke-WordDocumentInternalFindReplace -document $EachDocument `
+                -findValue $value -matchCase $matchCase -matchWholeWord $matchWholeWord `
+                -matchWildcards $matchWildcards -matchSoundsLike $matchSoundsLike `
+                -matchAllWordForms $matchAllWordForms -OnFindCommand $OnFindCommand
 
-                if (@($findResults).Count -gt 0) {
-                    #$result = ([pscustomobject]@{Document = Get-Item $documentPath; Snippets = $textSnippets.Before})
-                    #$textSnippets | Get-Member
-                    $findResults | Write-Output
-                }
+            if (@($findResults).Count -gt 0) {
+                #$result = ([pscustomobject]@{Document = Get-Item $documentPath; Snippets = $textSnippets.Before})
+                #$textSnippets | Get-Member
+                $findResults | Write-Output
+            }
         }
 
         Write-Progress -Activity "Invoke-WordDocumentFind" -PercentComplete 0
 
-        if($PSCmdlet.ParameterSetName -eq 'Document') {
-            $WordDocument | ForEach-Object{
+        if ($PSCmdlet.ParameterSetName -eq 'Document') {
+            $WordDocument | ForEach-Object {
                 Invoke-Find -EachDocument $_
             } 
         }
