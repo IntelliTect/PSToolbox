@@ -1,3 +1,23 @@
+try {
+    add-type -AssemblyName 'Microsoft.Office.Interop.Word'
+}
+catch {
+    try {
+        # the install location of the dll as per install.ps1
+        $wordAssemblyPath = Resolve-Path "./Lib/WordInteropNugetPackage/lib/netstandard2.0/Microsoft.Office.Interop.Word.dll" | `
+            Sort-Object -Descending | Select-Object -First 1 
+        if ($wordAssemblyPath -and (Test-Path $wordAssemblyPath)) {
+            add-type -Path $wordAssemblyPath
+        }
+        else {
+            throw;
+        }
+    }
+    catch {
+        throw  'Unable to find Microsoft.Office.Interop.Word package (see https://www.nuget.org/packages/Microsoft.Office.Interop.Word)'
+    }
+}
+
 #TODO: Remove and use dependency on File.ps1 (module needed) instead.
 Function Test-FileIsLocked {
     [CmdletBinding()]

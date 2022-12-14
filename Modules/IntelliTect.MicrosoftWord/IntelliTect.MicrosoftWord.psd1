@@ -54,12 +54,10 @@
     # RequiredModules = @()
 
     # Assemblies that must be loaded prior to importing this module
-    RequiredAssemblies = @(
-        "./Lib/netstandard2.0/Microsoft.Office.Interop.Word.dll"
-    )
+    #RequiredAssemblies = @()
 
     # Script files (.ps1) that are run in the caller's environment prior to importing this module.
-    # ScriptsToProcess = @()
+    ScriptsToProcess   = @("install.ps1")
 
     # Type files (.ps1xml) to be loaded when importing this module
     # TypesToProcess = @()
