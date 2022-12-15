@@ -12,7 +12,7 @@ Expand-Archive -Path $ZipFile -DestinationPath $ExtractPath
 
 Remove-Item $ZipFile
 
-# ensure word is installed
+# ensure word is installed.
 
 try {
     add-type -AssemblyName 'Microsoft.Office.Interop.Word'
