@@ -4,11 +4,11 @@ $wordInteropNugetDownloadUrl = "https://www.nuget.org/api/v2/package/Microsoft.O
 
 $ZipFile = "./" + $(Split-Path -Path $wordInteropNugetDownloadUrl -Leaf) + ".zip"
 
-$ExtractPath = "./Lib/WordInteropNugetPackage"
+$ExtractPath = "../Lib/WordInteropNugetPackage"
 
-Invoke-WebRequest -Uri $wordInteropNugetDownloadUrl -OutFile $ZipFile
+Invoke-WebRequest -Uri $wordInteropNugetDownloadUrl -OutFile $ZipFile 
 
-Expand-Archive -Path $ZipFile -DestinationPath $ExtractPath
+Expand-Archive -Path $ZipFile -DestinationPath $ExtractPath -Force
 
 Remove-Item $ZipFile
 
@@ -16,14 +16,16 @@ Remove-Item $ZipFile
 
 try {
     add-type -AssemblyName 'Microsoft.Office.Interop.Word'
+    Write-Output "Microsoft.Office.Interop.Word installed for module."
 }
 catch {
     try {
         # the install location of the dll as per install.ps1
-        $wordAssemblyPath = Resolve-Path "./Lib/WordInteropNugetPackage/lib/netstandard2.0/Microsoft.Office.Interop.Word.dll" | `
+        $wordAssemblyPath = Resolve-Path "../Lib/WordInteropNugetPackage/lib/netstandard2.0/Microsoft.Office.Interop.Word.dll" | `
             Sort-Object -Descending | Select-Object -First 1 
         if ($wordAssemblyPath -and (Test-Path $wordAssemblyPath)) {
             add-type -Path $wordAssemblyPath
+            Write-Output "Microsoft.Office.Interop.Word installed for module."
         }
         else {
             throw;
@@ -34,16 +36,14 @@ catch {
     }
 }
 
-Write-Output "Microsoft.Office.Interop.Word installed for module."
+
 
 try {
     # check if word is installed
-    $Word =  New-Object -ComObject word.application
+    $Word = New-Object -ComObject word.application
     $Word.Quit([Microsoft.Office.Interop.Word.WdSaveOptions]::wdDoNotSaveChanges)
+    Write-Output "Microsoft Word is installed. (Module requires existing Word Installation)"
 }
 catch {
-        throw  'Unable to find Microsoft Word. You must have an install of Microsoft Word in order to use this module.'
+    throw  'Unable to find Microsoft Word. You must have an install of Microsoft Word in order to use this module.'
 }
-Write-Output "Microsoft Word is installed. (Module requires existing Word Installation)"
-
-Write-Output "Ready to go!"
