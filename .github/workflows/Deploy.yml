@@ -86,8 +86,6 @@ jobs:
         git commit -m "[skip ci] Commit from build agent"
         git push
     - name: Publish To Gallery
-      env:
-        API_KEY: ${{ secrets.POWERSHELL_GALLERY_API_KEY }}
       run: |
         if(!(Test-Path StagingChangedModules)) {
           Write-Host "No modules changed"
@@ -96,5 +94,5 @@ jobs:
         }
         $moduleFolders = Get-ChildItem StagingChangedModules
         foreach ($item in $moduleFolders){
-          Publish-Module -Path $item.FullName -NuGetApiKey $env:API_KEY -Verbose
+          Publish-Module -Path $item.FullName -NuGetApiKey ${{ secrets.POWERSHELL_GALLERY_API_KEY }} -Verbose
         }
