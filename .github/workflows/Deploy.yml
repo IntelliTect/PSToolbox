@@ -96,5 +96,5 @@ jobs:
         }
         $moduleFolders = Get-ChildItem StagingChangedModules
         foreach ($item in $moduleFolders){
-          Publish-Module -Path $item.FullName -NuGetApiKey $env:API_KEY
+          Publish-Module -Path $item.FullName -NuGetApiKey $env:API_KEY -Verbose
         }
