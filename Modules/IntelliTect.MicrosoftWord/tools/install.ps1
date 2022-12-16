@@ -1,17 +1,21 @@
 
-# this file despite running from the ./tools folder has a working dir of the root of the module 
-# get the latest word interop package and place the dll in the lib folder
-$wordInteropNugetDownloadUrl = "https://www.nuget.org/api/v2/package/Microsoft.Office.Interop.Word"
+$wordAssemblyPath = "./Lib/WordInteropNugetPackage/lib/netstandard2.0/Microsoft.Office.Interop.Word.dll"
 
-$ZipFile = "./Lib/" + $(Split-Path -Path $wordInteropNugetDownloadUrl -Leaf) + ".zip"
+if (Test-Path $wordAssemblyPath -eq $false) {
+    # this file despite running from the ./tools folder has a working dir of the root of the module 
+    # get the latest word interop package and place the dll in the lib folder
+    $wordInteropNugetDownloadUrl = "https://www.nuget.org/api/v2/package/Microsoft.Office.Interop.Word"
 
-$ExtractPath = "./Lib/WordInteropNugetPackage"
+    $ZipFile = "./Lib/" + $(Split-Path -Path $wordInteropNugetDownloadUrl -Leaf) + ".zip"
 
-Invoke-WebRequest -Uri $wordInteropNugetDownloadUrl -OutFile $ZipFile 
+    $ExtractPath = "./Lib/WordInteropNugetPackage"
 
-Expand-Archive -Path $ZipFile -DestinationPath $ExtractPath -Force
+    Invoke-WebRequest -Uri $wordInteropNugetDownloadUrl -OutFile $ZipFile 
 
-Remove-Item $ZipFile
+    Expand-Archive -Path $ZipFile -DestinationPath $ExtractPath -Force
+
+    Remove-Item $ZipFile
+}
 
 # ensure word is installed.
 
@@ -20,11 +24,9 @@ try {
 }
 catch {
     try {
-        # the install location of the dll as per install.ps1
-        $wordAssemblyPath = "./Lib/WordInteropNugetPackage/lib/netstandard2.0/Microsoft.Office.Interop.Word.dll"
         if ($wordAssemblyPath -and (Test-Path $wordAssemblyPath)) {
             add-type -Path $wordAssemblyPath
-            Write-Output "Microsoft.Office.Interop.Word installed for module."
+            Write-Output "Microsoft.Office.Interop.Word.dll installed for module."
         }
         else {
             throw;
