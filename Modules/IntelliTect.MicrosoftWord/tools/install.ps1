@@ -1,4 +1,6 @@
 
+# ensure Microsoft.Office.Interop.Word.dll is installed.
+
 $wordAssemblyPath = "./Lib/WordInteropNugetPackage/lib/netstandard2.0/Microsoft.Office.Interop.Word.dll"
 
 if (Test-Path $wordAssemblyPath -eq $false) {
@@ -17,32 +19,27 @@ if (Test-Path $wordAssemblyPath -eq $false) {
     Remove-Item $ZipFile
 }
 
-# ensure word is installed.
 
 try {
-    add-type -AssemblyName 'Microsoft.Office.Interop.Word'
+    if ($wordAssemblyPath -and (Test-Path $wordAssemblyPath)) {
+        add-type -Path $wordAssemblyPath
+        Write-Output "Microsoft.Office.Interop.Word.dll installed for module."
+    }
+    else {
+        throw;
+    }
 }
 catch {
-    try {
-        if ($wordAssemblyPath -and (Test-Path $wordAssemblyPath)) {
-            add-type -Path $wordAssemblyPath
-            Write-Output "Microsoft.Office.Interop.Word.dll installed for module."
-        }
-        else {
-            throw;
-        }
-    }
-    catch {
-        throw  'Error with install script. Unable to find Microsoft.Office.Interop.Word package (see https://www.nuget.org/packages/Microsoft.Office.Interop.Word)'
-    }
+    throw  'Error with install script. Unable to find Microsoft.Office.Interop.Word package (see https://www.nuget.org/packages/Microsoft.Office.Interop.Word)'
 }
+
 
 try {
     # check if word is installed
     Write-Output "Checking for Microsoft Word installation. (Module requires existing Word Installation)"
     $Word = New-Object -ComObject word.application
     $Word.Quit([Microsoft.Office.Interop.Word.WdSaveOptions]::wdDoNotSaveChanges)
-    Write-Output "Microsoft Word is installed. ✔"
+    Write-Output "✔ Microsoft Word is installed."
 }
 catch {
     throw  'Unable to find Microsoft Word. You must have an install of Microsoft Word in order to use this module.'
