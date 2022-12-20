@@ -12,7 +12,7 @@
 RootModule = './IntelliTect.MicrosoftWord.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.5.0.12'
+ModuleVersion = '0.5.0.13'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
