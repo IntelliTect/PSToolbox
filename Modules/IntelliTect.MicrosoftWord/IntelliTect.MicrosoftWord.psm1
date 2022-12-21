@@ -1,5 +1,5 @@
 try {
-    $wordAssemblyPath = "./Lib/WordInteropNugetPackage/lib/netstandard2.0/Microsoft.Office.Interop.Word.dll"
+    $wordAssemblyPath = "$($PSScriptRoot)/Lib/WordInteropNugetPackage/lib/netstandard2.0/Microsoft.Office.Interop.Word.dll"
     add-type -Path $wordAssemblyPath
 }
 catch {
