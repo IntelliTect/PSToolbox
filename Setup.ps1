@@ -32,18 +32,19 @@ Function Script:Set-EnvironmentVariable {
      if($Scope -eq 'Machine') {
          $scopeArgs = '/M'
      }
-     setx.exe $Name $Value $scopeArgs | Out-Null
+
+     [System.Environment]::SetEnvironmentVariable($Name,$Value,[System.EnvironmentVariableTarget]::Machine)
      Set-Item -Path Env:$Name -Value $Value
 }
 
 
 $PSToolboxPath=Join-Path $PSScriptRoot Modules
-if($env:PSModulePath -notlike "*$PSToolboxPath*") {
-    Script:Set-EnvironmentVariable -Name 'PSModulePath' -Value "$PSToolboxPath;$env:PSModulePath" 
+if($env:PSModulePath -notlike "$PSToolboxPath*") {
+    $UpdatedPSModulePath = "$PSToolboxPath;$(($env:PSModulePath -split ';' | Where-Object{ $_ -ne 'C:\Git\PSToolbox\Modules' })  -join ';')"
+    Script:Set-EnvironmentVariable -Name 'PSModulePath' -Value $UpdatedPSModulePath
     if($PSToolboxPath -notin ($env:PSModulePath -split ';')) {
-        Write-Host -foreground Cyan $PSToolboxPath
         #NOTE: This does not test the change from [System.Environment]::SetEnvironmentVariable is permanent.
-        throw "PSModulePath ('$env:PSModulePath') is not set with $PSToolboxPath"  
+        throw "PSModulePath ('$env:PSModulePath') is not set with $PSToolboxPath"
     }
 }
 
