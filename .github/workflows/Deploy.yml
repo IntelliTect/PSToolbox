@@ -15,6 +15,8 @@ jobs:
         fetch-depth: 2
     - name: Discover Changes
       run: |
+        $powerShellDropboxProviderModuleName = 'PSDropBin'
+
         $changedModules = $(git diff --name-only HEAD HEAD~)
         $changedModules
         $files = $changedModules -split ' ' | ForEach-Object{[System.IO.FileInfo] $_}
@@ -31,6 +33,15 @@ jobs:
         $modules.Length
         if($modules.Length -eq 0){
           exit
+        }
+        # $powerShellDropboxProviderModuleName requires build if changed
+        foreach ($module in $modules) {
+            if ($module.FullName -match $powerShellDropboxProviderModuleName){
+                Write-Host "$($powerShellDropboxProviderModuleName) module was changed. Building latest version..."
+                $solutionPath = Join-Path $module.FullName "IntelliTect.$($powerShellDropboxProviderModuleName)" "IntelliTect.$($powerShellDropboxProviderModuleName).csproj"
+                dotnet build $solutionPath
+                break
+            }
         }
         $changedModulesPath = mkdir -Name "StagingChangedModules\" -Force
         For ($i=0; $i -lt $modules.Length; $i++)
