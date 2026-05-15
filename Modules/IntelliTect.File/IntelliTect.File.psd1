@@ -12,7 +12,10 @@
 RootModule = 'IntelliTect.File.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.5'
+ModuleVersion = '2.0.0'
+
+# Supported PSEditions
+CompatiblePSEditions = @('Core')
 
 # ID used to uniquely identify this module
 GUID = 'e53c95a2-c105-4910-b0d5-3067a6a9d7a7'
@@ -27,10 +30,10 @@ CompanyName = 'IntelliTect'
 # Copyright = ''
 
 # Description of the functionality provided by this module
-Description = 'Cmdlets for managing files with Powershell'
+Description = 'Cmdlets for managing files with PowerShell'
 
 # Minimum version of the Windows PowerShell engine required by this module
-# PowerShellVersion = ''
+PowerShellVersion = '7.2'
 
 # Name of the Windows PowerShell host required by this module
 # PowerShellHostName = ''
@@ -92,20 +95,27 @@ PrivateData = @{
 
     PSData = @{
 
-        # Tags applied to this module. These help with module discovery in online galleries.
-        # Tags = @()
+        # Tags applied to this module.
+        Tags = @('IntelliTect', 'File', 'Utility')
 
         # A URL to the license for this module.
-        # LicenseUri = ''
+        LicenseUri = 'https://github.com/IntelliTect/PSToolbox/blob/main/LICENSE.txt'
 
         # A URL to the main website for this project.
-        # ProjectUri = ''
+        ProjectUri = 'https://github.com/IntelliTect/PSToolbox'
 
         # A URL to an icon representing this module.
         # IconUri = ''
 
         # ReleaseNotes of this module
-        # ReleaseNotes = ''
+        ReleaseNotes = @'
+2.0.0
+  - Get-FileEncoding rewritten to use raw FileStream (PowerShell 7 removed
+    `Get-Content -Encoding byte`). Now works on PowerShell 7+.
+  - Removed n-ary Join-Path wrapper; PowerShell 7 Join-Path natively accepts
+    multiple child paths.
+  - Minimum PowerShell version raised to 7.2.
+'@
 
     } # End of PSData hashtable
 

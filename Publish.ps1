@@ -25,10 +25,6 @@ foreach ($item in $moduleFolders){
 
     if (!(Test-Path $manifestPath)) {
             Write-Error "$($moduleName): Manifest was not found."
-            $submodules = git config --file (Join-Path $PSScriptRoot .gitmodules) --get-regexp path
-            if ($submodules | ?{$_ -match $moduleName}) {
-                Write-Error "$moduleName looks like a git submodule. Did you forget to run 'git submodule update --init --recursive'?" 
-            }
     }
     else {
         $moduleStatus = ""
@@ -99,7 +95,7 @@ if ($modulesToPublish.Count -gt 0){
     }
 
     foreach ($item in $modulesToPublish) {
-        Publish-Module -Path $item.FullName -NuGetApiKey $PowerShellGalleryAPIKey
+        Publish-PSResource -Path $item.FullName -ApiKey $PowerShellGalleryAPIKey -Repository PSGallery
     }
     Write-Progress -Activity "Publish IntelliTect Module" -Completed
 }

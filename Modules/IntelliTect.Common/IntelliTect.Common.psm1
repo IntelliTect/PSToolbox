@@ -83,26 +83,43 @@ Function ConvertFrom-Hashtable {
 #TODO: Outputs ane extra NewLine: $definition = (get-command edit-file).Definition ; $definition | hl name
 #TODO: Select only the 10 lines around the item found
 #TODO: Consider renaming $pattern as it indicates the wild card characters (*) are already embedded.
-Function Highlight([string]$pattern, [Int32]$Context = 10, [Parameter(ValueFromPipeline = $true)][string[]]$item) {
+<#
+.SYNOPSIS
+Highlights lines matching a pattern using ANSI escape sequences.
+
+.DESCRIPTION
+Writes input lines to the host. Lines matching the wildcard pattern are
+highlighted in yellow using ANSI escape sequences; non-matching lines are
+emitted unchanged. Works on any PowerShell 7 host that supports VT, including
+non-Windows terminals.
+
+.PARAMETER Pattern
+A wildcard pattern (PowerShell -like semantics) to match against each line.
+
+.PARAMETER Item
+The lines to evaluate. Accepts pipeline input.
+#>
+Function Highlight {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory, Position = 0)][string]$Pattern,
+        [Parameter(ValueFromPipeline)][string[]]$Item
+    )
     PROCESS {
-        $items = $item.Split([Environment]::NewLine)
-        foreach ($line in $items) {
-            if ( $line -like "*$pattern*") {
-                write-host  $line -foregroundcolor Yellow
-            }
-            else {
-                write-host  $line -foregroundcolor white
+        $esc = [char]27
+        foreach ($entry in $Item) {
+            foreach ($line in ($entry -split [Environment]::NewLine)) {
+                if ($line -like "*$Pattern*") {
+                    Write-Output "$esc[33m$line$esc[0m"
+                }
+                else {
+                    Write-Output $line
+                }
             }
         }
     }
 }
-set-alias HL highlight
-
-function Initialize-Array {
-    [CmdletBinding()]
-    [OutputType('System.Array')]
-    [System.Array]$args | Write-Output
-}
+Set-Alias HL Highlight
 
 Function Add-DisposeScript {
     [CmdletBinding()]
@@ -303,18 +320,6 @@ Function Get-FileSystemTempItemPath {
 }
 Set-Alias -Name Get-TempItemPath -Value Get-FileSystemTempItemPath
 
-Function ConvertTo-Lines {
-    [CmdLetBinding()] param(
-        [Parameter(Position = 1, Mandatory, ValueFromPipeline)]
-        [string]$InputObject,
-        [string]$Deliminator = [Environment]::NewLine
-    )
-
-    PROCESS {
-        $InputObject -split $deliminator
-    }
-}
-
 <#
 .SYNOPSIS
 Determines whether a command exists.
@@ -377,25 +382,6 @@ Function Test-VariableExists {
         Test-Path Variable:\$Name
     }
 }
-
-Function Get-IsWindowsPlatform {
-    [OutputType([bool])]
-    [CmdletBinding()]param()
-    return ($IsWindows -or ('PSEdition' -in $PSVersionTable.Keys) `
-        -and (($PSVersionTable.PSEdition -eq 'Desktop') -or ($PSVersionTable.PSEdition -eq 'Core')))
-}
-
-Function Set-IsWindowsVariable {
-    [CmdletBinding(SupportsShouldProcess)]param()
-    if (-not (Test-VariableExists "IsWindows")) {
-        Invoke-ShouldProcess -ContinueMessage 'Seting global:IsWindows variable' -InquireMessage 'Set global:IsWindows variable?' `
-                 -Caption 'Set global:IsWindows variable' {
-            Set-Variable -Name "IsWindows" -Value `
-                (Get-IsWindowsPlatform) -Scope global
-        }
-    }
-}
-Set-IsWindowsVariable
 
 <#
 .SYNOPSIS

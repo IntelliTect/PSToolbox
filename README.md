@@ -1,20 +1,54 @@
 # IntelliTect.PSToolbox
-[![Build status](https://intellitect.visualstudio.com/PSToolbox/_apis/build/status/PSToolbox-CI)](https://intellitect.visualstudio.com/PSToolbox/_build/latest?definitionId=48)
 
-IntelliTect's PowerShell scripts and modules hosted at [PowerShell Gallery](https://www.powershellgallery.com/packages?q=Intellitect)
+[![Pull Request](https://github.com/IntelliTect/PSToolbox/actions/workflows/PullRequest.yml/badge.svg)](https://github.com/IntelliTect/PSToolbox/actions/workflows/PullRequest.yml)
 
-## These include:
-[IntelliTect.Common](https://www.powershellgallery.com/packages/IntelliTect.Common/) - Provides functionality for common functions in PowerShell<br>
-[IntelliTect.CredentialManager](https://www.powershellgallery.com/packages/IntelliTect.CredentialManager/) - Provides an easy-to-use interface to the Windows Credential Manager via PowerShell.<br>
-[IntelliTect.Google](https://www.powershellgallery.com/packages/IntelliTect.Google/) - Provides functions for interacting with non-API-based Google services.<br>
-[IntelliTect.PSRestore](https://www.powershellgallery.com/packages/IntelliTect.PSRestore/) - Provides functionality for restoring your command history in PowerShell and working directory in PowerShell ISE.<br>
-[IntelliTect.PSToolbox](https://www.powershellgallery.com/packages/IntelliTect.PSToolbox/) - Shortcut module to install all of IntelliTect's PowerShell modules<br>
-[IntelliTect.ResharperNugetSearch](https://www.powershellgallery.com/packages/IntelliTect.ResharperNugetSearch/) - Provides functions for searching against Jet Brains' Resharper Nuget Search API.<br>
+A small, curated set of PowerShell modules published to the
+[PowerShell Gallery](https://www.powershellgallery.com/packages?q=Intellitect).
+
+Requires **PowerShell 7.2 or later**. Runs on Windows, Linux, and macOS
+(individual cmdlets that rely on Windows-only APIs degrade gracefully).
+
+## Maintained modules
+
+| Module | Description |
+|---|---|
+| [`IntelliTect.Common`](https://www.powershellgallery.com/packages/IntelliTect.Common/) | Generic utility functions: `Wait-ForCondition`, `Register-AutoDispose` / `Using`, `Add-DisposeScript`, `Get-TempFile`, `Get-TempDirectory`, `Add-PathToEnvironmentVariable`, `Highlight` (ANSI), etc. |
+| [`IntelliTect.File`](https://www.powershellgallery.com/packages/IntelliTect.File/) | File-system helpers: `Edit-File`, `Test-FileIsLocked`, `Get-FileEncoding`, `Set-FileEncoding`, `Remove-FileToRecycleBin` (Windows), `Remove-FileSystemItemForcibly` (Windows). |
+| [`IntelliTect.Git`](https://www.powershellgallery.com/packages/IntelliTect.Git/) | Git wrappers: `Invoke-GitCommand`, `Get-GitItemStatus`, `Get-GitBranch`, `Push-GitBranch`, `Remove-GitBranch`, `Find-GitBranch`, `New-GitIgnore`, `Undo-Git`, `Invoke-GitDiff`. |
+| [`IntelliTect.CredentialManager`](https://www.powershellgallery.com/packages/IntelliTect.CredentialManager/) | Thin wrapper over the Windows Credential Manager. |
+| [`IntelliTect.PSToolbox`](https://www.powershellgallery.com/packages/IntelliTect.PSToolbox/) | Umbrella module that pulls in all of the above. |
 
 ## Installation
-To install these modules, you need the latest version of the PowerShellGet module. If you have Windows 10, you already have it. Otherwise, Instructions may be found at https://docs.microsoft.com/powershell/scripting/gallery/getting-started, or you may also run Setup.ps1 inside this repository to attempt to automatically install needed dependencies.
 
-Once you are all set up, run `Install-Module IntelliTect.PSToolbox` to install the latest versions of these modules from PowerShell Gallery. 
+```powershell
+Install-Module IntelliTect.PSToolbox
+```
+
+(or, for a single module: `Install-Module IntelliTect.Common`)
+
+## What happened to the other modules?
+
+Version **2.0.0** removed several modules that had been superseded by
+mature, out-of-the-box solutions. Use these replacements instead:
+
+| Removed module | Recommended replacement |
+|---|---|
+| `AzureManagement`                  | [`Az`](https://learn.microsoft.com/powershell/azure/) |
+| `IntelliTect.PSDbxCli`             | [`dbxcli`](https://github.com/dropbox/dbxcli) directly |
+| `IntelliTect.PSDropbin`            | [Dropbox.Api SDK](https://www.nuget.org/packages/Dropbox.Api) |
+| `IntelliTect.PSRestore`            | Built-in Windows Recycle Bin / [`Recycle`](https://www.powershellgallery.com/packages/Recycle) |
+| `IntelliTect.ResharperNugetSearch` | `Find-Package` / `nuget.exe search` |
+| `IntelliTect.MicrosoftWord`        | Word COM or [Open XML SDK](https://www.nuget.org/packages/DocumentFormat.OpenXml) |
+| `IntelliTect.Google`               | [GShell / Google APIs PowerShell module](https://www.powershellgallery.com/packages?q=google) |
+| `IntelliTect.ChatGpt`              | [`PowerShellAI`](https://www.powershellgallery.com/packages/PowerShellAI) |
+| `DotNetCore`                       | `dotnet` CLI directly |
+| `Functions/` loose scripts         | Module the bits you need yourself; most are now obsolete (ISE, TFS, etc.) |
+
+The complete **1.x** history is preserved in this repository at
+the tag [`v1.0-legacy`](https://github.com/IntelliTect/PSToolbox/releases/tag/v1.0-legacy)
+and the branch [`legacy/v1`](https://github.com/IntelliTect/PSToolbox/tree/legacy/v1).
+See [`PROJECT_OVERVIEW.md`](PROJECT_OVERVIEW.md) for the in-depth review that motivated this trim.
 
 ## Contributing
-Please see [CONTRIBUTING.md](CONTRIBUTING.md)
+
+Please see [CONTRIBUTING.md](CONTRIBUTING.md).

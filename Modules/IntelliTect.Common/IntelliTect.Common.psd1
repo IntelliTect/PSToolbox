@@ -12,10 +12,10 @@
 RootModule = './IntelliTect.Common.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.2.0.7'
+ModuleVersion = '2.0.0'
 
 # Supported PSEditions
-# CompatiblePSEditions = @()
+CompatiblePSEditions = @('Core')
 
 # ID used to uniquely identify this module
 GUID = '1f6d62b3-f07a-4c78-b205-229f01929acf'
@@ -33,7 +33,7 @@ Copyright = '(c) 2017 IntelliTect. All rights reserved.'
 Description = 'Provides functionality for common functions in PowerShell'
 
 # Minimum version of the PowerShell engine required by this module
-# PowerShellVersion = ''
+PowerShellVersion = '7.2'
 
 # Name of the PowerShell host required by this module
 # PowerShellHostName = ''
@@ -69,12 +69,21 @@ Description = 'Provides functionality for common functions in PowerShell'
 # NestedModules = @()
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-FunctionsToExport = 'Add-PathToEnvironmentVariable', 'Invoke-ShouldProcess', 
-               'ConvertFrom-Hashtable', 'Highlight', 'Initialize-Array', 
-               'Add-DisposeScript', 'Register-AutoDispose', 'Get-TempDirectory', 
-               'Get-TempFile', 'Get-FileSystemTempItemPath', 'ConvertTo-Lines', 
-               'Test-Command', 'Test-Property', 'Test-VariableExists', 
-               'Get-IsWindowsPlatform', 'Set-IsWindowsVariable', 'Wait-ForCondition'
+FunctionsToExport = @(
+    'Add-PathToEnvironmentVariable',
+    'Invoke-ShouldProcess',
+    'ConvertFrom-Hashtable',
+    'Highlight',
+    'Add-DisposeScript',
+    'Register-AutoDispose',
+    'Get-TempDirectory',
+    'Get-TempFile',
+    'Get-FileSystemTempItemPath',
+    'Test-Command',
+    'Test-Property',
+    'Test-VariableExists',
+    'Wait-ForCondition'
+)
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
 CmdletsToExport = '*'
@@ -112,7 +121,24 @@ PrivateData = @{
         # IconUri = ''
 
         # ReleaseNotes of this module
-        # ReleaseNotes = ''
+        ReleaseNotes = @'
+2.0.0
+  - Removed obsolete helpers superseded by built-in PowerShell 7 features:
+    Get-IsWindowsPlatform, Set-IsWindowsVariable (use $IsWindows automatic variable),
+    Initialize-Array (use @(...) array subexpression), ConvertTo-Lines (use -split).
+  - Highlight rewritten to emit ANSI escape sequences via Write-Output
+    instead of Write-Host with -ForegroundColor. Works cross-platform.
+  - Minimum PowerShell version raised to 7.2.
+'@
+
+        # Tags applied to this module.
+        Tags = @('IntelliTect', 'Common', 'Utility')
+
+        # A URL to the license for this module.
+        LicenseUri = 'https://github.com/IntelliTect/PSToolbox/blob/main/LICENSE.txt'
+
+        # A URL to the main website for this project.
+        ProjectUri = 'https://github.com/IntelliTect/PSToolbox'
 
         # Prerelease string of this module
         # Prerelease = ''
