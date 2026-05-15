@@ -17,21 +17,27 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Discover Changed Modules
+      - name: Discover Modules to Publish
         id: discover
         shell: pwsh
         run: |
-          $changed = git diff --name-only HEAD~ HEAD
-          $changed
-          $modules = @()
-          foreach ($file in $changed) {
-            $parts = $file -split '/'
-            if ($parts.Length -ge 2 -and $parts[0] -eq 'Modules') {
-              $modules += $parts[1]
+          if ('${{ github.event_name }}' -eq 'workflow_dispatch') {
+            # Manual run: consider every module a candidate; the publish step
+            # then skips any whose version is already on the gallery.
+            $modules = Get-ChildItem -Path Modules -Directory | Select-Object -ExpandProperty Name
+          } else {
+            $changed = git diff --name-only HEAD~ HEAD
+            $changed
+            $modules = @()
+            foreach ($file in $changed) {
+              $parts = $file -split '/'
+              if ($parts.Length -ge 2 -and $parts[0] -eq 'Modules') {
+                $modules += $parts[1]
+              }
             }
+            $modules = $modules | Sort-Object -Unique
           }
-          $modules = $modules | Sort-Object -Unique
-          Write-Host "Changed modules: $($modules -join ', ')"
+          Write-Host "Modules to consider: $($modules -join ', ')"
           "modules=$($modules -join ',')" >> $env:GITHUB_OUTPUT
 
       - name: Install PSResourceGet
