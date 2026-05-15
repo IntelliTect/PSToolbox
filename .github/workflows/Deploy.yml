@@ -32,48 +32,7 @@ jobs:
           }
           $modules = $modules | Sort-Object -Unique
           Write-Host "Changed modules: $($modules -join ', ')"
-          if ($modules.Length -eq 0) {
-            "modules=" >> $env:GITHUB_OUTPUT
-            return
-          }
-          $staging = New-Item -ItemType Directory -Force -Path StagingChangedModules
-          foreach ($m in $modules) {
-            Copy-Item -Path "Modules/$m" -Destination $staging.FullName -Recurse -Force
-          }
           "modules=$($modules -join ',')" >> $env:GITHUB_OUTPUT
-
-      - name: Bump Module Version
-        if: steps.discover.outputs.modules != ''
-        shell: pwsh
-        run: |
-          $moduleFolders = Get-ChildItem StagingChangedModules -Directory
-          foreach ($item in $moduleFolders) {
-            $manifest = Get-ChildItem $item.FullName -Filter '*.psd1' | Select-Object -First 1
-            if (-not $manifest) {
-              Write-Error "Manifest for $($item.Name) was not found"
-              continue
-            }
-            $current = (Test-ModuleManifest -Path $manifest.FullName).Version
-            $build = if ($current.Build -ge 0) { $current.Build } else { 0 }
-            $revision = if ($current.Revision -ge 0) { $current.Revision + 1 } else { 1 }
-            $updated = [Version]::new($current.Major, $current.Minor, $build, $revision)
-            $repoManifest = Join-Path '.' 'Modules' $item.Name $manifest.Name
-            Update-ModuleManifest -Path $repoManifest -ModuleVersion $updated
-            Update-ModuleManifest -Path $manifest.FullName -ModuleVersion $updated
-            Write-Host "$($item.Name): $current -> $updated"
-          }
-
-      - name: Commit Version Bump
-        if: steps.discover.outputs.modules != ''
-        shell: bash
-        run: |
-          git config --global user.email "actions@github.com"
-          git config --global user.name "github-actions[bot]"
-          git add Modules/*/*.psd1
-          if ! git diff --staged --quiet; then
-            git commit -m "[skip ci] Bump module version from build agent"
-            git push
-          fi
 
       - name: Install PSResourceGet
         if: steps.discover.outputs.modules != ''
@@ -90,7 +49,32 @@ jobs:
           PSGALLERY_API_KEY: ${{ secrets.POWERSHELL_GALLERY_API_KEY }}
         run: |
           Import-Module Microsoft.PowerShell.PSResourceGet
-          foreach ($item in Get-ChildItem StagingChangedModules -Directory) {
-            Write-Host "Publishing $($item.Name) ..."
-            Publish-PSResource -Path $item.FullName -ApiKey $env:PSGALLERY_API_KEY -Repository PSGallery -Verbose
+
+          # Publish in dependency order: leaf modules first, umbrella last.
+          $order = @(
+            'IntelliTect.Common',
+            'IntelliTect.File',
+            'IntelliTect.Git',
+            'IntelliTect.PSToolbox'
+          )
+          $changed = '${{ steps.discover.outputs.modules }}' -split ','
+
+          foreach ($name in $order) {
+            if ($changed -notcontains $name) { continue }
+            $path = Join-Path '.' 'Modules' $name
+            $manifestPath = Join-Path $path "$name.psd1"
+            if (-not (Test-Path $manifestPath)) {
+              Write-Warning "Manifest not found for $name at $manifestPath; skipping."
+              continue
+            }
+            $data = Import-PowerShellDataFile -Path $manifestPath
+            $version = $data.ModuleVersion
+            Write-Host "Checking PSGallery for $name $version ..."
+            $existing = Find-PSResource -Name $name -Version $version -Repository PSGallery -ErrorAction SilentlyContinue
+            if ($existing) {
+              Write-Host "$name $version already on PSGallery; skipping."
+              continue
+            }
+            Write-Host "Publishing $name $version ..."
+            Publish-PSResource -Path $path -ApiKey $env:PSGALLERY_API_KEY -Repository PSGallery -SkipModuleManifestValidate -Verbose
           }
