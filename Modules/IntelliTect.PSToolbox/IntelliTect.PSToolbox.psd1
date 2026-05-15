@@ -12,10 +12,10 @@
     # RootModule = ''
 
     # Version number of this module.
-    ModuleVersion     = '1.4.2.4'
+    ModuleVersion     = '2.0.0'
 
     # Supported PSEditions
-    # CompatiblePSEditions = @()
+    CompatiblePSEditions = @('Core')
 
     # ID used to uniquely identify this module
     GUID              = '91500afc-48ad-41a6-9cdc-091bc89611ed'
@@ -27,13 +27,13 @@
     CompanyName       = 'IntelliTect'
 
     # Copyright statement for this module
-    Copyright         = '(c) 2016 IntelliTect. All rights reserved.'
+    Copyright         = '(c) IntelliTect. All rights reserved.'
 
     # Description of the functionality provided by this module
-    Description       = 'Shortcut module to install all of IntelliTect''s PowerShell modules'
+    Description       = 'Umbrella module that installs IntelliTect''s maintained PowerShell modules: IntelliTect.Common, IntelliTect.File, IntelliTect.Git, and IntelliTect.CredentialManager.'
 
     # Minimum version of the Windows PowerShell engine required by this module
-    # PowerShellVersion = ''
+    PowerShellVersion = '7.2'
 
     # Name of the Windows PowerShell host required by this module
     # PowerShellHostName = ''
@@ -52,11 +52,10 @@
 
     # Modules that must be imported into the global environment prior to importing this module
     RequiredModules   = @(
-        "IntelliTect.Common",
-        "IntelliTect.Google",
-        "IntelliTect.CredentialManager",
-        "IntelliTect.ResharperNugetSearch",
-        "IntelliTect.MicrosoftWord"
+        'IntelliTect.Common',
+        'IntelliTect.File',
+        'IntelliTect.Git',
+        'IntelliTect.CredentialManager'
     )
 
     # Assemblies that must be loaded prior to importing this module
@@ -100,20 +99,44 @@
 
         PSData = @{
 
-            # Tags applied to this module. These help with module discovery in online galleries.
-            # Tags = @()
+            # Tags applied to this module.
+            Tags = @('IntelliTect', 'PSToolbox', 'Umbrella')
 
             # A URL to the license for this module.
-            # LicenseUri = ''
+            LicenseUri = 'https://github.com/IntelliTect/PSToolbox/blob/main/LICENSE.txt'
 
             # A URL to the main website for this project.
-            # ProjectUri = ''
+            ProjectUri = 'https://github.com/IntelliTect/PSToolbox'
 
             # A URL to an icon representing this module.
             # IconUri = ''
 
             # ReleaseNotes of this module
-            # ReleaseNotes = ''
+            ReleaseNotes = @'
+2.0.0  (Path B modernization)
+  This is a breaking-change major release.
+
+  Removed modules (use the recommended replacements):
+    - AzureManagement                  -> Az
+    - IntelliTect.PSDbxCli             -> dbxcli directly
+    - IntelliTect.PSDropbin            -> Dropbox.Api SDK
+    - IntelliTect.PSRestore            -> built-in Windows recycle bin / Recycle module
+    - IntelliTect.ResharperNugetSearch -> NuGet/Find-Package
+    - IntelliTect.MicrosoftWord        -> use Word COM/OpenXML directly
+    - IntelliTect.Google               -> Google APIs PowerShell module
+    - IntelliTect.ChatGpt              -> PowerShellAI module
+    - DotNetCore                       -> dotnet CLI directly
+
+  Retained and modernized modules:
+    - IntelliTect.Common 2.0.0
+    - IntelliTect.File 2.0.0
+    - IntelliTect.Git 2.0.0
+    - IntelliTect.CredentialManager (unchanged)
+
+  Minimum PowerShell version raised to 7.2.
+
+  The 1.x history is preserved at tag v1.0-legacy and branch legacy/v1.
+'@
 
             # Prerelease string of this module
             # Prerelease = ''

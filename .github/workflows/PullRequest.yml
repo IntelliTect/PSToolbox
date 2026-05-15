@@ -5,36 +5,72 @@ on:
     branches: [ main ]
 
   workflow_dispatch:
+
 defaults:
   run:
-    shell: powershell
+    shell: pwsh
+
 jobs:
   PesterTest:
-    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2      
-      
-      - name: Pester Test
+      - uses: actions/checkout@v4
+
+      - name: Install Pester 5
+        shell: pwsh
         run: |
-          $ConfirmPreference = "None"
-          $testResults = Invoke-Pester -Script .\Modules.Tests\  -OutputFile ${{env.GITHUB_WORKSPACE}}\Test-Pester.XML -OutputFormat NUnitXML -PassThru
-          if($testResults.FailedCount -ne 0) { 
-               Write-Error "$($testResults.FailedCount) test failed."
-               exit $LASTEXITCODE 
+          $ConfirmPreference = 'None'
+          if (-not (Get-Module -ListAvailable -Name Pester | Where-Object { $_.Version -ge [version]'5.5.0' })) {
+            Install-Module -Name Pester -MinimumVersion 5.5.0 -Force -SkipPublisherCheck -Scope CurrentUser
           }
-  DotNetBuild:
-    runs-on: windows-latest
+
+      - name: Run Pester Tests
+        shell: pwsh
+        run: |
+          $ConfirmPreference = 'None'
+          Import-Module Pester -MinimumVersion 5.5.0
+          $config = New-PesterConfiguration
+          $config.Run.Path = './Modules.Tests'
+          $config.Run.Exit = $true
+          $config.TestResult.Enabled = $true
+          $config.TestResult.OutputFormat = 'NUnitXml'
+          $config.TestResult.OutputPath = "${{ github.workspace }}/Test-Pester.xml"
+          $config.Output.Verbosity = 'Detailed'
+          Invoke-Pester -Configuration $config
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pester-results-${{ matrix.os }}
+          path: Test-Pester.xml
+
+  ScriptAnalyzer:
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2      
-      - name: DotNet Build
+      - uses: actions/checkout@v4
+
+      - name: Install PSScriptAnalyzer
+        shell: pwsh
         run: |
-          $items = Get-ChildItem -Include *.sln -Recurse
-          foreach ($item in $items){
-              dotnet build $item
+          if (-not (Get-Module -ListAvailable -Name PSScriptAnalyzer)) {
+            Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser
           }
-      - name: DotNet Test
+
+      - name: Run PSScriptAnalyzer
+        shell: pwsh
         run: |
-          $items = Get-ChildItem -Include *.sln -Recurse
-          foreach ($item in $items){
-              dotnet test $item
+          Import-Module PSScriptAnalyzer
+          $results = Invoke-ScriptAnalyzer -Path ./Modules -Recurse -Settings ./PSScriptAnalyzerSettings.psd1
+          if ($results) {
+            $results | Format-Table -AutoSize | Out-String | Write-Host
+            $errors = @($results | Where-Object Severity -eq 'Error')
+            if ($errors.Count -gt 0) {
+              Write-Error "PSScriptAnalyzer found $($errors.Count) error(s)."
+              exit 1
+            }
           }

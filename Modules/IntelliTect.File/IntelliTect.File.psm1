@@ -121,14 +121,23 @@ Same as previous example but fixes encoding using set-content
 Function Get-FileEncoding
 {
   [CmdletBinding()]
+  [OutputType([string])]
   Param (
     [Parameter(Mandatory = $True, ValueFromPipelineByPropertyName = $True)]
     [string]$Path
   )
 
-  [byte[]]$byte = Get-Content -Encoding byte -ReadCount 4 -TotalCount 4 -Path $Path
-  #Write-Host Bytes: $byte[0] $byte[1] $byte[2] $byte[3]
+  $resolved = (Resolve-Path -LiteralPath $Path).ProviderPath
+  $stream = [System.IO.File]::OpenRead($resolved)
+  try {
+    $byte = [byte[]]::new(4)
+    $read = $stream.Read($byte, 0, 4)
+  }
+  finally {
+    $stream.Dispose()
+  }
 
+  if ($read -lt 1) { return 'ASCII' }
   # EF BB BF (UTF8)
   if ( $byte[0] -eq 0xef -and $byte[1] -eq 0xbb -and $byte[2] -eq 0xbf )
   { Write-Output 'UTF8' }
@@ -176,6 +185,16 @@ Function Get-FileEncoding
   else
   { Write-Output 'ASCII' }
 }
+
+# TODO: Add functions below
+# See https://github.com/MarkMichaelis/Private/blob/InitialMachineSetup/Install-Dropbox.ps1 for
+#   Function Set-ItemShortName 
+#   Function Close-OpenFileHandle
+#   Function Get-ShortName
+#   Function Compare-Path
+#   Function Move-ItemWithOpenHandles
+#   Function Copy-Acl 
+
 
 if(($PSVersionTable.PSEdition -eq 'Desktop') -and ($PSVersionTable.Clrversion.Major -ge 4)) {
     <#
@@ -303,44 +322,6 @@ Function Remove-FileSystemItemForcibly {
         }
     }
 }
-}
-
-# Only create this function if it isn't build into the framework.
-try {
-    Microsoft.PowerShell.Management\Join-Path 'first' 'second' 'third' -ErrorAction ignore
-} 
-catch [System.Management.Automation.ParameterBindingException] { 
-    <#
-    .SYNOPSIS
-        Provide a wrapper to `Microsoft.PowerShell.Management\Join-Path` that can take an unlimited number of parameters.
-    .DESCRIPTION
-        `Microsoft.PowerShell.Management\Join-Path` only allows two parameters. This implementation of Join-Path
-        wraps `Microsoft.PowerShell.Management\Join-Path` and supports n parameters.
-    .EXAMPLE
-        PS C:\> Join-Path c:\first second third
-        c:\first\second\third
-        
-    .INPUTS
-        None
-    .OUTPUTS
-        string
-    .NOTES
-        None
-    #>
-    Function Join-Path {
-        [CmdletBinding()]
-        [OutputType([string])]
-        param (
-            [Parameter(Mandatory)][string]$BeginPath,
-            [Parameter(Mandatory,ValueFromRemainingArguments)][string[]]$ChildPathLet
-        )
-        
-        #TODO: Add support for ValueFromPipeline
-
-        $pathSuffix=$BeginPath
-        @($ChildPathLet) | ForEach-Object{ $pathSuffix = Microsoft.PowerShell.Management\Join-Path $pathSuffix $_}
-        Write-Output $pathSuffix
-    }
 }
 
 # TODO: Add functions below

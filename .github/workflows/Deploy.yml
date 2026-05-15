@@ -1,98 +1,96 @@
 name: Deploy
+
 on:
   push:
     branches: [ main ]
   workflow_dispatch:
+
 defaults:
   run:
     shell: pwsh
+
 jobs:
   Deploy:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2   
-      with:
-        fetch-depth: 2
-    - name: Discover Changes
-      run: |
-        $changedModules = $(git diff --name-only HEAD HEAD~)
-        $changedModules
-        $files = $changedModules -split ' ' | ForEach-Object{[System.IO.FileInfo] $_}
-        $modules = @()
-        foreach ($file in $files) 
-        {
-            if((Test-Path $file.FullName)){
-                $fileDirectoryParent = $file.Directory.Parent
-                if ($fileDirectoryParent -and $fileDirectoryParent.Name -eq "Modules") {
-                    $modules += $file.Directory
-                }
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Discover Changed Modules
+        id: discover
+        shell: pwsh
+        run: |
+          $changed = git diff --name-only HEAD~ HEAD
+          $changed
+          $modules = @()
+          foreach ($file in $changed) {
+            $parts = $file -split '/'
+            if ($parts.Length -ge 2 -and $parts[0] -eq 'Modules') {
+              $modules += $parts[1]
             }
-        }
-        $modules.Length
-        if($modules.Length -eq 0){
-          exit
-        }
-        $changedModulesPath = mkdir -Name "StagingChangedModules\" -Force
-        For ($i=0; $i -lt $modules.Length; $i++)
-        {
-            $module = $modules[$i]
-            Copy-Item -Path $module.FullName -Destination $changedModulesPath -Recurse -Force
-        }
-    - name: Update Changed Modules
-      run: |
-        if(!(Test-Path StagingChangedModules)) {
-          Write-Host "No modules changed"
-          exit
-        }
-        $moduleFolders = Get-ChildItem StagingChangedModules
-        foreach ($item in $moduleFolders){
-            $moduleName = $item.Name
-            $manifest = Get-ChildItem $item.PSPath | Where-Object{$_.Name -like "*psd1"}
-            if(!$manifest){
-                Write-Error "The manifest for $moduleName was not found"
+          }
+          $modules = $modules | Sort-Object -Unique
+          Write-Host "Changed modules: $($modules -join ', ')"
+          if ($modules.Length -eq 0) {
+            "modules=" >> $env:GITHUB_OUTPUT
+            return
+          }
+          $staging = New-Item -ItemType Directory -Force -Path StagingChangedModules
+          foreach ($m in $modules) {
+            Copy-Item -Path "Modules/$m" -Destination $staging.FullName -Recurse -Force
+          }
+          "modules=$($modules -join ',')" >> $env:GITHUB_OUTPUT
+
+      - name: Bump Module Version
+        if: steps.discover.outputs.modules != ''
+        shell: pwsh
+        run: |
+          $moduleFolders = Get-ChildItem StagingChangedModules -Directory
+          foreach ($item in $moduleFolders) {
+            $manifest = Get-ChildItem $item.FullName -Filter '*.psd1' | Select-Object -First 1
+            if (-not $manifest) {
+              Write-Error "Manifest for $($item.Name) was not found"
+              continue
             }
-            $content = Get-Content $manifest.PSPath | ForEach-Object{
-                $_
-                if ($_ -match "ModuleVersion"){
-                    $version = [System.Version]($_ -split "'")[1]
-                }
-            }
-        $major = 0
-            $minor = 0
-            $build = 0
-            $minorRev = 1
-            if($version.Major -gt 0){$major = $version.Major}
-            if($version.Minor -gt 0){$minor = $version.Minor}
-            if($version.Build -gt 0){$build = $version.Build}
-            if($version.MinorRevision -gt 0){$minorRev = $version.MinorRevision + 1}
-            $updatedVersion = New-Object -TypeName system.Version -ArgumentList $major, $minor, $build, $minorRev
-            $PushPath = ".\Modules\" +($manifest.PSChildName).Substring(0, $manifest.PSChildName.length - 5 ) +  "\"+ ($manifest.PSChildName)
-            $PublishPath = ".\StagingChangedModules\" +($manifest.PSChildName).Substring(0, $manifest.PSChildName.length - 5 ) +  "\"+ ($manifest.PSChildName)
-            
-            Update-ModuleManifest -Path $PushPath -ModuleVersion $updatedVersion
-            Update-ModuleManifest -Path $PublishPath -ModuleVersion $updatedVersion
-          
-            Write-Host "$moduleName's version was updated from $version to $updatedVersion"
-        }
-    - name: Push Changes
-      run: |
-        if(!(Test-Path StagingChangedModules)) {
-          Write-Host "No modules changed"
-          exit
-        }
-        git config --global user.email "tylerjones321@gmail.com"
-        git config --global user.name "worseTyler"
-        git add Modules/\*.psd1
-        git commit -m "[skip ci] Commit from build agent"
-        git push
-    - name: Publish To Gallery
-      run: |
-        if(!(Test-Path StagingChangedModules)) {
-          Write-Host "No modules changed"
-          Write-Host "Nothing to Publish"
-          exit
-        }
-        $moduleFolders = Get-ChildItem StagingChangedModules
-        foreach ($item in $moduleFolders){
-          Publish-Module -Path $item.FullName -NuGetApiKey ${{ secrets.POWERSHELL_GALLERY_API_KEY }} -Verbose
-        }
+            $current = (Test-ModuleManifest -Path $manifest.FullName).Version
+            $build = if ($current.Build -ge 0) { $current.Build } else { 0 }
+            $revision = if ($current.Revision -ge 0) { $current.Revision + 1 } else { 1 }
+            $updated = [Version]::new($current.Major, $current.Minor, $build, $revision)
+            $repoManifest = Join-Path '.' 'Modules' $item.Name $manifest.Name
+            Update-ModuleManifest -Path $repoManifest -ModuleVersion $updated
+            Update-ModuleManifest -Path $manifest.FullName -ModuleVersion $updated
+            Write-Host "$($item.Name): $current -> $updated"
+          }
+
+      - name: Commit Version Bump
+        if: steps.discover.outputs.modules != ''
+        shell: bash
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "github-actions[bot]"
+          git add Modules/*/*.psd1
+          if ! git diff --staged --quiet; then
+            git commit -m "[skip ci] Bump module version from build agent"
+            git push
+          fi
+
+      - name: Install PSResourceGet
+        if: steps.discover.outputs.modules != ''
+        shell: pwsh
+        run: |
+          if (-not (Get-Module -ListAvailable -Name Microsoft.PowerShell.PSResourceGet)) {
+            Install-Module -Name Microsoft.PowerShell.PSResourceGet -Force -Scope CurrentUser
+          }
+
+      - name: Publish to PowerShell Gallery
+        if: steps.discover.outputs.modules != ''
+        shell: pwsh
+        env:
+          PSGALLERY_API_KEY: ${{ secrets.POWERSHELL_GALLERY_API_KEY }}
+        run: |
+          Import-Module Microsoft.PowerShell.PSResourceGet
+          foreach ($item in Get-ChildItem StagingChangedModules -Directory) {
+            Write-Host "Publishing $($item.Name) ..."
+            Publish-PSResource -Path $item.FullName -ApiKey $env:PSGALLERY_API_KEY -Repository PSGallery -Verbose
+          }

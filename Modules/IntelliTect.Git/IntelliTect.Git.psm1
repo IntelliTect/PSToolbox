@@ -159,44 +159,31 @@ $Script:contentTypes = $null
 Function Script:Get-GitIgnoreContentTypes {
     [CmdletBinding()]param()
     if(!$Script:contentTypes) {
-        try { 
-            $response = Invoke-WebRequest -Uri 'https://www.gitignore.io/api/list' # -ErrorAction is ignored
+        try {
+            $response = Invoke-WebRequest -Uri 'https://www.toptal.com/developers/gitignore/api/list'
             if($response) {
                 $Script:contentTypes = $response.Content -replace "`n",',' -split ','
             }
-        } catch [System.Net.WebException] { 
-            Write-Warning "$($_.Exception.Message)"
-            $Script:contentTypes = 'actionscript','ada','adobe','agda','alteraquartusiiandroid','anjuta','ansible','apachecordova','appbuilderappceleratortitanium','appcode','appengine','aptanastudio
-            ','arcanistarchive','archives','archlinuxpackages','assembler','atmelstudioautomationstudio','autotools','basercms','basic','batchbazaar','bazel','bitrix','blackbox','bluejbower','bricxcc','c','c++','cakecakep
-            hp','calabash','carthage','ceylon','cfwheelschefcookbook','clion','clojure','cloud9','cmakecocos2dx','code','code-java','codeblocks','codeignitercodeio','codekit','coffeescript','commonl
-            isp','composercompressedarchive','compression','concrete5','coq','craftcmscrashlytics','crossbar','crystal','csharp','cudacvs','d','dart','darteditor','datarecoverydelphi','django','dm',
-            'dotfilessh','dotsettingsdreamweaver','dropbox','drupal','eagle','easybookeclipse','eiffelstudio','elasticbeanstalk','elisp','elixirelm','emacs','ember','ensime','episervererlang','espre
-            sso','expressionengine','extjs','f#fancy','fastlane','finale','flashbuilder','flexflexbuilder','fontforge','forcedotcom','fortran','freepascalfuelphp','fusetools','gcov','genero4gl','ggt
-            sgit','gitbook','go','gpg','gradlegrails','greenfoot','grunt','gwt','haskellhsp','hugo','iar_ewarm','idris','igorproimages','infer','intellij','intellij+iml','jabrefjava','jboss','jdevel
-            oper','jekyll','jetbrainsjmeter','joe','joomla','jspm','juliajustcode','kate','kdevelop4','kicad','kirby2kobalt','kohana','komodoedit','labview','laravellatex','lazarus','leiningen','lem
-            onstand','lessliberosoc','librarian-chef','libreoffice','lilypond','linuxlithium','lua','lyx','m2e','macosmagento','matlab','maven','mercurial','mercurymetaprogrammingsystem','meteorjs',
-            'microsoftoffice','modelsim','modxmomentics','monodevelop','nanoc','ncrunch','nescnetbeans','nette','nim','ninja','nodenotepadpp','objective-c','ocaml','octobercms','opaopencart','opencv
-            ','openfoam','openframeworks','oracleformsosx','otto','packer','perl','ph7cmsphalcon','phoenix','phpstorm','pimcore','pinegrowplayframework','plone','polymer','premake-gmake','prestashop
-            processing','progressabl','puppet-librarian','purescript','pycharmpython','qml','qooxdoo','qt','rracket','rails','redcar','redis','rhodesrhomobileroot','ros','ruby','rubymine','rustsas',
-            'sass','sbt','scala','schemescons','scrivener','sdcc','seamgen','senchatouchserverless','shopware','silverstripe','sketchup','slickeditsmalltalk','sonar','sourcepawn','splunk','statastel
-            la','stellar','stylus','sublimetext','sugarcrmsvn','swift','symfony','symphonycms','synologysynopsysvcs','tags','tarmainstallmate','terraform','testtestcomplete','tex','textmate','textpa
-            ttern','theos-tweaktortoisegit','tower','turbogears2','typings','typo3umbraco','unity','unrealengine','vagrant','vimvirtualenv','virtuoso','visualstudio','visualstudiocode','vivadovvvv',
-            'waf','wakanda','webmethods','webstormwerckercli','windows','wintersmith','wordpress','xamarinstudioxcode','xilinxise','xojo','xtext','yeomanyii','yii2','zendframework','zephir' 
-        } 
+        } catch {
+            Write-Warning "Unable to retrieve gitignore template list: $($_.Exception.Message)"
+            $Script:contentTypes = @()
+        }
     }
     return $Script:contentTypes
 }
 Function New-GitIgnore {
     [CmdletBinding(SupportsShouldProcess)]
     param(
-         # [Parameter(Mandatory)]$ProjectType = "VisualStudio",
          [ValidateScript({Test-Path $_ -PathType Container })][string]$Path = $pwd,
          [switch]$Force
     )
     DynamicParam {
-        New-DynamicParam -Name ProjectType -ValidateSet (Script:Get-GitIgnoreContentTypes) `
-            -HelpMessage 'The project types available. (The default is "VisualStudio")' `
-            -Position 1 -Type ([string])
+        $types = Script:Get-GitIgnoreContentTypes
+        if ($types -and $types.Count -gt 0) {
+            New-DynamicParam -Name ProjectType -ValidateSet $types `
+                -HelpMessage 'The project types available. (The default is "VisualStudio")' `
+                -Position 1 -Type ([string])
+        }
     }
     BEGIN {
         $ProjectType = $PSBoundParameters.ProjectType
@@ -207,11 +194,11 @@ Function New-GitIgnore {
     PROCESS {
         try {
             $gitIgnorePath = (Microsoft.PowerShell.Management\Join-Path -Path $Path -ChildPath '.gitignore')
-            $response = Invoke-WebRequest -Uri "https://www.gitignore.io/api/$ProjectType"
+            $response = Invoke-WebRequest -Uri "https://www.toptal.com/developers/gitignore/api/$ProjectType"
             if ($PSCmdlet.ShouldProcess("'$gitIgnorePath' file", "Create '$gitIgnorePath' file")) {
-                $response | Select-Object -ExpandProperty Content | Out-File -FilePath $gitIgnorePath -Encoding ascii -NoClobber:(!$Force)
+                $response | Select-Object -ExpandProperty Content | Out-File -FilePath $gitIgnorePath -Encoding utf8 -NoClobber:(!$Force)
             }
-        } catch [System.Net.WebException] { 
+        } catch {
             Write-Error "$($_.Exception.Message)"
         }
     }
@@ -357,30 +344,37 @@ function Push-GitBranch {
         [switch]$SetUpstream
     )
 
-    # Check if an upstream branch exists.  Since Invoke-GitCommand doesn't (yet) use start-process and we don't return the $LastExitCode cleanly,
-    # we call git explicitly here until Invoke-GitCommand is fixed.
-    Write-Host "Executing: git rev-parse --abbrev-ref '@{upstream}'"
-    git rev-parse --abbrev-ref '@{upstream}' 2>&1 >> $null
+    # Determine whether the current branch has an upstream configured.
+    # We invoke git directly (not via Invoke-GitCommand) because we need
+    # access to $LASTEXITCODE without other commands clobbering it.
+    Write-Verbose "Executing: git rev-parse --abbrev-ref '@{upstream}'"
+    $null = & git rev-parse --abbrev-ref '@{upstream}' 2>&1
+    $hasUpstream = ($LASTEXITCODE -eq 0)
 
-    [string]$result=$null
-    if($LASTEXITCODE -eq 0) {
+    [string]$result = $null
+    if($hasUpstream) {
         if($SetUpstream) { Write-Information -MessageData '-SetUpstream specified unnecessarily. Switch is ignored.' }
         if ($PSCmdlet.ShouldProcess('Pushing current branch to remote', 'Do you want to push the current branch to remote','Push-GitBranch' )) {
-            $result=Invoke-GitCommand -ActionMessage 'Push current branch to remote.' -command 'git push' 2>&1
+            $result = Invoke-GitCommand -ActionMessage 'Push current branch to remote.' -command 'git push' 2>&1
+            if ($LASTEXITCODE -ne 0) {
+                throw "git push failed with exit code $LASTEXITCODE."
+            }
         }
     }
     elseif($SetUpstream) {
         if ($PSCmdlet.ShouldProcess('Pushing current branch to remote and setting upstream because there isn''t one already', `
                 'Do you want to push the current branch to remote and set the upstream branch', 'Push-GitBranch')) {
-            #ToDo: Switch Invoke-GitCommand to use Start-Process in order to capture the output.
-            $result=Invoke-GitCommand -ActionMessage 'Push current branch to remote.' -command "git push --set-upstream origin $(Get-GitBranch)"
+            $result = Invoke-GitCommand -ActionMessage 'Push current branch to remote.' -command "git push --set-upstream origin $(Get-GitBranch)"
+            if ($LASTEXITCODE -ne 0) {
+                throw "git push --set-upstream failed with exit code $LASTEXITCODE."
+            }
         }
     }
     else {
         throw 'Remote upstream branch not set.  Use -SetUpstream to push this branch.'
     }
 
-    Write-Output $result.Trim()
+    if ($result) { Write-Output ([string]$result).Trim() }
 }
 
 Function Invoke-GitDiff {
